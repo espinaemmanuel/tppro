@@ -1,5 +1,6 @@
 import static org.junit.Assert.*;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.List;
@@ -30,7 +31,7 @@ public class ThriftIndexCoreTest {
 	@BeforeClass
 	public static void startServer() throws URISyntaxException, IOException {
 		// Start thrift server in a seperate thread
-		new Thread(new ThriftIndexCore(PORT)).start();
+		new Thread(new ThriftIndexCore(PORT, new File("dataDir"))).start();
 		try {
 			// wait for the server start up
 			Thread.sleep(5000);
@@ -46,7 +47,9 @@ public class ThriftIndexCoreTest {
 		IndexNode.Client client = new IndexNode.Client(protocol);
 		transport.open();
 
-		client.createPartition(123);
+		if(!client.containsPartition(123)){
+			client.createPartition(123);
+		}
 
 		transport.close();
 	}
@@ -67,13 +70,17 @@ public class ThriftIndexCoreTest {
 		doc.fields.put("title", docTitle);
 		doc.fields.put("text", docText);
 		
-		client.index(0, Lists.newArrayList(doc));
+		if(!client.containsPartition(123)){
+			client.createPartition(123);
+		}
 		
-		List<QueryResult> results = client.search(0, "information", 10, 0);
+		client.index(123, Lists.newArrayList(doc));		
+		QueryResult queryResult = client.search(123, "information", 10, 0);
 		
-		assertEquals(1, results.size());
-		assertEquals(docTitle, results.get(0).doc.fields.get("title"));
-		assertEquals(docText, results.get(0).doc.fields.get("text"));
+		assertEquals(2, queryResult.totalHits);
+		assertEquals(1, queryResult.hits.size());
+		assertEquals(docTitle, queryResult.hits.get(0).doc.fields.get("title"));
+		assertEquals(docText, queryResult.hits.get(0).doc.fields.get("text"));
 
 		transport.close();
 	}

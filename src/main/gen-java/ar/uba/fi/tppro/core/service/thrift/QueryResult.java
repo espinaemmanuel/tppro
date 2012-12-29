@@ -33,8 +33,8 @@ import org.slf4j.LoggerFactory;
 public class QueryResult implements org.apache.thrift.TBase<QueryResult, QueryResult._Fields>, java.io.Serializable, Cloneable {
   private static final org.apache.thrift.protocol.TStruct STRUCT_DESC = new org.apache.thrift.protocol.TStruct("QueryResult");
 
-  private static final org.apache.thrift.protocol.TField SCORE_FIELD_DESC = new org.apache.thrift.protocol.TField("score", org.apache.thrift.protocol.TType.DOUBLE, (short)1);
-  private static final org.apache.thrift.protocol.TField DOC_FIELD_DESC = new org.apache.thrift.protocol.TField("doc", org.apache.thrift.protocol.TType.STRUCT, (short)2);
+  private static final org.apache.thrift.protocol.TField TOTAL_HITS_FIELD_DESC = new org.apache.thrift.protocol.TField("totalHits", org.apache.thrift.protocol.TType.I32, (short)1);
+  private static final org.apache.thrift.protocol.TField HITS_FIELD_DESC = new org.apache.thrift.protocol.TField("hits", org.apache.thrift.protocol.TType.LIST, (short)2);
 
   private static final Map<Class<? extends IScheme>, SchemeFactory> schemes = new HashMap<Class<? extends IScheme>, SchemeFactory>();
   static {
@@ -42,13 +42,13 @@ public class QueryResult implements org.apache.thrift.TBase<QueryResult, QueryRe
     schemes.put(TupleScheme.class, new QueryResultTupleSchemeFactory());
   }
 
-  public double score; // required
-  public Document doc; // required
+  public int totalHits; // required
+  public List<Hit> hits; // required
 
   /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
   public enum _Fields implements org.apache.thrift.TFieldIdEnum {
-    SCORE((short)1, "score"),
-    DOC((short)2, "doc");
+    TOTAL_HITS((short)1, "totalHits"),
+    HITS((short)2, "hits");
 
     private static final Map<String, _Fields> byName = new HashMap<String, _Fields>();
 
@@ -63,10 +63,10 @@ public class QueryResult implements org.apache.thrift.TBase<QueryResult, QueryRe
      */
     public static _Fields findByThriftId(int fieldId) {
       switch(fieldId) {
-        case 1: // SCORE
-          return SCORE;
-        case 2: // DOC
-          return DOC;
+        case 1: // TOTAL_HITS
+          return TOTAL_HITS;
+        case 2: // HITS
+          return HITS;
         default:
           return null;
       }
@@ -107,15 +107,16 @@ public class QueryResult implements org.apache.thrift.TBase<QueryResult, QueryRe
   }
 
   // isset id assignments
-  private static final int __SCORE_ISSET_ID = 0;
+  private static final int __TOTALHITS_ISSET_ID = 0;
   private byte __isset_bitfield = 0;
   public static final Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> metaDataMap;
   static {
     Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift.meta_data.FieldMetaData>(_Fields.class);
-    tmpMap.put(_Fields.SCORE, new org.apache.thrift.meta_data.FieldMetaData("score", org.apache.thrift.TFieldRequirementType.DEFAULT, 
-        new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.DOUBLE)));
-    tmpMap.put(_Fields.DOC, new org.apache.thrift.meta_data.FieldMetaData("doc", org.apache.thrift.TFieldRequirementType.DEFAULT, 
-        new org.apache.thrift.meta_data.StructMetaData(org.apache.thrift.protocol.TType.STRUCT, Document.class)));
+    tmpMap.put(_Fields.TOTAL_HITS, new org.apache.thrift.meta_data.FieldMetaData("totalHits", org.apache.thrift.TFieldRequirementType.DEFAULT, 
+        new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.I32)));
+    tmpMap.put(_Fields.HITS, new org.apache.thrift.meta_data.FieldMetaData("hits", org.apache.thrift.TFieldRequirementType.DEFAULT, 
+        new org.apache.thrift.meta_data.ListMetaData(org.apache.thrift.protocol.TType.LIST, 
+            new org.apache.thrift.meta_data.StructMetaData(org.apache.thrift.protocol.TType.STRUCT, Hit.class))));
     metaDataMap = Collections.unmodifiableMap(tmpMap);
     org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(QueryResult.class, metaDataMap);
   }
@@ -124,13 +125,13 @@ public class QueryResult implements org.apache.thrift.TBase<QueryResult, QueryRe
   }
 
   public QueryResult(
-    double score,
-    Document doc)
+    int totalHits,
+    List<Hit> hits)
   {
     this();
-    this.score = score;
-    setScoreIsSet(true);
-    this.doc = doc;
+    this.totalHits = totalHits;
+    setTotalHitsIsSet(true);
+    this.hits = hits;
   }
 
   /**
@@ -138,9 +139,13 @@ public class QueryResult implements org.apache.thrift.TBase<QueryResult, QueryRe
    */
   public QueryResult(QueryResult other) {
     __isset_bitfield = other.__isset_bitfield;
-    this.score = other.score;
-    if (other.isSetDoc()) {
-      this.doc = new Document(other.doc);
+    this.totalHits = other.totalHits;
+    if (other.isSetHits()) {
+      List<Hit> __this__hits = new ArrayList<Hit>();
+      for (Hit other_element : other.hits) {
+        __this__hits.add(new Hit(other_element));
+      }
+      this.hits = __this__hits;
     }
   }
 
@@ -150,73 +155,88 @@ public class QueryResult implements org.apache.thrift.TBase<QueryResult, QueryRe
 
   @Override
   public void clear() {
-    setScoreIsSet(false);
-    this.score = 0.0;
-    this.doc = null;
+    setTotalHitsIsSet(false);
+    this.totalHits = 0;
+    this.hits = null;
   }
 
-  public double getScore() {
-    return this.score;
+  public int getTotalHits() {
+    return this.totalHits;
   }
 
-  public QueryResult setScore(double score) {
-    this.score = score;
-    setScoreIsSet(true);
+  public QueryResult setTotalHits(int totalHits) {
+    this.totalHits = totalHits;
+    setTotalHitsIsSet(true);
     return this;
   }
 
-  public void unsetScore() {
-    __isset_bitfield = EncodingUtils.clearBit(__isset_bitfield, __SCORE_ISSET_ID);
+  public void unsetTotalHits() {
+    __isset_bitfield = EncodingUtils.clearBit(__isset_bitfield, __TOTALHITS_ISSET_ID);
   }
 
-  /** Returns true if field score is set (has been assigned a value) and false otherwise */
-  public boolean isSetScore() {
-    return EncodingUtils.testBit(__isset_bitfield, __SCORE_ISSET_ID);
+  /** Returns true if field totalHits is set (has been assigned a value) and false otherwise */
+  public boolean isSetTotalHits() {
+    return EncodingUtils.testBit(__isset_bitfield, __TOTALHITS_ISSET_ID);
   }
 
-  public void setScoreIsSet(boolean value) {
-    __isset_bitfield = EncodingUtils.setBit(__isset_bitfield, __SCORE_ISSET_ID, value);
+  public void setTotalHitsIsSet(boolean value) {
+    __isset_bitfield = EncodingUtils.setBit(__isset_bitfield, __TOTALHITS_ISSET_ID, value);
   }
 
-  public Document getDoc() {
-    return this.doc;
+  public int getHitsSize() {
+    return (this.hits == null) ? 0 : this.hits.size();
   }
 
-  public QueryResult setDoc(Document doc) {
-    this.doc = doc;
+  public java.util.Iterator<Hit> getHitsIterator() {
+    return (this.hits == null) ? null : this.hits.iterator();
+  }
+
+  public void addToHits(Hit elem) {
+    if (this.hits == null) {
+      this.hits = new ArrayList<Hit>();
+    }
+    this.hits.add(elem);
+  }
+
+  public List<Hit> getHits() {
+    return this.hits;
+  }
+
+  public QueryResult setHits(List<Hit> hits) {
+    this.hits = hits;
     return this;
   }
 
-  public void unsetDoc() {
-    this.doc = null;
+  public void unsetHits() {
+    this.hits = null;
   }
 
-  /** Returns true if field doc is set (has been assigned a value) and false otherwise */
-  public boolean isSetDoc() {
-    return this.doc != null;
+  /** Returns true if field hits is set (has been assigned a value) and false otherwise */
+  public boolean isSetHits() {
+    return this.hits != null;
   }
 
-  public void setDocIsSet(boolean value) {
+  public void setHitsIsSet(boolean value) {
     if (!value) {
-      this.doc = null;
+      this.hits = null;
     }
   }
 
   public void setFieldValue(_Fields field, Object value) {
     switch (field) {
-    case SCORE:
+    case TOTAL_HITS:
       if (value == null) {
-        unsetScore();
+        unsetTotalHits();
       } else {
-        setScore((Double)value);
+        setTotalHits((Integer)value);
       }
       break;
 
-    case DOC:
+    case HITS:
       if (value == null) {
-        unsetDoc();
+        unsetHits();
       } else {
-        setDoc((Document)value);
+        setHits((List<Hit>)value);
       }
       break;
 
@@ -225,11 +245,11 @@ public class QueryResult implements org.apache.thrift.TBase<QueryResult, QueryRe
 
   public Object getFieldValue(_Fields field) {
     switch (field) {
-    case SCORE:
-      return Double.valueOf(getScore());
+    case TOTAL_HITS:
+      return Integer.valueOf(getTotalHits());
 
-    case DOC:
-      return getDoc();
+    case HITS:
+      return getHits();
 
     }
     throw new IllegalStateException();
@@ -242,10 +262,10 @@ public class QueryResult implements org.apache.thrift.TBase<QueryResult, QueryRe
     }
 
     switch (field) {
-    case SCORE:
-      return isSetScore();
-    case DOC:
-      return isSetDoc();
+    case TOTAL_HITS:
+      return isSetTotalHits();
+    case HITS:
+      return isSetHits();
     }
     throw new IllegalStateException();
   }
@@ -263,21 +283,21 @@ public class QueryResult implements org.apache.thrift.TBase<QueryResult, QueryRe
     if (that == null)
       return false;
 
-    boolean this_present_score = true;
-    boolean that_present_score = true;
-    if (this_present_score || that_present_score) {
-      if (!(this_present_score && that_present_score))
+    boolean this_present_totalHits = true;
+    boolean that_present_totalHits = true;
+    if (this_present_totalHits || that_present_totalHits) {
+      if (!(this_present_totalHits && that_present_totalHits))
         return false;
-      if (this.score != that.score)
+      if (this.totalHits != that.totalHits)
         return false;
     }
 
-    boolean this_present_doc = true && this.isSetDoc();
-    boolean that_present_doc = true && that.isSetDoc();
-    if (this_present_doc || that_present_doc) {
-      if (!(this_present_doc && that_present_doc))
+    boolean this_present_hits = true && this.isSetHits();
+    boolean that_present_hits = true && that.isSetHits();
+    if (this_present_hits || that_present_hits) {
+      if (!(this_present_hits && that_present_hits))
         return false;
-      if (!this.doc.equals(that.doc))
+      if (!this.hits.equals(that.hits))
         return false;
     }
 
@@ -297,22 +317,22 @@ public class QueryResult implements org.apache.thrift.TBase<QueryResult, QueryRe
     int lastComparison = 0;
     QueryResult typedOther = (QueryResult)other;
 
-    lastComparison = Boolean.valueOf(isSetScore()).compareTo(typedOther.isSetScore());
+    lastComparison = Boolean.valueOf(isSetTotalHits()).compareTo(typedOther.isSetTotalHits());
     if (lastComparison != 0) {
       return lastComparison;
     }
-    if (isSetScore()) {
-      lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.score, typedOther.score);
+    if (isSetTotalHits()) {
+      lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.totalHits, typedOther.totalHits);
       if (lastComparison != 0) {
         return lastComparison;
       }
     }
-    lastComparison = Boolean.valueOf(isSetDoc()).compareTo(typedOther.isSetDoc());
+    lastComparison = Boolean.valueOf(isSetHits()).compareTo(typedOther.isSetHits());
     if (lastComparison != 0) {
       return lastComparison;
     }
-    if (isSetDoc()) {
-      lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.doc, typedOther.doc);
+    if (isSetHits()) {
+      lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.hits, typedOther.hits);
       if (lastComparison != 0) {
         return lastComparison;
       }
@@ -337,15 +357,15 @@ public class QueryResult implements org.apache.thrift.TBase<QueryResult, QueryRe
     StringBuilder sb = new StringBuilder("QueryResult(");
     boolean first = true;
 
-    sb.append("score:");
-    sb.append(this.score);
+    sb.append("totalHits:");
+    sb.append(this.totalHits);
     first = false;
     if (!first) sb.append(", ");
-    sb.append("doc:");
-    if (this.doc == null) {
+    sb.append("hits:");
+    if (this.hits == null) {
       sb.append("null");
     } else {
-      sb.append(this.doc);
+      sb.append(this.hits);
     }
     first = false;
     sb.append(")");
@@ -355,9 +375,6 @@ public class QueryResult implements org.apache.thrift.TBase<QueryResult, QueryRe
   public void validate() throws org.apache.thrift.TException {
     // check for required fields
     // check for sub-struct validity
-    if (doc != null) {
-      doc.validate();
-    }
   }
 
   private void writeObject(java.io.ObjectOutputStream out) throws java.io.IOException {
@@ -396,19 +413,29 @@ public class QueryResult implements org.apache.thrift.TBase<QueryResult, QueryRe
           break;
         }
         switch (schemeField.id) {
-          case 1: // SCORE
-            if (schemeField.type == org.apache.thrift.protocol.TType.DOUBLE) {
-              struct.score = iprot.readDouble();
-              struct.setScoreIsSet(true);
+          case 1: // TOTAL_HITS
+            if (schemeField.type == org.apache.thrift.protocol.TType.I32) {
+              struct.totalHits = iprot.readI32();
+              struct.setTotalHitsIsSet(true);
             } else { 
               org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
             }
             break;
-          case 2: // DOC
-            if (schemeField.type == org.apache.thrift.protocol.TType.STRUCT) {
-              struct.doc = new Document();
-              struct.doc.read(iprot);
-              struct.setDocIsSet(true);
+          case 2: // HITS
+            if (schemeField.type == org.apache.thrift.protocol.TType.LIST) {
+              {
+                org.apache.thrift.protocol.TList _list10 = iprot.readListBegin();
+                struct.hits = new ArrayList<Hit>(_list10.size);
+                for (int _i11 = 0; _i11 < _list10.size; ++_i11)
+                {
+                  Hit _elem12; // required
+                  _elem12 = new Hit();
+                  _elem12.read(iprot);
+                  struct.hits.add(_elem12);
+                }
+                iprot.readListEnd();
+              }
+              struct.setHitsIsSet(true);
             } else { 
               org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
             }
@@ -428,12 +455,19 @@ public class QueryResult implements org.apache.thrift.TBase<QueryResult, QueryRe
       struct.validate();
 
       oprot.writeStructBegin(STRUCT_DESC);
-      oprot.writeFieldBegin(SCORE_FIELD_DESC);
-      oprot.writeDouble(struct.score);
+      oprot.writeFieldBegin(TOTAL_HITS_FIELD_DESC);
+      oprot.writeI32(struct.totalHits);
       oprot.writeFieldEnd();
-      if (struct.doc != null) {
-        oprot.writeFieldBegin(DOC_FIELD_DESC);
-        struct.doc.write(oprot);
+      if (struct.hits != null) {
+        oprot.writeFieldBegin(HITS_FIELD_DESC);
+        {
+          oprot.writeListBegin(new org.apache.thrift.protocol.TList(org.apache.thrift.protocol.TType.STRUCT, struct.hits.size()));
+          for (Hit _iter13 : struct.hits)
+          {
+            _iter13.write(oprot);
+          }
+          oprot.writeListEnd();
+        }
         oprot.writeFieldEnd();
       }
       oprot.writeFieldStop();
@@ -454,18 +488,24 @@ public class QueryResult implements org.apache.thrift.TBase<QueryResult, QueryRe
     public void write(org.apache.thrift.protocol.TProtocol prot, QueryResult struct) throws org.apache.thrift.TException {
       TTupleProtocol oprot = (TTupleProtocol) prot;
       BitSet optionals = new BitSet();
-      if (struct.isSetScore()) {
+      if (struct.isSetTotalHits()) {
         optionals.set(0);
       }
-      if (struct.isSetDoc()) {
+      if (struct.isSetHits()) {
         optionals.set(1);
       }
       oprot.writeBitSet(optionals, 2);
-      if (struct.isSetScore()) {
-        oprot.writeDouble(struct.score);
+      if (struct.isSetTotalHits()) {
+        oprot.writeI32(struct.totalHits);
       }
-      if (struct.isSetDoc()) {
-        struct.doc.write(oprot);
+      if (struct.isSetHits()) {
+        {
+          oprot.writeI32(struct.hits.size());
+          for (Hit _iter14 : struct.hits)
+          {
+            _iter14.write(oprot);
+          }
+        }
       }
     }
 
@@ -474,13 +514,22 @@ public class QueryResult implements org.apache.thrift.TBase<QueryResult, QueryRe
       TTupleProtocol iprot = (TTupleProtocol) prot;
       BitSet incoming = iprot.readBitSet(2);
       if (incoming.get(0)) {
-        struct.score = iprot.readDouble();
-        struct.setScoreIsSet(true);
+        struct.totalHits = iprot.readI32();
+        struct.setTotalHitsIsSet(true);
       }
       if (incoming.get(1)) {
-        struct.doc = new Document();
-        struct.doc.read(iprot);
-        struct.setDocIsSet(true);
+        {
+          org.apache.thrift.protocol.TList _list15 = new org.apache.thrift.protocol.TList(org.apache.thrift.protocol.TType.STRUCT, iprot.readI32());
+          struct.hits = new ArrayList<Hit>(_list15.size);
+          for (int _i16 = 0; _i16 < _list15.size; ++_i16)
+          {
+            Hit _elem17; // required
+            _elem17 = new Hit();
+            _elem17.read(iprot);
+            struct.hits.add(_elem17);
+          }
+        }
+        struct.setHitsIsSet(true);
       }
     }
   }

@@ -1,5 +1,7 @@
 package ar.uba.fi.tppro.core.service;
 
+import java.io.File;
+
 import org.apache.thrift.server.TServer;
 import org.apache.thrift.server.TThreadPoolServer;
 import org.apache.thrift.transport.TServerSocket;
@@ -14,23 +16,25 @@ public class ThriftIndexCore implements Runnable {
 	final Logger logger = LoggerFactory.getLogger(IndexCoreHandler.class);
 	
 	protected int port;
+	protected File dataDir;
 
 	protected IndexCoreHandler handler;
 	protected IndexNode.Processor<IndexNode.Iface> processor;
 
 	public static void main(String[] args) {
 		//TODO setear el puerto por propiedad
-		new Thread(new ThriftIndexCore(9090)).start();
+		new Thread(new ThriftIndexCore(9090, new File("dataDir"))).start();
 	}
 	
-	public ThriftIndexCore(int port){
+	public ThriftIndexCore(int port, File dataDir){
 		this.port = port;
+		this.dataDir = dataDir;
 	}
 
 	@Override
 	public void run() {
 		try {
-			handler = new IndexCoreHandler();
+			handler = new IndexCoreHandler(this.dataDir);
 			processor = new IndexNode.Processor<IndexNode.Iface>(handler);
 			
 			TServerTransport serverTransport = new TServerSocket(this.port);
