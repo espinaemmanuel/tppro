@@ -1,11 +1,9 @@
+package ar.uba.fi.tppro.core.service;
 import static org.junit.Assert.*;
 
 import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
-import java.util.List;
-
-import javax.print.DocFlavor;
 
 import org.apache.thrift.TException;
 import org.apache.thrift.protocol.TBinaryProtocol;
