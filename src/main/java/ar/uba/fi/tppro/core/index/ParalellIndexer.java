@@ -11,6 +11,10 @@ import org.apache.thrift.TException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import ar.uba.fi.tppro.core.index.lock.IndexLock;
+import ar.uba.fi.tppro.core.index.lock.LockAquireTimeoutException;
+import ar.uba.fi.tppro.core.index.lock.LockManager;
+import ar.uba.fi.tppro.core.index.lock.LockManager.LockType;
 import ar.uba.fi.tppro.core.service.thrift.Document;
 import ar.uba.fi.tppro.core.service.thrift.IndexNode;
 import ar.uba.fi.tppro.core.service.thrift.NonExistentPartitionException;
@@ -27,6 +31,8 @@ public class ParalellIndexer {
 			"parallel-searcher");
 	private final ExecutorService executorService = Executors
 			.newCachedThreadPool(threadFactory);
+	
+	private LockManager lockManager;
 
 	protected long timeout = 8000;
 
@@ -38,7 +44,7 @@ public class ParalellIndexer {
 
 	public void distributeAndIndex(
 			Multimap<Integer, IndexNodeDescriptor> partitions,
-			List<Document> documents) {
+			List<Document> documents) throws LockAquireTimeoutException {
 
 		Multimap<Integer, PartialList> partialLists = LinkedListMultimap
 				.create();
@@ -74,6 +80,8 @@ public class ParalellIndexer {
 			counter++;
 		}
 
+		IndexLock addLock = lockManager.aquire(LockType.ADD, 1000);
+		
 		List<Future<?>> futures = Lists.newArrayList();
 
 		for (final PartialList pl : partialLists.values()) {
@@ -110,6 +118,8 @@ public class ParalellIndexer {
 				logger.error("Execution exception", e);
 			}
 		}
+		
+		addLock.release();
 	}
 
 }

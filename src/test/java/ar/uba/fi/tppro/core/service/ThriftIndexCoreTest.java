@@ -17,7 +17,7 @@ import org.junit.Test;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
-import ar.uba.fi.tppro.core.service.ThriftIndexCore;
+import ar.uba.fi.tppro.core.service.IndexCore;
 import ar.uba.fi.tppro.core.service.thrift.Document;
 import ar.uba.fi.tppro.core.service.thrift.IndexNode;
 import ar.uba.fi.tppro.core.service.thrift.QueryResult;
@@ -29,7 +29,7 @@ public class ThriftIndexCoreTest {
 	@BeforeClass
 	public static void startServer() throws URISyntaxException, IOException {
 		// Start thrift server in a seperate thread
-		new Thread(new ThriftIndexCore(PORT, new File("dataDir"))).start();
+		new Thread(new IndexCore(PORT, new File("dataDir"))).start();
 		try {
 			// wait for the server start up
 			Thread.sleep(5000);

@@ -11,7 +11,7 @@ import org.slf4j.LoggerFactory;
 
 import ar.uba.fi.tppro.core.service.thrift.IndexNode;
 
-public class ThriftIndexCore implements Runnable {
+public class IndexCore implements Runnable {
 
 	final Logger logger = LoggerFactory.getLogger(IndexCoreHandler.class);
 	
@@ -23,10 +23,10 @@ public class ThriftIndexCore implements Runnable {
 
 	public static void main(String[] args) {
 		//TODO setear el puerto por propiedad
-		new Thread(new ThriftIndexCore(9090, new File("dataDir"))).start();
+		new Thread(new IndexCore(9090, new File("dataDir"))).start();
 	}
 	
-	public ThriftIndexCore(int port, File dataDir){
+	public IndexCore(int port, File dataDir){
 		this.port = port;
 		this.dataDir = dataDir;
 	}
