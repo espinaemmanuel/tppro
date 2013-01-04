@@ -11,7 +11,8 @@ struct Hit {
 
 struct QueryResult {
 	1: i32 totalHits,
-	2: list<Hit> hits,
+	2: string parsedQuery,
+	3: list<Hit> hits,
 }
 
 exception ParseException {

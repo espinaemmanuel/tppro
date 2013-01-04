@@ -34,7 +34,8 @@ public class QueryResult implements org.apache.thrift.TBase<QueryResult, QueryRe
   private static final org.apache.thrift.protocol.TStruct STRUCT_DESC = new org.apache.thrift.protocol.TStruct("QueryResult");
 
   private static final org.apache.thrift.protocol.TField TOTAL_HITS_FIELD_DESC = new org.apache.thrift.protocol.TField("totalHits", org.apache.thrift.protocol.TType.I32, (short)1);
-  private static final org.apache.thrift.protocol.TField HITS_FIELD_DESC = new org.apache.thrift.protocol.TField("hits", org.apache.thrift.protocol.TType.LIST, (short)2);
+  private static final org.apache.thrift.protocol.TField PARSED_QUERY_FIELD_DESC = new org.apache.thrift.protocol.TField("parsedQuery", org.apache.thrift.protocol.TType.STRING, (short)2);
+  private static final org.apache.thrift.protocol.TField HITS_FIELD_DESC = new org.apache.thrift.protocol.TField("hits", org.apache.thrift.protocol.TType.LIST, (short)3);
 
   private static final Map<Class<? extends IScheme>, SchemeFactory> schemes = new HashMap<Class<? extends IScheme>, SchemeFactory>();
   static {
@@ -43,12 +44,14 @@ public class QueryResult implements org.apache.thrift.TBase<QueryResult, QueryRe
   }
 
   public int totalHits; // required
+  public String parsedQuery; // required
   public List<Hit> hits; // required
 
   /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
   public enum _Fields implements org.apache.thrift.TFieldIdEnum {
     TOTAL_HITS((short)1, "totalHits"),
-    HITS((short)2, "hits");
+    PARSED_QUERY((short)2, "parsedQuery"),
+    HITS((short)3, "hits");
 
     private static final Map<String, _Fields> byName = new HashMap<String, _Fields>();
 
@@ -65,7 +68,9 @@ public class QueryResult implements org.apache.thrift.TBase<QueryResult, QueryRe
       switch(fieldId) {
         case 1: // TOTAL_HITS
           return TOTAL_HITS;
-        case 2: // HITS
+        case 2: // PARSED_QUERY
+          return PARSED_QUERY;
+        case 3: // HITS
           return HITS;
         default:
           return null;
@@ -114,6 +119,8 @@ public class QueryResult implements org.apache.thrift.TBase<QueryResult, QueryRe
     Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift.meta_data.FieldMetaData>(_Fields.class);
     tmpMap.put(_Fields.TOTAL_HITS, new org.apache.thrift.meta_data.FieldMetaData("totalHits", org.apache.thrift.TFieldRequirementType.DEFAULT, 
         new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.I32)));
+    tmpMap.put(_Fields.PARSED_QUERY, new org.apache.thrift.meta_data.FieldMetaData("parsedQuery", org.apache.thrift.TFieldRequirementType.DEFAULT, 
+        new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.STRING)));
     tmpMap.put(_Fields.HITS, new org.apache.thrift.meta_data.FieldMetaData("hits", org.apache.thrift.TFieldRequirementType.DEFAULT, 
         new org.apache.thrift.meta_data.ListMetaData(org.apache.thrift.protocol.TType.LIST, 
             new org.apache.thrift.meta_data.StructMetaData(org.apache.thrift.protocol.TType.STRUCT, Hit.class))));
@@ -126,11 +133,13 @@ public class QueryResult implements org.apache.thrift.TBase<QueryResult, QueryRe
 
   public QueryResult(
     int totalHits,
+    String parsedQuery,
     List<Hit> hits)
   {
     this();
     this.totalHits = totalHits;
     setTotalHitsIsSet(true);
+    this.parsedQuery = parsedQuery;
     this.hits = hits;
   }
 
@@ -140,6 +149,9 @@ public class QueryResult implements org.apache.thrift.TBase<QueryResult, QueryRe
   public QueryResult(QueryResult other) {
     __isset_bitfield = other.__isset_bitfield;
     this.totalHits = other.totalHits;
+    if (other.isSetParsedQuery()) {
+      this.parsedQuery = other.parsedQuery;
+    }
     if (other.isSetHits()) {
       List<Hit> __this__hits = new ArrayList<Hit>();
       for (Hit other_element : other.hits) {
@@ -157,6 +169,7 @@ public class QueryResult implements org.apache.thrift.TBase<QueryResult, QueryRe
   public void clear() {
     setTotalHitsIsSet(false);
     this.totalHits = 0;
+    this.parsedQuery = null;
     this.hits = null;
   }
 
@@ -181,6 +194,30 @@ public class QueryResult implements org.apache.thrift.TBase<QueryResult, QueryRe
 
   public void setTotalHitsIsSet(boolean value) {
     __isset_bitfield = EncodingUtils.setBit(__isset_bitfield, __TOTALHITS_ISSET_ID, value);
+  }
+
+  public String getParsedQuery() {
+    return this.parsedQuery;
+  }
+
+  public QueryResult setParsedQuery(String parsedQuery) {
+    this.parsedQuery = parsedQuery;
+    return this;
+  }
+
+  public void unsetParsedQuery() {
+    this.parsedQuery = null;
+  }
+
+  /** Returns true if field parsedQuery is set (has been assigned a value) and false otherwise */
+  public boolean isSetParsedQuery() {
+    return this.parsedQuery != null;
+  }
+
+  public void setParsedQueryIsSet(boolean value) {
+    if (!value) {
+      this.parsedQuery = null;
+    }
   }
 
   public int getHitsSize() {
@@ -232,6 +269,14 @@ public class QueryResult implements org.apache.thrift.TBase<QueryResult, QueryRe
       }
       break;
 
+    case PARSED_QUERY:
+      if (value == null) {
+        unsetParsedQuery();
+      } else {
+        setParsedQuery((String)value);
+      }
+      break;
+
     case HITS:
       if (value == null) {
         unsetHits();
@@ -247,6 +292,9 @@ public class QueryResult implements org.apache.thrift.TBase<QueryResult, QueryRe
     switch (field) {
     case TOTAL_HITS:
       return Integer.valueOf(getTotalHits());
+
+    case PARSED_QUERY:
+      return getParsedQuery();
 
     case HITS:
       return getHits();
@@ -264,6 +312,8 @@ public class QueryResult implements org.apache.thrift.TBase<QueryResult, QueryRe
     switch (field) {
     case TOTAL_HITS:
       return isSetTotalHits();
+    case PARSED_QUERY:
+      return isSetParsedQuery();
     case HITS:
       return isSetHits();
     }
@@ -289,6 +339,15 @@ public class QueryResult implements org.apache.thrift.TBase<QueryResult, QueryRe
       if (!(this_present_totalHits && that_present_totalHits))
         return false;
       if (this.totalHits != that.totalHits)
+        return false;
+    }
+
+    boolean this_present_parsedQuery = true && this.isSetParsedQuery();
+    boolean that_present_parsedQuery = true && that.isSetParsedQuery();
+    if (this_present_parsedQuery || that_present_parsedQuery) {
+      if (!(this_present_parsedQuery && that_present_parsedQuery))
+        return false;
+      if (!this.parsedQuery.equals(that.parsedQuery))
         return false;
     }
 
@@ -327,6 +386,16 @@ public class QueryResult implements org.apache.thrift.TBase<QueryResult, QueryRe
         return lastComparison;
       }
     }
+    lastComparison = Boolean.valueOf(isSetParsedQuery()).compareTo(typedOther.isSetParsedQuery());
+    if (lastComparison != 0) {
+      return lastComparison;
+    }
+    if (isSetParsedQuery()) {
+      lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.parsedQuery, typedOther.parsedQuery);
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+    }
     lastComparison = Boolean.valueOf(isSetHits()).compareTo(typedOther.isSetHits());
     if (lastComparison != 0) {
       return lastComparison;
@@ -359,6 +428,14 @@ public class QueryResult implements org.apache.thrift.TBase<QueryResult, QueryRe
 
     sb.append("totalHits:");
     sb.append(this.totalHits);
+    first = false;
+    if (!first) sb.append(", ");
+    sb.append("parsedQuery:");
+    if (this.parsedQuery == null) {
+      sb.append("null");
+    } else {
+      sb.append(this.parsedQuery);
+    }
     first = false;
     if (!first) sb.append(", ");
     sb.append("hits:");
@@ -421,7 +498,15 @@ public class QueryResult implements org.apache.thrift.TBase<QueryResult, QueryRe
               org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
             }
             break;
-          case 2: // HITS
+          case 2: // PARSED_QUERY
+            if (schemeField.type == org.apache.thrift.protocol.TType.STRING) {
+              struct.parsedQuery = iprot.readString();
+              struct.setParsedQueryIsSet(true);
+            } else { 
+              org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
+            }
+            break;
+          case 3: // HITS
             if (schemeField.type == org.apache.thrift.protocol.TType.LIST) {
               {
                 org.apache.thrift.protocol.TList _list10 = iprot.readListBegin();
@@ -458,6 +543,11 @@ public class QueryResult implements org.apache.thrift.TBase<QueryResult, QueryRe
       oprot.writeFieldBegin(TOTAL_HITS_FIELD_DESC);
       oprot.writeI32(struct.totalHits);
       oprot.writeFieldEnd();
+      if (struct.parsedQuery != null) {
+        oprot.writeFieldBegin(PARSED_QUERY_FIELD_DESC);
+        oprot.writeString(struct.parsedQuery);
+        oprot.writeFieldEnd();
+      }
       if (struct.hits != null) {
         oprot.writeFieldBegin(HITS_FIELD_DESC);
         {
@@ -491,12 +581,18 @@ public class QueryResult implements org.apache.thrift.TBase<QueryResult, QueryRe
       if (struct.isSetTotalHits()) {
         optionals.set(0);
       }
-      if (struct.isSetHits()) {
+      if (struct.isSetParsedQuery()) {
         optionals.set(1);
       }
-      oprot.writeBitSet(optionals, 2);
+      if (struct.isSetHits()) {
+        optionals.set(2);
+      }
+      oprot.writeBitSet(optionals, 3);
       if (struct.isSetTotalHits()) {
         oprot.writeI32(struct.totalHits);
+      }
+      if (struct.isSetParsedQuery()) {
+        oprot.writeString(struct.parsedQuery);
       }
       if (struct.isSetHits()) {
         {
@@ -512,12 +608,16 @@ public class QueryResult implements org.apache.thrift.TBase<QueryResult, QueryRe
     @Override
     public void read(org.apache.thrift.protocol.TProtocol prot, QueryResult struct) throws org.apache.thrift.TException {
       TTupleProtocol iprot = (TTupleProtocol) prot;
-      BitSet incoming = iprot.readBitSet(2);
+      BitSet incoming = iprot.readBitSet(3);
       if (incoming.get(0)) {
         struct.totalHits = iprot.readI32();
         struct.setTotalHitsIsSet(true);
       }
       if (incoming.get(1)) {
+        struct.parsedQuery = iprot.readString();
+        struct.setParsedQueryIsSet(true);
+      }
+      if (incoming.get(2)) {
         {
           org.apache.thrift.protocol.TList _list15 = new org.apache.thrift.protocol.TList(org.apache.thrift.protocol.TType.STRUCT, iprot.readI32());
           struct.hits = new ArrayList<Hit>(_list15.size);

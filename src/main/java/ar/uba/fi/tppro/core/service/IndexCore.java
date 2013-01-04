@@ -22,8 +22,11 @@ public class IndexCore implements Runnable {
 	protected IndexNode.Processor<IndexNode.Iface> processor;
 
 	public static void main(String[] args) {
-		//TODO setear el puerto por propiedad
-		new Thread(new IndexCore(9090, new File("dataDir"))).start();
+		
+		String port = System.getProperty("port", "9090");
+		String dataDir = System.getProperty("dataDir", "data");
+
+		new Thread(new IndexCore(Integer.parseInt(port), new File(dataDir))).start();
 	}
 	
 	public IndexCore(int port, File dataDir){
@@ -41,7 +44,7 @@ public class IndexCore implements Runnable {
 			TServer server = new TThreadPoolServer(new TThreadPoolServer.Args(
 					serverTransport).processor(processor));
 			
-			logger.info("Starting the Index server...");
+			logger.info("Starting the Index server on port " + this.port + "...");
 			server.serve();
 
 		} catch (Exception e) {

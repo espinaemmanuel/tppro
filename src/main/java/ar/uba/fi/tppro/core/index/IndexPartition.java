@@ -84,6 +84,7 @@ public class IndexPartition {
 		
 		QueryResult queryResult = new QueryResult();
 		queryResult.hits = Lists.newArrayList();
+		queryResult.parsedQuery = q.toString();
 		queryResult.totalHits = collector.getTotalHits();
 
 		for (int i = 0; i < hits.length; i++) {
