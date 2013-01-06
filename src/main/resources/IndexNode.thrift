@@ -1,4 +1,6 @@
 namespace java ar.uba.fi.tppro.core.service.thrift
+namespace php tppro
+
 
 struct Document {
 	1: map<string, string> fields,

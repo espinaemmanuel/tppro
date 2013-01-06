@@ -16,6 +16,7 @@ import org.junit.Test;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.google.common.io.Files;
 
 import ar.uba.fi.tppro.core.service.IndexCore;
 import ar.uba.fi.tppro.core.service.thrift.Document;
@@ -29,7 +30,15 @@ public class ThriftIndexCoreTest {
 	@BeforeClass
 	public static void startServer() throws URISyntaxException, IOException {
 		// Start thrift server in a seperate thread
-		new Thread(new IndexCore(PORT, new File("dataDir"))).start();
+		
+		//Create temp dir
+		File tempDir = Files.createTempDir();
+		tempDir.deleteOnExit();
+		
+		if(tempDir.list().length > 0)
+			fail("temp directory not empty");
+		
+		new Thread(new IndexCore(PORT, tempDir)).start();
 		try {
 			// wait for the server start up
 			Thread.sleep(5000);
@@ -75,7 +84,7 @@ public class ThriftIndexCoreTest {
 		client.index(123, Lists.newArrayList(doc));		
 		QueryResult queryResult = client.search(123, "information", 10, 0);
 		
-		assertEquals(2, queryResult.totalHits);
+		assertEquals(1, queryResult.totalHits);
 		assertEquals(1, queryResult.hits.size());
 		assertEquals(docTitle, queryResult.hits.get(0).doc.fields.get("title"));
 		assertEquals(docText, queryResult.hits.get(0).doc.fields.get("text"));

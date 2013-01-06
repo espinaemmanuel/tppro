@@ -12,11 +12,14 @@ import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
+import org.apache.lucene.index.IndexWriterConfig.OpenMode;
 import org.apache.lucene.index.IndexableField;
 import org.apache.lucene.queryparser.classic.QueryParser;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.ScoreDoc;
+import org.apache.lucene.search.SearcherFactory;
+import org.apache.lucene.search.SearcherManager;
 import org.apache.lucene.search.TopScoreDocCollector;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
@@ -33,20 +36,33 @@ import ar.uba.fi.tppro.core.service.thrift.QueryResult;
 
 public class IndexPartition {
 
+	private static final String DEFAULT_FIELD = "text";
+
+	private String defaultField = DEFAULT_FIELD;
 	private IndexWriterConfig config;
-	private Directory index;
+	private Directory indexDir;
 	private StandardAnalyzer analyzer;
+
+	private SearcherManager mgr;
 
 	public IndexPartition(File path) throws IOException {
 		analyzer = new StandardAnalyzer(Version.LUCENE_40);
-		index = FSDirectory.open(path);
+		indexDir = FSDirectory.open(path);
 		config = new IndexWriterConfig(Version.LUCENE_40, analyzer);
+		config.setOpenMode(OpenMode.CREATE_OR_APPEND);
+		
+		if(path.list().length == 0){
+			IndexWriter initialWriter = new IndexWriter(indexDir, config);
+			initialWriter.close();
+		}
+		
+		mgr = new SearcherManager(indexDir, new SearcherFactory());
 	}
 
 	public void index(List<Document> documents) throws IOException {
 
 		IndexWriter w;
-		w = new IndexWriter(index, config);
+		w = new IndexWriter(indexDir, config);
 
 		for (Document document : documents) {
 			org.apache.lucene.document.Document luceneDoc = new org.apache.lucene.document.Document();
@@ -58,8 +74,10 @@ public class IndexPartition {
 			w.addDocument(luceneDoc);
 		}
 
+		w.commit();
 		w.close();
 
+		mgr.maybeRefresh();
 	}
 
 	public QueryResult search(int partitionId, String query, int limit,
@@ -74,43 +92,58 @@ public class IndexPartition {
 			throw new ParseException(e.getMessage());
 		}
 
-		IndexReader reader = DirectoryReader.open(index);
-		IndexSearcher searcher = new IndexSearcher(reader);
-		TopScoreDocCollector collector = TopScoreDocCollector.create(limit,
-				true);
-		searcher.search(q, collector);
-
-		ScoreDoc[] hits = collector.topDocs(offset).scoreDocs;
-		
+		IndexSearcher searcher = mgr.acquire();
 		QueryResult queryResult = new QueryResult();
-		queryResult.hits = Lists.newArrayList();
-		queryResult.parsedQuery = q.toString();
-		queryResult.totalHits = collector.getTotalHits();
 
-		for (int i = 0; i < hits.length; i++) {
-			int docId = hits[i].doc;
-			float score = hits[i].score;
+		try {
 
-			org.apache.lucene.document.Document d = searcher.doc(docId);
-			
-			Hit hit = new Hit();
-			hit.doc = new Document();
-			hit.doc.fields = Maps.newHashMap();
-			hit.score = score;
+			TopScoreDocCollector collector = TopScoreDocCollector.create(limit,
+					true);
 
-			for (IndexableField field : d.getFields()) {
-				if (field.fieldType().stored()) {
-					String name = field.name();
-					String val = field.stringValue();
+			searcher.search(q, collector);
 
-					hit.doc.fields.put(name, val);
+			ScoreDoc[] hits = collector.topDocs(offset).scoreDocs;
+
+			queryResult.hits = Lists.newArrayList();
+			queryResult.parsedQuery = q.toString();
+			queryResult.totalHits = collector.getTotalHits();
+
+			for (int i = 0; i < hits.length; i++) {
+				int docId = hits[i].doc;
+				float score = hits[i].score;
+
+				org.apache.lucene.document.Document d = searcher.doc(docId);
+
+				Hit hit = new Hit();
+				hit.doc = new Document();
+				hit.doc.fields = Maps.newHashMap();
+				hit.score = score;
+
+				for (IndexableField field : d.getFields()) {
+					if (field.fieldType().stored()) {
+						String name = field.name();
+						String val = field.stringValue();
+
+						hit.doc.fields.put(name, val);
+					}
 				}
+
+				queryResult.hits.add(hit);
 			}
 
-			queryResult.hits.add(hit);
+		} finally {
+			mgr.release(searcher);
 		}
 
 		return queryResult;
+
 	}
 
+	public String getDefaultField() {
+		return defaultField;
+	}
+
+	public void setDefaultField(String defaultField) {
+		this.defaultField = defaultField;
+	}
 }
