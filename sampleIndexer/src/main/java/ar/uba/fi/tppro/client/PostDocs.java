@@ -11,6 +11,8 @@ import org.apache.thrift.protocol.TBinaryProtocol;
 import org.apache.thrift.protocol.TProtocol;
 import org.apache.thrift.transport.TSocket;
 import org.apache.thrift.transport.TTransport;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import ar.uba.fi.tppro.core.service.thrift.Document;
 import ar.uba.fi.tppro.core.service.thrift.IndexNode;
@@ -26,6 +28,8 @@ import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
 
 public class PostDocs {
+	
+	final static Logger logger = LoggerFactory.getLogger(PostDocs.class);
 
 	/**
 	 * @param args
@@ -62,26 +66,27 @@ public class PostDocs {
 
 	private static void indexFile(String jsonFile, IndexNode.Client client, int partition) throws JsonIOException, JsonSyntaxException, FileNotFoundException, NonExistentPartitionException, TException {
 		
-
 		JsonParser parser = new JsonParser();
-		
 		JsonElement element = parser.parse(new BufferedReader(new FileReader(jsonFile)));
-		
 		List<Document> documents = Lists.newArrayList();
+		
+		int counter = 0;
 		
 		if(element.isJsonObject()){
 			Document doc = jsonToDocument(element.getAsJsonObject());
 			documents.add(doc);
+			counter++;
 		} else if (element.isJsonArray()){
 			for(JsonElement object : element.getAsJsonArray()){
 				if(object.isJsonObject()){
 					documents.add(jsonToDocument(object.getAsJsonObject()));
+					counter++;
 				}
 			}
 		}
 		
 		client.index(partition, documents);
-			
+		logger.info("Indexed " + counter + " documents");		
 	}
 
 	private static Document jsonToDocument(JsonObject jsonObject) {

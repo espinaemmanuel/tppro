@@ -25,16 +25,21 @@ import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.util.Version;
 import org.apache.thrift.TException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
+import ar.uba.fi.tppro.core.service.IndexCoreHandler;
 import ar.uba.fi.tppro.core.service.thrift.Document;
 import ar.uba.fi.tppro.core.service.thrift.Hit;
 import ar.uba.fi.tppro.core.service.thrift.ParseException;
 import ar.uba.fi.tppro.core.service.thrift.QueryResult;
 
 public class IndexPartition {
+
+	final Logger logger = LoggerFactory.getLogger(IndexPartition.class);
 
 	private static final String DEFAULT_FIELD = "text";
 
@@ -61,6 +66,8 @@ public class IndexPartition {
 
 	public void index(List<Document> documents) throws IOException {
 
+		long startTime = System.currentTimeMillis();
+
 		IndexWriter w;
 		w = new IndexWriter(indexDir, config);
 
@@ -76,17 +83,23 @@ public class IndexPartition {
 
 		w.commit();
 		w.close();
-
+		
 		mgr.maybeRefresh();
+		
+		long endTime = System.currentTimeMillis();
+		
+		logger.debug(String.format("INDEXED: DocCount=%d IndexTime=%d", documents.size(), endTime - startTime));
+
 	}
 
 	public QueryResult search(int partitionId, String query, int limit,
 			int offset) throws ParseException, IOException {
+		
+		long startTime = System.currentTimeMillis();
 
-		// TODO: definir el default field
 		Query q;
 		try {
-			q = new QueryParser(Version.LUCENE_40, "text", analyzer)
+			q = new QueryParser(Version.LUCENE_40, defaultField, analyzer)
 					.parse(query);
 		} catch (org.apache.lucene.queryparser.classic.ParseException e) {
 			throw new ParseException(e.getMessage());
@@ -134,6 +147,9 @@ public class IndexPartition {
 		} finally {
 			mgr.release(searcher);
 		}
+		
+		long endTime = System.currentTimeMillis();
+		logger.debug(String.format("QUERY: Partition=%d query=[%s] limit=%d offset=%d -> qtime=%d hits=%d", partitionId, query, limit, offset, endTime - startTime, queryResult.totalHits));
 
 		return queryResult;
 
