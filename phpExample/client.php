@@ -2,6 +2,9 @@
 
 namespace tppro;
 
+$directory = "files/";
+$partition_id = 0; 
+
 error_reporting ( E_ALL );
 
 require_once __DIR__ . '/lib/Thrift/ClassLoader/ThriftClassLoader.php';
@@ -45,15 +48,22 @@ try {
 	
 	$transport->open ();
 	
-	if(!$client->containsPartition(0)){
-		$client->createPartition(0);
+	if(!$client->containsPartition($partition_id)){
+		$client->createPartition($partition_id);
 	}
 	
-	$doc = new Document();
-	$doc->fields = array("title" => "Hi", "text" => "Hello world");
+    $files = glob($directory . "*.txt");
+    $documents = array();
 	
-	$client->index(0, array($doc));
-	
+	foreach($files as $file){
+		echo "Se procesa: $file<br>";
+		$documents[]=parse($file);
+  	}
+
+    foreach ($documents as $document) {
+      $client->index($partition_id, array($document));
+    }
+    
 	$results = $client->search(0, "text:world", 10, 0);
 	
 	foreach($results->hits as $hit){
@@ -64,6 +74,24 @@ try {
 	$transport->close();
 } catch ( TException $tx ) {
 	print 'TException: ' . $tx->getMessage () . "\n";
+}
+
+function parse($file=null){
+  $doc = new Document();
+  
+  if (file_exists($file)) {
+    $fp = fopen($file, "r");
+    $content = fread($fp, filesize($file));
+    fclose($fp);
+  }
+  
+  //echo "$content<br>";
+  
+  $doc->fields = json_decode($content, true);
+  
+  //var_dump($doc);
+  
+  return $doc;
 }
 
 ?>
