@@ -22,13 +22,40 @@ exception ParseException {
 }
 
 exception NonExistentPartitionException {
-  1: i32 partitionId,
+  1: list<i32> partitionId,
 }
 
 exception PartitionAlreadyExistsException {
   1: i32 partitionId,
 }
 
+exception ParalellSearchException {
+	1: string msg,
+}
+
+exception ParalellIndexException {
+	1: string msg,
+}
+
+struct Error {
+	1: i32 code,
+	2: string desc,
+}
+
+struct ParalellSearchResult {
+	1: QueryResult qr,
+	2: list<Error> errors,
+}
+
+struct IndexResult {
+	1: list<Error> errors,
+}
+
+service IndexBroker{
+	ParalellSearchResult search(1: list<i32> partitionId, 2: string query, 3: i32 limit, 4: i32 offset) throws (1:ParalellSearchException searex, 2:NonExistentPartitionException partex),
+	IndexResult deleteByQuery(1: list<i32> partitionId, 2: string query),
+	IndexResult index(1: list<i32> partitionIds, 2: list<Document> documents) throws (1:ParalellIndexException parex, 2:NonExistentPartitionException noex),
+}
  
 service IndexNode{
 	QueryResult search(1: i32 partitionId, 2: string query, 3: i32 limit, 4: i32 offset) throws (1:ParseException parsex, 2:NonExistentPartitionException partex),

@@ -9,6 +9,7 @@ import org.apache.thrift.TException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
 import ar.uba.fi.tppro.core.index.IndexInterface;
@@ -67,7 +68,7 @@ public class IndexCoreHandler implements IndexInterface {
 		}
 
 		if (partition == null) {
-			throw new NonExistentPartitionException(partitionId);
+			throw new NonExistentPartitionException(Lists.newArrayList(partitionId));
 		}
 
 		try {
@@ -115,7 +116,7 @@ public class IndexCoreHandler implements IndexInterface {
 		}
 
 		if (partition == null) {
-			throw new NonExistentPartitionException(partitionId);
+			throw new NonExistentPartitionException(Lists.newArrayList(partitionId));
 		}
 
 		try {

@@ -2913,14 +2913,14 @@ public class IndexNode {
             case 2: // DOCUMENTS
               if (schemeField.type == org.apache.thrift.protocol.TType.LIST) {
                 {
-                  org.apache.thrift.protocol.TList _list18 = iprot.readListBegin();
-                  struct.documents = new ArrayList<Document>(_list18.size);
-                  for (int _i19 = 0; _i19 < _list18.size; ++_i19)
+                  org.apache.thrift.protocol.TList _list74 = iprot.readListBegin();
+                  struct.documents = new ArrayList<Document>(_list74.size);
+                  for (int _i75 = 0; _i75 < _list74.size; ++_i75)
                   {
-                    Document _elem20; // required
-                    _elem20 = new Document();
-                    _elem20.read(iprot);
-                    struct.documents.add(_elem20);
+                    Document _elem76; // required
+                    _elem76 = new Document();
+                    _elem76.read(iprot);
+                    struct.documents.add(_elem76);
                   }
                   iprot.readListEnd();
                 }
@@ -2951,9 +2951,9 @@ public class IndexNode {
           oprot.writeFieldBegin(DOCUMENTS_FIELD_DESC);
           {
             oprot.writeListBegin(new org.apache.thrift.protocol.TList(org.apache.thrift.protocol.TType.STRUCT, struct.documents.size()));
-            for (Document _iter21 : struct.documents)
+            for (Document _iter77 : struct.documents)
             {
-              _iter21.write(oprot);
+              _iter77.write(oprot);
             }
             oprot.writeListEnd();
           }
@@ -2990,9 +2990,9 @@ public class IndexNode {
         if (struct.isSetDocuments()) {
           {
             oprot.writeI32(struct.documents.size());
-            for (Document _iter22 : struct.documents)
+            for (Document _iter78 : struct.documents)
             {
-              _iter22.write(oprot);
+              _iter78.write(oprot);
             }
           }
         }
@@ -3008,14 +3008,14 @@ public class IndexNode {
         }
         if (incoming.get(1)) {
           {
-            org.apache.thrift.protocol.TList _list23 = new org.apache.thrift.protocol.TList(org.apache.thrift.protocol.TType.STRUCT, iprot.readI32());
-            struct.documents = new ArrayList<Document>(_list23.size);
-            for (int _i24 = 0; _i24 < _list23.size; ++_i24)
+            org.apache.thrift.protocol.TList _list79 = new org.apache.thrift.protocol.TList(org.apache.thrift.protocol.TType.STRUCT, iprot.readI32());
+            struct.documents = new ArrayList<Document>(_list79.size);
+            for (int _i80 = 0; _i80 < _list79.size; ++_i80)
             {
-              Document _elem25; // required
-              _elem25 = new Document();
-              _elem25.read(iprot);
-              struct.documents.add(_elem25);
+              Document _elem81; // required
+              _elem81 = new Document();
+              _elem81.read(iprot);
+              struct.documents.add(_elem81);
             }
           }
           struct.setDocumentsIsSet(true);

@@ -11,6 +11,7 @@ import org.apache.thrift.protocol.TBinaryProtocol;
 import org.apache.thrift.protocol.TProtocol;
 import org.apache.thrift.transport.TSocket;
 import org.apache.thrift.transport.TTransport;
+import org.apache.thrift.transport.TTransportException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,9 +28,14 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
 
-public class PostDocs {
+public abstract class PostDocsBase {
 	
-	final static Logger logger = LoggerFactory.getLogger(PostDocs.class);
+	protected final static Logger logger = LoggerFactory.getLogger(PostDocsBase.class);
+	
+	public enum Destination{
+		CORE,
+		BROKER
+	}
 
 	/**
 	 * @param args
@@ -40,56 +46,47 @@ public class PostDocs {
 	 * @throws PartitionAlreadyExistsException 
 	 */
 	public static void main(String[] args) throws JsonIOException, JsonSyntaxException, FileNotFoundException, PartitionAlreadyExistsException, TException {
-		String host = System.getProperty("host", "localhost");
-		String port = System.getProperty("port", "9090");
-		int partition = Integer.parseInt(System.getProperty("partition", "0"));
+		
+		Destination destination = Destination.valueOf(System.getProperty("destination", "CORE"));
+		
+		PostDocsBase postDocs = null;
+		
+		switch(destination){
+		case CORE:
+			postDocs = new PostDocsCore();
+			break;
+		case BROKER:
+			postDocs = new PostDocsBroker();
+			break;
+		}
+		
+		postDocs.run(args);
 
-		TTransport transport = new TSocket(host, Integer.parseInt(port));
-		TProtocol protocol = new TBinaryProtocol(transport);
-		IndexNode.Client client = new IndexNode.Client(protocol);
-		transport.open();
-		
-		if(args.length == 0){
-			System.out.println("Missing files");
-			return;
-		}
-		
-		if(!client.containsPartition(partition)){
-			client.createPartition(partition);
-		}
-		
-		for(String jsonFile : args){
-			indexFile(jsonFile, client, partition);
-		}
 
 	}
+	
+	protected abstract void run(String[] args) throws TTransportException, PartitionAlreadyExistsException, TException, JsonIOException, JsonSyntaxException, FileNotFoundException;
 
-	private static void indexFile(String jsonFile, IndexNode.Client client, int partition) throws JsonIOException, JsonSyntaxException, FileNotFoundException, NonExistentPartitionException, TException {
-		
+	protected List<Document> createDocuments(String jsonFile) throws JsonIOException, JsonSyntaxException, FileNotFoundException{
 		JsonParser parser = new JsonParser();
 		JsonElement element = parser.parse(new BufferedReader(new FileReader(jsonFile)));
 		List<Document> documents = Lists.newArrayList();
-		
-		int counter = 0;
-		
+				
 		if(element.isJsonObject()){
 			Document doc = jsonToDocument(element.getAsJsonObject());
 			documents.add(doc);
-			counter++;
 		} else if (element.isJsonArray()){
 			for(JsonElement object : element.getAsJsonArray()){
 				if(object.isJsonObject()){
 					documents.add(jsonToDocument(object.getAsJsonObject()));
-					counter++;
 				}
 			}
 		}
 		
-		client.index(partition, documents);
-		logger.info("Indexed " + counter + " documents");		
+		return documents;
 	}
-
-	private static Document jsonToDocument(JsonObject jsonObject) {
+	
+	protected static Document jsonToDocument(JsonObject jsonObject) {
 		Document document = new Document();
 		document.fields = Maps.newHashMap();
 		

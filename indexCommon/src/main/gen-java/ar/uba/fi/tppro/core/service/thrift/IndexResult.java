@@ -30,22 +30,22 @@ import java.util.Arrays;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class NonExistentPartitionException extends TException implements org.apache.thrift.TBase<NonExistentPartitionException, NonExistentPartitionException._Fields>, java.io.Serializable, Cloneable {
-  private static final org.apache.thrift.protocol.TStruct STRUCT_DESC = new org.apache.thrift.protocol.TStruct("NonExistentPartitionException");
+public class IndexResult implements org.apache.thrift.TBase<IndexResult, IndexResult._Fields>, java.io.Serializable, Cloneable {
+  private static final org.apache.thrift.protocol.TStruct STRUCT_DESC = new org.apache.thrift.protocol.TStruct("IndexResult");
 
-  private static final org.apache.thrift.protocol.TField PARTITION_ID_FIELD_DESC = new org.apache.thrift.protocol.TField("partitionId", org.apache.thrift.protocol.TType.LIST, (short)1);
+  private static final org.apache.thrift.protocol.TField ERRORS_FIELD_DESC = new org.apache.thrift.protocol.TField("errors", org.apache.thrift.protocol.TType.LIST, (short)1);
 
   private static final Map<Class<? extends IScheme>, SchemeFactory> schemes = new HashMap<Class<? extends IScheme>, SchemeFactory>();
   static {
-    schemes.put(StandardScheme.class, new NonExistentPartitionExceptionStandardSchemeFactory());
-    schemes.put(TupleScheme.class, new NonExistentPartitionExceptionTupleSchemeFactory());
+    schemes.put(StandardScheme.class, new IndexResultStandardSchemeFactory());
+    schemes.put(TupleScheme.class, new IndexResultTupleSchemeFactory());
   }
 
-  public List<Integer> partitionId; // required
+  public List<Error> errors; // required
 
   /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
   public enum _Fields implements org.apache.thrift.TFieldIdEnum {
-    PARTITION_ID((short)1, "partitionId");
+    ERRORS((short)1, "errors");
 
     private static final Map<String, _Fields> byName = new HashMap<String, _Fields>();
 
@@ -60,8 +60,8 @@ public class NonExistentPartitionException extends TException implements org.apa
      */
     public static _Fields findByThriftId(int fieldId) {
       switch(fieldId) {
-        case 1: // PARTITION_ID
-          return PARTITION_ID;
+        case 1: // ERRORS
+          return ERRORS;
         default:
           return null;
       }
@@ -105,91 +105,91 @@ public class NonExistentPartitionException extends TException implements org.apa
   public static final Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> metaDataMap;
   static {
     Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift.meta_data.FieldMetaData>(_Fields.class);
-    tmpMap.put(_Fields.PARTITION_ID, new org.apache.thrift.meta_data.FieldMetaData("partitionId", org.apache.thrift.TFieldRequirementType.DEFAULT, 
+    tmpMap.put(_Fields.ERRORS, new org.apache.thrift.meta_data.FieldMetaData("errors", org.apache.thrift.TFieldRequirementType.DEFAULT, 
         new org.apache.thrift.meta_data.ListMetaData(org.apache.thrift.protocol.TType.LIST, 
-            new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.I32))));
+            new org.apache.thrift.meta_data.StructMetaData(org.apache.thrift.protocol.TType.STRUCT, Error.class))));
     metaDataMap = Collections.unmodifiableMap(tmpMap);
-    org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(NonExistentPartitionException.class, metaDataMap);
+    org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(IndexResult.class, metaDataMap);
   }
 
-  public NonExistentPartitionException() {
+  public IndexResult() {
   }
 
-  public NonExistentPartitionException(
-    List<Integer> partitionId)
+  public IndexResult(
+    List<Error> errors)
   {
     this();
-    this.partitionId = partitionId;
+    this.errors = errors;
   }
 
   /**
    * Performs a deep copy on <i>other</i>.
    */
-  public NonExistentPartitionException(NonExistentPartitionException other) {
-    if (other.isSetPartitionId()) {
-      List<Integer> __this__partitionId = new ArrayList<Integer>();
-      for (Integer other_element : other.partitionId) {
-        __this__partitionId.add(other_element);
+  public IndexResult(IndexResult other) {
+    if (other.isSetErrors()) {
+      List<Error> __this__errors = new ArrayList<Error>();
+      for (Error other_element : other.errors) {
+        __this__errors.add(new Error(other_element));
       }
-      this.partitionId = __this__partitionId;
+      this.errors = __this__errors;
     }
   }
 
-  public NonExistentPartitionException deepCopy() {
-    return new NonExistentPartitionException(this);
+  public IndexResult deepCopy() {
+    return new IndexResult(this);
   }
 
   @Override
   public void clear() {
-    this.partitionId = null;
+    this.errors = null;
   }
 
-  public int getPartitionIdSize() {
-    return (this.partitionId == null) ? 0 : this.partitionId.size();
+  public int getErrorsSize() {
+    return (this.errors == null) ? 0 : this.errors.size();
   }
 
-  public java.util.Iterator<Integer> getPartitionIdIterator() {
-    return (this.partitionId == null) ? null : this.partitionId.iterator();
+  public java.util.Iterator<Error> getErrorsIterator() {
+    return (this.errors == null) ? null : this.errors.iterator();
   }
 
-  public void addToPartitionId(int elem) {
-    if (this.partitionId == null) {
-      this.partitionId = new ArrayList<Integer>();
+  public void addToErrors(Error elem) {
+    if (this.errors == null) {
+      this.errors = new ArrayList<Error>();
     }
-    this.partitionId.add(elem);
+    this.errors.add(elem);
   }
 
-  public List<Integer> getPartitionId() {
-    return this.partitionId;
+  public List<Error> getErrors() {
+    return this.errors;
   }
 
-  public NonExistentPartitionException setPartitionId(List<Integer> partitionId) {
-    this.partitionId = partitionId;
+  public IndexResult setErrors(List<Error> errors) {
+    this.errors = errors;
     return this;
   }
 
-  public void unsetPartitionId() {
-    this.partitionId = null;
+  public void unsetErrors() {
+    this.errors = null;
   }
 
-  /** Returns true if field partitionId is set (has been assigned a value) and false otherwise */
-  public boolean isSetPartitionId() {
-    return this.partitionId != null;
+  /** Returns true if field errors is set (has been assigned a value) and false otherwise */
+  public boolean isSetErrors() {
+    return this.errors != null;
   }
 
-  public void setPartitionIdIsSet(boolean value) {
+  public void setErrorsIsSet(boolean value) {
     if (!value) {
-      this.partitionId = null;
+      this.errors = null;
     }
   }
 
   public void setFieldValue(_Fields field, Object value) {
     switch (field) {
-    case PARTITION_ID:
+    case ERRORS:
       if (value == null) {
-        unsetPartitionId();
+        unsetErrors();
       } else {
-        setPartitionId((List<Integer>)value);
+        setErrors((List<Error>)value);
       }
       break;
 
@@ -198,8 +198,8 @@ public class NonExistentPartitionException extends TException implements org.apa
 
   public Object getFieldValue(_Fields field) {
     switch (field) {
-    case PARTITION_ID:
-      return getPartitionId();
+    case ERRORS:
+      return getErrors();
 
     }
     throw new IllegalStateException();
@@ -212,8 +212,8 @@ public class NonExistentPartitionException extends TException implements org.apa
     }
 
     switch (field) {
-    case PARTITION_ID:
-      return isSetPartitionId();
+    case ERRORS:
+      return isSetErrors();
     }
     throw new IllegalStateException();
   }
@@ -222,21 +222,21 @@ public class NonExistentPartitionException extends TException implements org.apa
   public boolean equals(Object that) {
     if (that == null)
       return false;
-    if (that instanceof NonExistentPartitionException)
-      return this.equals((NonExistentPartitionException)that);
+    if (that instanceof IndexResult)
+      return this.equals((IndexResult)that);
     return false;
   }
 
-  public boolean equals(NonExistentPartitionException that) {
+  public boolean equals(IndexResult that) {
     if (that == null)
       return false;
 
-    boolean this_present_partitionId = true && this.isSetPartitionId();
-    boolean that_present_partitionId = true && that.isSetPartitionId();
-    if (this_present_partitionId || that_present_partitionId) {
-      if (!(this_present_partitionId && that_present_partitionId))
+    boolean this_present_errors = true && this.isSetErrors();
+    boolean that_present_errors = true && that.isSetErrors();
+    if (this_present_errors || that_present_errors) {
+      if (!(this_present_errors && that_present_errors))
         return false;
-      if (!this.partitionId.equals(that.partitionId))
+      if (!this.errors.equals(that.errors))
         return false;
     }
 
@@ -248,20 +248,20 @@ public class NonExistentPartitionException extends TException implements org.apa
     return 0;
   }
 
-  public int compareTo(NonExistentPartitionException other) {
+  public int compareTo(IndexResult other) {
     if (!getClass().equals(other.getClass())) {
       return getClass().getName().compareTo(other.getClass().getName());
     }
 
     int lastComparison = 0;
-    NonExistentPartitionException typedOther = (NonExistentPartitionException)other;
+    IndexResult typedOther = (IndexResult)other;
 
-    lastComparison = Boolean.valueOf(isSetPartitionId()).compareTo(typedOther.isSetPartitionId());
+    lastComparison = Boolean.valueOf(isSetErrors()).compareTo(typedOther.isSetErrors());
     if (lastComparison != 0) {
       return lastComparison;
     }
-    if (isSetPartitionId()) {
-      lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.partitionId, typedOther.partitionId);
+    if (isSetErrors()) {
+      lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.errors, typedOther.errors);
       if (lastComparison != 0) {
         return lastComparison;
       }
@@ -283,14 +283,14 @@ public class NonExistentPartitionException extends TException implements org.apa
 
   @Override
   public String toString() {
-    StringBuilder sb = new StringBuilder("NonExistentPartitionException(");
+    StringBuilder sb = new StringBuilder("IndexResult(");
     boolean first = true;
 
-    sb.append("partitionId:");
-    if (this.partitionId == null) {
+    sb.append("errors:");
+    if (this.errors == null) {
       sb.append("null");
     } else {
-      sb.append(this.partitionId);
+      sb.append(this.errors);
     }
     first = false;
     sb.append(")");
@@ -318,15 +318,15 @@ public class NonExistentPartitionException extends TException implements org.apa
     }
   }
 
-  private static class NonExistentPartitionExceptionStandardSchemeFactory implements SchemeFactory {
-    public NonExistentPartitionExceptionStandardScheme getScheme() {
-      return new NonExistentPartitionExceptionStandardScheme();
+  private static class IndexResultStandardSchemeFactory implements SchemeFactory {
+    public IndexResultStandardScheme getScheme() {
+      return new IndexResultStandardScheme();
     }
   }
 
-  private static class NonExistentPartitionExceptionStandardScheme extends StandardScheme<NonExistentPartitionException> {
+  private static class IndexResultStandardScheme extends StandardScheme<IndexResult> {
 
-    public void read(org.apache.thrift.protocol.TProtocol iprot, NonExistentPartitionException struct) throws org.apache.thrift.TException {
+    public void read(org.apache.thrift.protocol.TProtocol iprot, IndexResult struct) throws org.apache.thrift.TException {
       org.apache.thrift.protocol.TField schemeField;
       iprot.readStructBegin();
       while (true)
@@ -336,20 +336,21 @@ public class NonExistentPartitionException extends TException implements org.apa
           break;
         }
         switch (schemeField.id) {
-          case 1: // PARTITION_ID
+          case 1: // ERRORS
             if (schemeField.type == org.apache.thrift.protocol.TType.LIST) {
               {
-                org.apache.thrift.protocol.TList _list18 = iprot.readListBegin();
-                struct.partitionId = new ArrayList<Integer>(_list18.size);
-                for (int _i19 = 0; _i19 < _list18.size; ++_i19)
+                org.apache.thrift.protocol.TList _list34 = iprot.readListBegin();
+                struct.errors = new ArrayList<Error>(_list34.size);
+                for (int _i35 = 0; _i35 < _list34.size; ++_i35)
                 {
-                  int _elem20; // required
-                  _elem20 = iprot.readI32();
-                  struct.partitionId.add(_elem20);
+                  Error _elem36; // required
+                  _elem36 = new Error();
+                  _elem36.read(iprot);
+                  struct.errors.add(_elem36);
                 }
                 iprot.readListEnd();
               }
-              struct.setPartitionIdIsSet(true);
+              struct.setErrorsIsSet(true);
             } else { 
               org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
             }
@@ -365,17 +366,17 @@ public class NonExistentPartitionException extends TException implements org.apa
       struct.validate();
     }
 
-    public void write(org.apache.thrift.protocol.TProtocol oprot, NonExistentPartitionException struct) throws org.apache.thrift.TException {
+    public void write(org.apache.thrift.protocol.TProtocol oprot, IndexResult struct) throws org.apache.thrift.TException {
       struct.validate();
 
       oprot.writeStructBegin(STRUCT_DESC);
-      if (struct.partitionId != null) {
-        oprot.writeFieldBegin(PARTITION_ID_FIELD_DESC);
+      if (struct.errors != null) {
+        oprot.writeFieldBegin(ERRORS_FIELD_DESC);
         {
-          oprot.writeListBegin(new org.apache.thrift.protocol.TList(org.apache.thrift.protocol.TType.I32, struct.partitionId.size()));
-          for (int _iter21 : struct.partitionId)
+          oprot.writeListBegin(new org.apache.thrift.protocol.TList(org.apache.thrift.protocol.TType.STRUCT, struct.errors.size()));
+          for (Error _iter37 : struct.errors)
           {
-            oprot.writeI32(_iter21);
+            _iter37.write(oprot);
           }
           oprot.writeListEnd();
         }
@@ -387,49 +388,50 @@ public class NonExistentPartitionException extends TException implements org.apa
 
   }
 
-  private static class NonExistentPartitionExceptionTupleSchemeFactory implements SchemeFactory {
-    public NonExistentPartitionExceptionTupleScheme getScheme() {
-      return new NonExistentPartitionExceptionTupleScheme();
+  private static class IndexResultTupleSchemeFactory implements SchemeFactory {
+    public IndexResultTupleScheme getScheme() {
+      return new IndexResultTupleScheme();
     }
   }
 
-  private static class NonExistentPartitionExceptionTupleScheme extends TupleScheme<NonExistentPartitionException> {
+  private static class IndexResultTupleScheme extends TupleScheme<IndexResult> {
 
     @Override
-    public void write(org.apache.thrift.protocol.TProtocol prot, NonExistentPartitionException struct) throws org.apache.thrift.TException {
+    public void write(org.apache.thrift.protocol.TProtocol prot, IndexResult struct) throws org.apache.thrift.TException {
       TTupleProtocol oprot = (TTupleProtocol) prot;
       BitSet optionals = new BitSet();
-      if (struct.isSetPartitionId()) {
+      if (struct.isSetErrors()) {
         optionals.set(0);
       }
       oprot.writeBitSet(optionals, 1);
-      if (struct.isSetPartitionId()) {
+      if (struct.isSetErrors()) {
         {
-          oprot.writeI32(struct.partitionId.size());
-          for (int _iter22 : struct.partitionId)
+          oprot.writeI32(struct.errors.size());
+          for (Error _iter38 : struct.errors)
           {
-            oprot.writeI32(_iter22);
+            _iter38.write(oprot);
           }
         }
       }
     }
 
     @Override
-    public void read(org.apache.thrift.protocol.TProtocol prot, NonExistentPartitionException struct) throws org.apache.thrift.TException {
+    public void read(org.apache.thrift.protocol.TProtocol prot, IndexResult struct) throws org.apache.thrift.TException {
       TTupleProtocol iprot = (TTupleProtocol) prot;
       BitSet incoming = iprot.readBitSet(1);
       if (incoming.get(0)) {
         {
-          org.apache.thrift.protocol.TList _list23 = new org.apache.thrift.protocol.TList(org.apache.thrift.protocol.TType.I32, iprot.readI32());
-          struct.partitionId = new ArrayList<Integer>(_list23.size);
-          for (int _i24 = 0; _i24 < _list23.size; ++_i24)
+          org.apache.thrift.protocol.TList _list39 = new org.apache.thrift.protocol.TList(org.apache.thrift.protocol.TType.STRUCT, iprot.readI32());
+          struct.errors = new ArrayList<Error>(_list39.size);
+          for (int _i40 = 0; _i40 < _list39.size; ++_i40)
           {
-            int _elem25; // required
-            _elem25 = iprot.readI32();
-            struct.partitionId.add(_elem25);
+            Error _elem41; // required
+            _elem41 = new Error();
+            _elem41.read(iprot);
+            struct.errors.add(_elem41);
           }
         }
-        struct.setPartitionIdIsSet(true);
+        struct.setErrorsIsSet(true);
       }
     }
   }

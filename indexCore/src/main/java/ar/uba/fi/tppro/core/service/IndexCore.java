@@ -1,13 +1,17 @@
 package ar.uba.fi.tppro.core.service;
 
 import java.io.File;
+import java.util.List;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.thrift.server.TServer;
 import org.apache.thrift.server.TThreadPoolServer;
 import org.apache.thrift.transport.TServerSocket;
 import org.apache.thrift.transport.TServerTransport;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.google.common.collect.Lists;
 
 import ar.uba.fi.tppro.core.service.thrift.IndexNode;
 
@@ -20,6 +24,8 @@ public class IndexCore implements Runnable {
 
 	protected IndexCoreHandler handler;
 	protected IndexNode.Processor<IndexNode.Iface> processor;
+	
+	protected TServer server;
 
 	public static void main(String[] args) {
 		
@@ -33,15 +39,40 @@ public class IndexCore implements Runnable {
 		this.port = port;
 		this.dataDir = dataDir;
 	}
+	
+	public void stop(){
+		logger.info("INDEX CORE: Stoping server");
+		if(server!=null){
+			server.stop();
+		}
+	}
 
 	@Override
 	public void run() {
 		try {
+			
+			String initialPartitions = System.getProperty("initialPartitions");
+			
+			List<Integer> partitions = Lists.newArrayList();
+			
+			if(initialPartitions!=null && !initialPartitions.isEmpty()){
+				for(String partitionStr : StringUtils.split(initialPartitions, ',')){
+					int partId = Integer.parseInt(partitionStr);
+					partitions.add(partId);	
+				}
+			}
+			
 			handler = new IndexCoreHandler(this.dataDir);
 			processor = new IndexNode.Processor<IndexNode.Iface>(handler);
 			
+			for(Integer partId : partitions){
+				if(!handler.containsPartition(partId)){
+					handler.createPartition(partId);
+				}
+			}
+			
 			TServerTransport serverTransport = new TServerSocket(this.port);
-			TServer server = new TThreadPoolServer(new TThreadPoolServer.Args(
+			server = new TThreadPoolServer(new TThreadPoolServer.Args(
 					serverTransport).processor(processor));
 			
 			logger.info("Starting the Index server on port " + this.port + "...");
@@ -51,6 +82,5 @@ public class IndexCore implements Runnable {
 			// TODO: mejorar esto
 			e.printStackTrace();
 		}
-
 	}
 }

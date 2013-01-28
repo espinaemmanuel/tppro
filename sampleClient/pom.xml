@@ -34,7 +34,7 @@
 					</descriptorRefs>
 					<archive>
 						<manifest>
-							<mainClass>ar.uba.fi.tppro.client.SearchDocs</mainClass>
+							<mainClass>ar.uba.fi.tppro.client.SearchDocsBase</mainClass>
 						</manifest>
 					</archive>
 				</configuration>

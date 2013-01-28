@@ -32,18 +32,11 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
 
-public class SearchDocs {
+public class SearchDocsCore extends SearchDocsBase {
 
-	/**
-	 * @param args
-	 * @throws JsonSyntaxException
-	 * @throws JsonIOException
-	 * @throws TException
-	 * @throws PartitionAlreadyExistsException
-	 * @throws IOException
-	 * @throws NonExistentPartitionException 
-	 */
-	public static void main(String[] args) throws IOException, NonExistentPartitionException, TException {
+	@Override
+	public void run(String[] args) throws IOException,
+			NonExistentPartitionException, TException {
 		String host = System.getProperty("host", "localhost");
 		String port = System.getProperty("port", "9090");
 		int partition = Integer.parseInt(System.getProperty("partition", "0"));
@@ -64,27 +57,20 @@ public class SearchDocs {
 
 			if (!(curLine.equals("quit"))) {
 				try {
-					queryAndPrint(curLine, client, partition);
+					QueryResult result = client.search(partition, curLine, 10,
+							0);
+
+					System.out.println("Num Found: " + result.totalHits);
+					System.out.println("Parsed Query: " + result.parsedQuery);
+
+					for (Hit hit : result.hits) {
+						System.out.println(hit.doc.fields);
+					}
 				} catch (ParseException e) {
 					System.out.println("Parse error");
-				}			
+				}
 			}
 		}
-
-	}
-
-	private static void queryAndPrint(String query, Client client,
-			int partition) throws ParseException, NonExistentPartitionException, TException {
-		
-		QueryResult result = client.search(partition, query, 10, 0);
-		
-		System.out.println("Num Found: " + result.totalHits);
-		System.out.println("Parsed Query: " + result.parsedQuery);
-		
-		for(Hit hit : result.hits){
-			System.out.println(hit.doc.fields);
-		}
-		
 	}
 
 }
