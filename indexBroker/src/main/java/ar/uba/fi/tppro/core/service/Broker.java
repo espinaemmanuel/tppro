@@ -9,10 +9,10 @@ import org.apache.thrift.transport.TServerTransport;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import ar.uba.fi.tppro.core.broker.CSVPartitionResolver;
 import ar.uba.fi.tppro.core.broker.IndexBrokerHandler;
 import ar.uba.fi.tppro.core.broker.NullLockManager;
-import ar.uba.fi.tppro.core.broker.RemoteNodePool;
+import ar.uba.fi.tppro.core.index.CSVPartitionResolver;
+import ar.uba.fi.tppro.core.index.RemoteNodePool;
 import ar.uba.fi.tppro.core.service.thrift.IndexBroker;
 
 public class Broker implements Runnable {

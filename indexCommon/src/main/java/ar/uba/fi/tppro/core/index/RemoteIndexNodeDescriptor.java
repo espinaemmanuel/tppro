@@ -49,6 +49,11 @@ public class RemoteIndexNodeDescriptor implements IndexNodeDescriptor {
 	public String toString(){
 		return String.format("Remote Node: %s:%d", this.host, this.port);
 	}
+
+	@Override
+	public PartitionHttpClient getHttpClient(int partition) {
+		return new PartitionHttpClient(host, port + 1, partition);
+	}
 	
 
 }

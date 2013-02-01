@@ -1,4 +1,4 @@
-package ar.uba.fi.tppro.core.broker;
+package ar.uba.fi.tppro.core.index;
 
 import java.util.List;
 

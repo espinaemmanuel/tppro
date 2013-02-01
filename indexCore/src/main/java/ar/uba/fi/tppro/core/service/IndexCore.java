@@ -28,6 +28,7 @@ public class IndexCore implements Runnable {
 	protected File dataDir;
 
 	protected IndexCoreHandler handler;
+
 	protected IndexNode.Processor<IndexNode.Iface> processor;
 
 	protected TServer server;
@@ -44,6 +45,8 @@ public class IndexCore implements Runnable {
 	public IndexCore(int port, File dataDir) {
 		this.port = port;
 		this.dataDir = dataDir;
+		
+		handler = new IndexCoreHandler(this.dataDir);
 	}
 
 	public void stop() {
@@ -68,8 +71,11 @@ public class IndexCore implements Runnable {
 					partitions.add(partId);
 				}
 			}
+			
+			if(!this.dataDir.exists()){
+				this.dataDir.mkdir();
+			}
 
-			handler = new IndexCoreHandler(this.dataDir);
 			processor = new IndexNode.Processor<IndexNode.Iface>(handler);
 
 			for (Integer partId : partitions) {
@@ -78,20 +84,20 @@ public class IndexCore implements Runnable {
 				}
 			}
 
-			Server webServer = new Server(8080);
+			Server webServer = new Server(this.port + 1);
 			ResourceHandler resource_handler = new ResourceHandler();
 			resource_handler.setDirectoriesListed(true);
 			resource_handler.setWelcomeFiles(new String[] { "index.html" });
-
-			resource_handler.setResourceBase(".");
+			resource_handler.setResourceBase(this.dataDir.getAbsolutePath());
 
 			HandlerList handlers = new HandlerList();
 			handlers.setHandlers(new Handler[] { resource_handler,
 					new DefaultHandler() });
 			webServer.setHandler(handlers);
-
+			
+			logger.info("Starting http server on port port " + (this.port + 1)
+					+ "...");
 			webServer.start();
-			webServer.join();
 
 			TServerTransport serverTransport = new TServerSocket(this.port);
 			server = new TThreadPoolServer(new TThreadPoolServer.Args(
@@ -105,5 +111,9 @@ public class IndexCore implements Runnable {
 			// TODO: mejorar esto
 			e.printStackTrace();
 		}
+	}
+	
+	public IndexCoreHandler getHandler() {
+		return handler;
 	}
 }

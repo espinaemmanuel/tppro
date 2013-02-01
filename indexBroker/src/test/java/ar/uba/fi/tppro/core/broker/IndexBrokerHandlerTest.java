@@ -21,6 +21,8 @@ import org.apache.thrift.transport.TTransportException;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import ar.uba.fi.tppro.core.index.RemoteNodePool;
+import ar.uba.fi.tppro.core.index.StaticSocketPartitionResolver;
 import ar.uba.fi.tppro.core.index.lock.IndexLock;
 import ar.uba.fi.tppro.core.index.lock.LockAquireTimeoutException;
 import ar.uba.fi.tppro.core.index.lock.LockManager;
@@ -188,19 +190,19 @@ public class IndexBrokerHandlerTest {
 	@Test
 	public void testIndexAndSearch() throws LockAquireTimeoutException, ParalellIndexException, NonExistentPartitionException, TException, InterruptedException {
 		
-		IndexCore core1 = initServer(9001);
-		IndexCore core2 = initServer(9002);
-		IndexCore core3 = initServer(9003);
+		IndexCore core1 = initServer(9000);
+		IndexCore core2 = initServer(9010);
+		IndexCore core3 = initServer(9020);
 		Thread.sleep(5000);
 		
 		Multimap<Integer, Integer> parts = LinkedListMultimap.create();
 
-		parts.put(9001, 2);
-		parts.put(9001, 3);
-		parts.put(9002, 1);
-		parts.put(9002, 3);
-		parts.put(9003, 1);
-		parts.put(9003, 2);
+		parts.put(9000, 2);
+		parts.put(9000, 3);
+		parts.put(9010, 1);
+		parts.put(9010, 3);
+		parts.put(9020, 1);
+		parts.put(9020, 2);
 		
 		for(int pId : parts.keySet()){
 			createPartitions(pId, parts.get(pId));
@@ -208,12 +210,12 @@ public class IndexBrokerHandlerTest {
 		
 		RemoteNodePool nodePool = new RemoteNodePool();
 		StaticSocketPartitionResolver resolver = new StaticSocketPartitionResolver(nodePool);
-		resolver.addReplica("localhost", 9001, 2);
-		resolver.addReplica("localhost", 9001, 3);
-		resolver.addReplica("localhost", 9002, 1);
-		resolver.addReplica("localhost", 9002, 3);
-		resolver.addReplica("localhost", 9003, 1);
-		resolver.addReplica("localhost", 9003, 2);
+		resolver.addReplica("localhost", 9000, 2);
+		resolver.addReplica("localhost", 9000, 3);
+		resolver.addReplica("localhost", 9010, 1);
+		resolver.addReplica("localhost", 9010, 3);
+		resolver.addReplica("localhost", 9020, 1);
+		resolver.addReplica("localhost", 9020, 2);
 		
 		LockManager lockManager = mock(LockManager.class);
 		IndexLock indexLock = mock(IndexLock.class);

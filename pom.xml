@@ -12,13 +12,4 @@
 		<module>sampleIndexer</module>
 		<module>indexCommon</module>
 	</modules>
-	<dependencyManagement>
-		<dependencies>
-			<dependency>
-				<groupId>org.eclipse.jetty</groupId>
-				<artifactId>jetty-server</artifactId>
-				<version>9.0.0.M4</version>
-			</dependency>
-		</dependencies>
-	</dependencyManagement>
 </project>

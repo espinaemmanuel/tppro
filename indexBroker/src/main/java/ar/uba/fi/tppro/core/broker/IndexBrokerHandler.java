@@ -11,6 +11,7 @@ import com.google.common.collect.Multimap;
 
 import ar.uba.fi.tppro.core.index.BrokerIterface;
 import ar.uba.fi.tppro.core.index.IndexNodeDescriptor;
+import ar.uba.fi.tppro.core.index.PartitionResolver;
 import ar.uba.fi.tppro.core.index.lock.LockAquireTimeoutException;
 import ar.uba.fi.tppro.core.index.lock.LockManager;
 import ar.uba.fi.tppro.core.service.thrift.Document;
@@ -19,8 +20,7 @@ import ar.uba.fi.tppro.core.service.thrift.NonExistentPartitionException;
 import ar.uba.fi.tppro.core.service.thrift.ParalellIndexException;
 import ar.uba.fi.tppro.core.service.thrift.ParalellSearchException;
 import ar.uba.fi.tppro.core.service.thrift.ParalellSearchResult;
-import ar.uba.fi.tppro.core.service.thrift.ParseException;
-import ar.uba.fi.tppro.core.service.thrift.QueryResult;
+
 
 public class IndexBrokerHandler implements BrokerIterface {
 

@@ -37,6 +37,11 @@ exception ParalellIndexException {
 	1: string msg,
 }
 
+exception ReplicationException {
+	1: i32 code,
+	2: string msg
+}
+
 struct Error {
 	1: i32 code,
 	2: string desc,
@@ -49,6 +54,11 @@ struct ParalellSearchResult {
 
 struct IndexResult {
 	1: list<Error> errors,
+}
+
+struct PartitionStatus {
+	1: i32 partitionId,
+	2: string status,
 }
 
 service IndexBroker{
@@ -64,5 +74,8 @@ service IndexNode{
 	void createPartition(1: i32 partitionId) throws (1: PartitionAlreadyExistsException partex),
 	void removePartition(1: i32 partitionId) throws (1: NonExistentPartitionException partex),
 	bool containsPartition(1: i32 partitionId),
+	void replicate(1: i32 partitionId) throws (1: ReplicationException repex),
+	PartitionStatus partitionStatus(1: i32 partitionId) throws (1: NonExistentPartitionException e),
+	list<string> listPartitionFiles(1: i32 partitionId) throws (1: NonExistentPartitionException e),
 }
 	

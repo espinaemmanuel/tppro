@@ -42,34 +42,75 @@ public class IndexPartition {
 	final Logger logger = LoggerFactory.getLogger(IndexPartition.class);
 
 	private static final String DEFAULT_FIELD = "text";
+	
+	private File dataPath;
+
+	public File getDataPath() {
+		return dataPath;
+	}
+
+	public void setDataPath(File dataPath) {
+		this.dataPath = dataPath;
+	}
 
 	private String defaultField = DEFAULT_FIELD;
 	private IndexWriterConfig config;
 	private Directory indexDir;
 	private StandardAnalyzer analyzer;
-
 	private SearcherManager mgr;
+	boolean isOpen = false;
+	
+	private IndexWriter currentWriter;
+	
+	public enum Status{
+		CREATED,
+		REPLICATING,
+		READY,
+		FAILURE,
+		REPLICATION_FAILED
+	}
+	
+	private Status status;
 
-	public IndexPartition(File path) throws IOException {
+	private String lastError;
+
+	public IndexPartition(File dataPath) {
+		this.dataPath = dataPath;
+	}
+	
+	public void open() throws IOException{
 		analyzer = new StandardAnalyzer(Version.LUCENE_40);
-		indexDir = FSDirectory.open(path);
+		indexDir = FSDirectory.open(dataPath);
 		config = new IndexWriterConfig(Version.LUCENE_40, analyzer);
 		config.setOpenMode(OpenMode.CREATE_OR_APPEND);
 		
-		if(path.list().length == 0){
+		if(dataPath.list().length == 0){
 			IndexWriter initialWriter = new IndexWriter(indexDir, config);
 			initialWriter.close();
 		}
 		
 		mgr = new SearcherManager(indexDir, new SearcherFactory());
+		
+		isOpen = true;
+	}
+	
+	protected void ensureOpen() throws IOException{
+		if(!isOpen){
+			this.open();
+		}
 	}
 
-	public void index(List<Document> documents) throws IOException {
+	public void index(List<Document> documents) throws IOException, PartitionNotReadyException {
+		
+		if(this.status != Status.READY){
+			throw new PartitionNotReadyException();
+		}
+		
+		ensureOpen();
 
 		long startTime = System.currentTimeMillis();
-
-		IndexWriter w;
-		w = new IndexWriter(indexDir, config);
+		
+		IndexWriter writer = this.getCurrentWriter();
 
 		for (Document document : documents) {
 			org.apache.lucene.document.Document luceneDoc = new org.apache.lucene.document.Document();
@@ -78,23 +119,35 @@ public class IndexPartition {
 				luceneDoc.add(new TextField(field.getKey(), field.getValue(),
 						Field.Store.YES));
 			}
-			w.addDocument(luceneDoc);
+			writer.addDocument(luceneDoc);
 		}
-
-		w.commit();
-		w.close();
 		
+		writer.commit();
 		mgr.maybeRefresh();
 		
-		long endTime = System.currentTimeMillis();
-		
+		long endTime = System.currentTimeMillis();	
 		logger.debug(String.format("INDEXED: DocCount=%d IndexTime=%d", documents.size(), endTime - startTime));
+	}
 
+	private synchronized IndexWriter getCurrentWriter() throws IOException {
+		ensureOpen();
+
+		if(this.currentWriter == null){
+			this.currentWriter = new IndexWriter(indexDir, config);
+		}
+
+		return this.currentWriter;
 	}
 
 	public QueryResult search(int partitionId, String query, int limit,
-			int offset) throws ParseException, IOException {
+			int offset) throws ParseException, IOException, PartitionNotReadyException {
 		
+		if(this.status != Status.READY){
+			throw new PartitionNotReadyException();
+		}
+		
+		ensureOpen();
+
 		long startTime = System.currentTimeMillis();
 
 		Query q;
@@ -161,5 +214,36 @@ public class IndexPartition {
 
 	public void setDefaultField(String defaultField) {
 		this.defaultField = defaultField;
+	}
+	
+	public Status getStatus() {
+		return status;
+	}
+
+	public void setStatus(Status status) {
+		this.status = status;
+	}
+
+	public void clear() throws IOException {
+		this.getCurrentWriter().deleteAll();	
+	}
+
+	public void runReplicator(PartitionReplicator replicator) {
+		replicator.setPartition(this);
+		replicator.start();		
+	}
+
+	public void setError(String error) {
+		this.lastError = error;
+	}
+
+	public List<String> listFiles() throws IOException {
+		if(this.status != Status.READY){
+			return Lists.newArrayList();
+		}
+		
+		ensureOpen();
+		
+		return Lists.newArrayList(indexDir.listAll());
 	}
 }
