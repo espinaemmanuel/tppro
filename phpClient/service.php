@@ -24,11 +24,11 @@ use Thrift\Exception\TException;
 //Service call
 $data = RestUtils::processRequest();
 
-$data->response=  search($data->request_vars['query']);
+$data->response=  search($data->request_vars['query'], $data->request_vars['parts']);
 $data->response= json_encode($data->response);
 RestUtils::sendResponse(200, $data->response, 'application/json');
 
-function search($query='world'){
+function search($query='world', $parts='0'){
   try{
   
       $socket = new TSocket ( 'localhost', 9090 );
@@ -38,8 +38,10 @@ function search($query='world'){
       $client = new IndexNodeClient($protocol);
 
       $transport->open ();
+      
+      //echo $parts.'<br>';
 
-      $results = $client->search(0, $query, 10, 0);
+      $results = $client->search(0, $query, 10, $parts);
 
       $transport->close();
       

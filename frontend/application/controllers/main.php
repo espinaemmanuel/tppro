@@ -59,9 +59,10 @@ class main extends CI_Controller {
         if($_POST){
           $parts=$this->User_partitions->get($_POST['user_id']);
           
-          //print_r($parts);
+          //TODO harcodeado para q agarre solo una particion
+          $part=$parts[0]->user_id;
           
-          $get=array('query'=>'text:hello');
+          $get=array('query'=>'text:'.$_POST['query'], 'parts'=>$part);
 		  $res=$this->curl->simple_get(URLGET,$get);
         
           echo $res;
