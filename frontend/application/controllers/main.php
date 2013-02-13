@@ -23,7 +23,7 @@ class main extends CI_Controller {
           $this->login();
         else{
           $this->load->view('include/header');
-          $this->load->view("main", array('user_id'=> $this->session->userdata('user_id')));
+          $this->load->view("main", array('user_id'=> $this->session->userdata('user_id'), 'query'=>''));
           $this->load->view('include/footer');
         }  
 	}
@@ -58,17 +58,24 @@ class main extends CI_Controller {
     
         if($_POST){
           $parts=$this->User_partitions->get($_POST['user_id']);
+          $query=$_POST['query'];
           
           //TODO harcodeado para q agarre solo una particion
           $part=$parts[0]->user_id;
           
-          $get=array('query'=>'text:'.$_POST['query'], 'parts'=>$part);
+          $get=array('query'=>'text:'.$query, 'parts'=>$part);
 		  $res=$this->curl->simple_get(URLGET,$get);
         
-          echo $res;
+          $res2=json_decode($res);
+          
+          if(isset($res2->hits)){
+            foreach ($res2->hits as $hit) {
+              print "<p>".$hit->doc->fields->text."</p>";
+            }
+          }
           
           $this->load->view('include/header');
-          $this->load->view("main", array('user_id'=> $this->session->userdata('user_id')));
+          $this->load->view("main", array('user_id'=> $this->session->userdata('user_id'),'query'=>$query));
           $this->load->view('include/footer');
         }
     }
