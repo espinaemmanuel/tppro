@@ -3,30 +3,42 @@ package ar.uba.fi.tppro.core.service;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
-import java.util.Map;
+import java.util.concurrent.ConcurrentMap;
 
 import org.apache.thrift.TException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
 import ar.uba.fi.tppro.core.index.IndexInterface;
 import ar.uba.fi.tppro.core.index.IndexPartition;
+import ar.uba.fi.tppro.core.index.PartitionNotReadyException;
+import ar.uba.fi.tppro.core.index.PartitionResolver;
+import ar.uba.fi.tppro.core.index.IndexPartition.Status;
+import ar.uba.fi.tppro.core.index.PartitionStatusObserver;
+import ar.uba.fi.tppro.core.index.lock.LockManager;
+import ar.uba.fi.tppro.core.index.PartitionReplicator;
 import ar.uba.fi.tppro.core.service.thrift.Document;
 import ar.uba.fi.tppro.core.service.thrift.NonExistentPartitionException;
 import ar.uba.fi.tppro.core.service.thrift.ParseException;
 import ar.uba.fi.tppro.core.service.thrift.PartitionAlreadyExistsException;
+import ar.uba.fi.tppro.core.service.thrift.PartitionStatus;
 import ar.uba.fi.tppro.core.service.thrift.QueryResult;
+import ar.uba.fi.tppro.core.service.thrift.ReplicationException;
 
 public class IndexCoreHandler implements IndexInterface {
 
 	final Logger logger = LoggerFactory.getLogger(IndexCoreHandler.class);
 
 	private File dataPath;
-	private Map<Integer, IndexPartition> partitionMap = Maps.newHashMap();
+	private ConcurrentMap<Integer, IndexPartition> partitionMap = Maps.newConcurrentMap();
+	private PartitionResolver partitionResolver;
+	private LockManager lockManager;
+	private PartitionStatusObserver partitionObserver;
 
-	public IndexCoreHandler(File dataPath) throws IOException {
+	public IndexCoreHandler(File dataPath) {
 		this.dataPath = dataPath;
 	}
 
@@ -44,6 +56,7 @@ public class IndexCoreHandler implements IndexInterface {
 		}
 
 		IndexPartition partition = new IndexPartition(path);
+		partition.setStatus(Status.READY);
 		partitionMap.put(partitionId, partition);
 
 		return partition;
@@ -67,7 +80,7 @@ public class IndexCoreHandler implements IndexInterface {
 		}
 
 		if (partition == null) {
-			throw new NonExistentPartitionException(partitionId);
+			throw new NonExistentPartitionException(Lists.newArrayList(partitionId));
 		}
 
 		try {
@@ -75,6 +88,8 @@ public class IndexCoreHandler implements IndexInterface {
 		} catch (IOException e) {
 			throw new TException("Could not index in the index partition "
 					+ partitionId, e);
+		} catch (PartitionNotReadyException e) {
+			throw new TException("Partition not ready: " + partitionId, e);
 		}
 	}
 
@@ -93,6 +108,12 @@ public class IndexCoreHandler implements IndexInterface {
 		if (!partitionPath.mkdirs()) {
 			throw new TException("Could not create the partition directory");
 		}
+		
+		IndexPartition newPartition = new IndexPartition(partitionPath);
+		newPartition.setStatus(Status.READY);
+		
+		partitionMap.put(partitionId, newPartition);
+
 	}
 
 	@Override
@@ -115,7 +136,7 @@ public class IndexCoreHandler implements IndexInterface {
 		}
 
 		if (partition == null) {
-			throw new NonExistentPartitionException(partitionId);
+			throw new NonExistentPartitionException(Lists.newArrayList(partitionId));
 		}
 
 		try {
@@ -123,6 +144,8 @@ public class IndexCoreHandler implements IndexInterface {
 		} catch (IOException e) {
 			throw new TException("Could not search the index partition "
 					+ partitionId, e);
+		} catch (PartitionNotReadyException e) {
+			throw new TException("Partition not ready: " + partitionId, e);
 		}
 	}
 
@@ -134,6 +157,128 @@ public class IndexCoreHandler implements IndexInterface {
 				new Integer(partitionId).toString());
 
 		return partitionPath.exists();
+	}
+
+	@Override
+	public void replicate(int partitionId) throws ReplicationException,
+			TException {
+		
+		IndexPartition partition = partitionMap.get(partitionId);
+		if(partition != null){
+			switch(partition.getStatus()){				
+			case FAILURE:
+			case REPLICATION_FAILED:
+				try {
+					partition.clear();					
+				} catch (IOException e) {
+					logger.error("Could not clean partition", e);
+					throw new ReplicationException(3, "Could not start the replication because there was an exception cleaning the old partition");
+				}
+				break;
+
+			case READY:
+				throw new ReplicationException(1, "The partition " + partitionId + " already exists");
+			case REPLICATING:
+				throw new ReplicationException(2, "The partition " + partitionId + " is already replicating");
+			default:
+				break;
+			}
+		} else {
+			File partitionPath = new File(dataPath,
+					new Integer(partitionId).toString());
+
+			partition = new IndexPartition(partitionPath);
+			partition.setStatus(Status.CREATED);
+		}
+		
+		assert partition.getStatus() == Status.CREATED;
+		
+		PartitionReplicator replicator = new PartitionReplicator();
+		replicator.setPartitionId(partitionId);
+		replicator.setPartitionResolver(partitionResolver);
+		replicator.setLockManager(lockManager);
+		replicator.setStatusObserver(partitionObserver);
+
+		partition.runReplicator(replicator);
+		
+	}
+
+	@Override
+	public PartitionStatus partitionStatus(int partitionId)
+			throws NonExistentPartitionException, TException {
+		
+		IndexPartition partition = null;
+		
+		try {
+			partition = this.getIndexPartition(partitionId);
+		} catch (IOException e) {
+			throw new TException("Could not obtain index partition", e);
+		}
+
+		if (partition == null) {
+			throw new NonExistentPartitionException(Lists.newArrayList(partitionId));
+		}
+		
+		PartitionStatus status = new PartitionStatus();
+		status.partitionId = partitionId;
+		status.status = partition.getStatus().toString();
+
+		return status;
+	}
+
+	@Override
+	public List<String> listPartitionFiles(int partitionId)
+			throws NonExistentPartitionException, TException {
+		
+		IndexPartition partition = null;
+		
+		try {
+			partition = this.getIndexPartition(partitionId);
+		} catch (IOException e) {
+			throw new TException("Could not obtain index partition", e);
+		}
+
+		if (partition == null) {
+			throw new NonExistentPartitionException(Lists.newArrayList(partitionId));
+		}
+		
+		try {
+			return partition.listFiles();
+		} catch (IOException e) {
+			throw new TException("Exception retrieving file list", e);
+		}
+	}
+
+	public File getDataPath() {
+		return dataPath;
+	}
+
+	public void setDataPath(File dataPath) {
+		this.dataPath = dataPath;
+	}
+
+	public PartitionResolver getPartitionResolver() {
+		return partitionResolver;
+	}
+
+	public void setPartitionResolver(PartitionResolver partitionResolver) {
+		this.partitionResolver = partitionResolver;
+	}
+
+	public LockManager getLockManager() {
+		return lockManager;
+	}
+
+	public void setLockManager(LockManager lockManager) {
+		this.lockManager = lockManager;
+	}
+
+	public PartitionStatusObserver getPartitionObserver() {
+		return partitionObserver;
+	}
+
+	public void setPartitionObserver(PartitionStatusObserver partitionObserver) {
+		this.partitionObserver = partitionObserver;
 	}
 
 }

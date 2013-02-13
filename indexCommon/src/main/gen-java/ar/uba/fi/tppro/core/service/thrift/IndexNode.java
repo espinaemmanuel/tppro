@@ -46,6 +46,12 @@ public class IndexNode {
 
     public boolean containsPartition(int partitionId) throws org.apache.thrift.TException;
 
+    public void replicate(int partitionId) throws ReplicationException, org.apache.thrift.TException;
+
+    public PartitionStatus partitionStatus(int partitionId) throws NonExistentPartitionException, org.apache.thrift.TException;
+
+    public List<String> listPartitionFiles(int partitionId) throws NonExistentPartitionException, org.apache.thrift.TException;
+
   }
 
   public interface AsyncIface {
@@ -61,6 +67,12 @@ public class IndexNode {
     public void removePartition(int partitionId, org.apache.thrift.async.AsyncMethodCallback<AsyncClient.removePartition_call> resultHandler) throws org.apache.thrift.TException;
 
     public void containsPartition(int partitionId, org.apache.thrift.async.AsyncMethodCallback<AsyncClient.containsPartition_call> resultHandler) throws org.apache.thrift.TException;
+
+    public void replicate(int partitionId, org.apache.thrift.async.AsyncMethodCallback<AsyncClient.replicate_call> resultHandler) throws org.apache.thrift.TException;
+
+    public void partitionStatus(int partitionId, org.apache.thrift.async.AsyncMethodCallback<AsyncClient.partitionStatus_call> resultHandler) throws org.apache.thrift.TException;
+
+    public void listPartitionFiles(int partitionId, org.apache.thrift.async.AsyncMethodCallback<AsyncClient.listPartitionFiles_call> resultHandler) throws org.apache.thrift.TException;
 
   }
 
@@ -228,6 +240,81 @@ public class IndexNode {
         return result.success;
       }
       throw new org.apache.thrift.TApplicationException(org.apache.thrift.TApplicationException.MISSING_RESULT, "containsPartition failed: unknown result");
+    }
+
+    public void replicate(int partitionId) throws ReplicationException, org.apache.thrift.TException
+    {
+      send_replicate(partitionId);
+      recv_replicate();
+    }
+
+    public void send_replicate(int partitionId) throws org.apache.thrift.TException
+    {
+      replicate_args args = new replicate_args();
+      args.setPartitionId(partitionId);
+      sendBase("replicate", args);
+    }
+
+    public void recv_replicate() throws ReplicationException, org.apache.thrift.TException
+    {
+      replicate_result result = new replicate_result();
+      receiveBase(result, "replicate");
+      if (result.repex != null) {
+        throw result.repex;
+      }
+      return;
+    }
+
+    public PartitionStatus partitionStatus(int partitionId) throws NonExistentPartitionException, org.apache.thrift.TException
+    {
+      send_partitionStatus(partitionId);
+      return recv_partitionStatus();
+    }
+
+    public void send_partitionStatus(int partitionId) throws org.apache.thrift.TException
+    {
+      partitionStatus_args args = new partitionStatus_args();
+      args.setPartitionId(partitionId);
+      sendBase("partitionStatus", args);
+    }
+
+    public PartitionStatus recv_partitionStatus() throws NonExistentPartitionException, org.apache.thrift.TException
+    {
+      partitionStatus_result result = new partitionStatus_result();
+      receiveBase(result, "partitionStatus");
+      if (result.isSetSuccess()) {
+        return result.success;
+      }
+      if (result.e != null) {
+        throw result.e;
+      }
+      throw new org.apache.thrift.TApplicationException(org.apache.thrift.TApplicationException.MISSING_RESULT, "partitionStatus failed: unknown result");
+    }
+
+    public List<String> listPartitionFiles(int partitionId) throws NonExistentPartitionException, org.apache.thrift.TException
+    {
+      send_listPartitionFiles(partitionId);
+      return recv_listPartitionFiles();
+    }
+
+    public void send_listPartitionFiles(int partitionId) throws org.apache.thrift.TException
+    {
+      listPartitionFiles_args args = new listPartitionFiles_args();
+      args.setPartitionId(partitionId);
+      sendBase("listPartitionFiles", args);
+    }
+
+    public List<String> recv_listPartitionFiles() throws NonExistentPartitionException, org.apache.thrift.TException
+    {
+      listPartitionFiles_result result = new listPartitionFiles_result();
+      receiveBase(result, "listPartitionFiles");
+      if (result.isSetSuccess()) {
+        return result.success;
+      }
+      if (result.e != null) {
+        throw result.e;
+      }
+      throw new org.apache.thrift.TApplicationException(org.apache.thrift.TApplicationException.MISSING_RESULT, "listPartitionFiles failed: unknown result");
     }
 
   }
@@ -455,6 +542,102 @@ public class IndexNode {
       }
     }
 
+    public void replicate(int partitionId, org.apache.thrift.async.AsyncMethodCallback<replicate_call> resultHandler) throws org.apache.thrift.TException {
+      checkReady();
+      replicate_call method_call = new replicate_call(partitionId, resultHandler, this, ___protocolFactory, ___transport);
+      this.___currentMethod = method_call;
+      ___manager.call(method_call);
+    }
+
+    public static class replicate_call extends org.apache.thrift.async.TAsyncMethodCall {
+      private int partitionId;
+      public replicate_call(int partitionId, org.apache.thrift.async.AsyncMethodCallback<replicate_call> resultHandler, org.apache.thrift.async.TAsyncClient client, org.apache.thrift.protocol.TProtocolFactory protocolFactory, org.apache.thrift.transport.TNonblockingTransport transport) throws org.apache.thrift.TException {
+        super(client, protocolFactory, transport, resultHandler, false);
+        this.partitionId = partitionId;
+      }
+
+      public void write_args(org.apache.thrift.protocol.TProtocol prot) throws org.apache.thrift.TException {
+        prot.writeMessageBegin(new org.apache.thrift.protocol.TMessage("replicate", org.apache.thrift.protocol.TMessageType.CALL, 0));
+        replicate_args args = new replicate_args();
+        args.setPartitionId(partitionId);
+        args.write(prot);
+        prot.writeMessageEnd();
+      }
+
+      public void getResult() throws ReplicationException, org.apache.thrift.TException {
+        if (getState() != org.apache.thrift.async.TAsyncMethodCall.State.RESPONSE_READ) {
+          throw new IllegalStateException("Method call not finished!");
+        }
+        org.apache.thrift.transport.TMemoryInputTransport memoryTransport = new org.apache.thrift.transport.TMemoryInputTransport(getFrameBuffer().array());
+        org.apache.thrift.protocol.TProtocol prot = client.getProtocolFactory().getProtocol(memoryTransport);
+        (new Client(prot)).recv_replicate();
+      }
+    }
+
+    public void partitionStatus(int partitionId, org.apache.thrift.async.AsyncMethodCallback<partitionStatus_call> resultHandler) throws org.apache.thrift.TException {
+      checkReady();
+      partitionStatus_call method_call = new partitionStatus_call(partitionId, resultHandler, this, ___protocolFactory, ___transport);
+      this.___currentMethod = method_call;
+      ___manager.call(method_call);
+    }
+
+    public static class partitionStatus_call extends org.apache.thrift.async.TAsyncMethodCall {
+      private int partitionId;
+      public partitionStatus_call(int partitionId, org.apache.thrift.async.AsyncMethodCallback<partitionStatus_call> resultHandler, org.apache.thrift.async.TAsyncClient client, org.apache.thrift.protocol.TProtocolFactory protocolFactory, org.apache.thrift.transport.TNonblockingTransport transport) throws org.apache.thrift.TException {
+        super(client, protocolFactory, transport, resultHandler, false);
+        this.partitionId = partitionId;
+      }
+
+      public void write_args(org.apache.thrift.protocol.TProtocol prot) throws org.apache.thrift.TException {
+        prot.writeMessageBegin(new org.apache.thrift.protocol.TMessage("partitionStatus", org.apache.thrift.protocol.TMessageType.CALL, 0));
+        partitionStatus_args args = new partitionStatus_args();
+        args.setPartitionId(partitionId);
+        args.write(prot);
+        prot.writeMessageEnd();
+      }
+
+      public PartitionStatus getResult() throws NonExistentPartitionException, org.apache.thrift.TException {
+        if (getState() != org.apache.thrift.async.TAsyncMethodCall.State.RESPONSE_READ) {
+          throw new IllegalStateException("Method call not finished!");
+        }
+        org.apache.thrift.transport.TMemoryInputTransport memoryTransport = new org.apache.thrift.transport.TMemoryInputTransport(getFrameBuffer().array());
+        org.apache.thrift.protocol.TProtocol prot = client.getProtocolFactory().getProtocol(memoryTransport);
+        return (new Client(prot)).recv_partitionStatus();
+      }
+    }
+
+    public void listPartitionFiles(int partitionId, org.apache.thrift.async.AsyncMethodCallback<listPartitionFiles_call> resultHandler) throws org.apache.thrift.TException {
+      checkReady();
+      listPartitionFiles_call method_call = new listPartitionFiles_call(partitionId, resultHandler, this, ___protocolFactory, ___transport);
+      this.___currentMethod = method_call;
+      ___manager.call(method_call);
+    }
+
+    public static class listPartitionFiles_call extends org.apache.thrift.async.TAsyncMethodCall {
+      private int partitionId;
+      public listPartitionFiles_call(int partitionId, org.apache.thrift.async.AsyncMethodCallback<listPartitionFiles_call> resultHandler, org.apache.thrift.async.TAsyncClient client, org.apache.thrift.protocol.TProtocolFactory protocolFactory, org.apache.thrift.transport.TNonblockingTransport transport) throws org.apache.thrift.TException {
+        super(client, protocolFactory, transport, resultHandler, false);
+        this.partitionId = partitionId;
+      }
+
+      public void write_args(org.apache.thrift.protocol.TProtocol prot) throws org.apache.thrift.TException {
+        prot.writeMessageBegin(new org.apache.thrift.protocol.TMessage("listPartitionFiles", org.apache.thrift.protocol.TMessageType.CALL, 0));
+        listPartitionFiles_args args = new listPartitionFiles_args();
+        args.setPartitionId(partitionId);
+        args.write(prot);
+        prot.writeMessageEnd();
+      }
+
+      public List<String> getResult() throws NonExistentPartitionException, org.apache.thrift.TException {
+        if (getState() != org.apache.thrift.async.TAsyncMethodCall.State.RESPONSE_READ) {
+          throw new IllegalStateException("Method call not finished!");
+        }
+        org.apache.thrift.transport.TMemoryInputTransport memoryTransport = new org.apache.thrift.transport.TMemoryInputTransport(getFrameBuffer().array());
+        org.apache.thrift.protocol.TProtocol prot = client.getProtocolFactory().getProtocol(memoryTransport);
+        return (new Client(prot)).recv_listPartitionFiles();
+      }
+    }
+
   }
 
   public static class Processor<I extends Iface> extends org.apache.thrift.TBaseProcessor<I> implements org.apache.thrift.TProcessor {
@@ -474,6 +657,9 @@ public class IndexNode {
       processMap.put("createPartition", new createPartition());
       processMap.put("removePartition", new removePartition());
       processMap.put("containsPartition", new containsPartition());
+      processMap.put("replicate", new replicate());
+      processMap.put("partitionStatus", new partitionStatus());
+      processMap.put("listPartitionFiles", new listPartitionFiles());
       return processMap;
     }
 
@@ -612,6 +798,78 @@ public class IndexNode {
         containsPartition_result result = new containsPartition_result();
         result.success = iface.containsPartition(args.partitionId);
         result.setSuccessIsSet(true);
+        return result;
+      }
+    }
+
+    public static class replicate<I extends Iface> extends org.apache.thrift.ProcessFunction<I, replicate_args> {
+      public replicate() {
+        super("replicate");
+      }
+
+      public replicate_args getEmptyArgsInstance() {
+        return new replicate_args();
+      }
+
+      protected boolean isOneway() {
+        return false;
+      }
+
+      public replicate_result getResult(I iface, replicate_args args) throws org.apache.thrift.TException {
+        replicate_result result = new replicate_result();
+        try {
+          iface.replicate(args.partitionId);
+        } catch (ReplicationException repex) {
+          result.repex = repex;
+        }
+        return result;
+      }
+    }
+
+    public static class partitionStatus<I extends Iface> extends org.apache.thrift.ProcessFunction<I, partitionStatus_args> {
+      public partitionStatus() {
+        super("partitionStatus");
+      }
+
+      public partitionStatus_args getEmptyArgsInstance() {
+        return new partitionStatus_args();
+      }
+
+      protected boolean isOneway() {
+        return false;
+      }
+
+      public partitionStatus_result getResult(I iface, partitionStatus_args args) throws org.apache.thrift.TException {
+        partitionStatus_result result = new partitionStatus_result();
+        try {
+          result.success = iface.partitionStatus(args.partitionId);
+        } catch (NonExistentPartitionException e) {
+          result.e = e;
+        }
+        return result;
+      }
+    }
+
+    public static class listPartitionFiles<I extends Iface> extends org.apache.thrift.ProcessFunction<I, listPartitionFiles_args> {
+      public listPartitionFiles() {
+        super("listPartitionFiles");
+      }
+
+      public listPartitionFiles_args getEmptyArgsInstance() {
+        return new listPartitionFiles_args();
+      }
+
+      protected boolean isOneway() {
+        return false;
+      }
+
+      public listPartitionFiles_result getResult(I iface, listPartitionFiles_args args) throws org.apache.thrift.TException {
+        listPartitionFiles_result result = new listPartitionFiles_result();
+        try {
+          result.success = iface.listPartitionFiles(args.partitionId);
+        } catch (NonExistentPartitionException e) {
+          result.e = e;
+        }
         return result;
       }
     }
@@ -2913,14 +3171,14 @@ public class IndexNode {
             case 2: // DOCUMENTS
               if (schemeField.type == org.apache.thrift.protocol.TType.LIST) {
                 {
-                  org.apache.thrift.protocol.TList _list18 = iprot.readListBegin();
-                  struct.documents = new ArrayList<Document>(_list18.size);
-                  for (int _i19 = 0; _i19 < _list18.size; ++_i19)
+                  org.apache.thrift.protocol.TList _list74 = iprot.readListBegin();
+                  struct.documents = new ArrayList<Document>(_list74.size);
+                  for (int _i75 = 0; _i75 < _list74.size; ++_i75)
                   {
-                    Document _elem20; // required
-                    _elem20 = new Document();
-                    _elem20.read(iprot);
-                    struct.documents.add(_elem20);
+                    Document _elem76; // required
+                    _elem76 = new Document();
+                    _elem76.read(iprot);
+                    struct.documents.add(_elem76);
                   }
                   iprot.readListEnd();
                 }
@@ -2951,9 +3209,9 @@ public class IndexNode {
           oprot.writeFieldBegin(DOCUMENTS_FIELD_DESC);
           {
             oprot.writeListBegin(new org.apache.thrift.protocol.TList(org.apache.thrift.protocol.TType.STRUCT, struct.documents.size()));
-            for (Document _iter21 : struct.documents)
+            for (Document _iter77 : struct.documents)
             {
-              _iter21.write(oprot);
+              _iter77.write(oprot);
             }
             oprot.writeListEnd();
           }
@@ -2990,9 +3248,9 @@ public class IndexNode {
         if (struct.isSetDocuments()) {
           {
             oprot.writeI32(struct.documents.size());
-            for (Document _iter22 : struct.documents)
+            for (Document _iter78 : struct.documents)
             {
-              _iter22.write(oprot);
+              _iter78.write(oprot);
             }
           }
         }
@@ -3008,14 +3266,14 @@ public class IndexNode {
         }
         if (incoming.get(1)) {
           {
-            org.apache.thrift.protocol.TList _list23 = new org.apache.thrift.protocol.TList(org.apache.thrift.protocol.TType.STRUCT, iprot.readI32());
-            struct.documents = new ArrayList<Document>(_list23.size);
-            for (int _i24 = 0; _i24 < _list23.size; ++_i24)
+            org.apache.thrift.protocol.TList _list79 = new org.apache.thrift.protocol.TList(org.apache.thrift.protocol.TType.STRUCT, iprot.readI32());
+            struct.documents = new ArrayList<Document>(_list79.size);
+            for (int _i80 = 0; _i80 < _list79.size; ++_i80)
             {
-              Document _elem25; // required
-              _elem25 = new Document();
-              _elem25.read(iprot);
-              struct.documents.add(_elem25);
+              Document _elem81; // required
+              _elem81 = new Document();
+              _elem81.read(iprot);
+              struct.documents.add(_elem81);
             }
           }
           struct.setDocumentsIsSet(true);
@@ -5497,6 +5755,2387 @@ public class IndexNode {
         if (incoming.get(0)) {
           struct.success = iprot.readBool();
           struct.setSuccessIsSet(true);
+        }
+      }
+    }
+
+  }
+
+  public static class replicate_args implements org.apache.thrift.TBase<replicate_args, replicate_args._Fields>, java.io.Serializable, Cloneable   {
+    private static final org.apache.thrift.protocol.TStruct STRUCT_DESC = new org.apache.thrift.protocol.TStruct("replicate_args");
+
+    private static final org.apache.thrift.protocol.TField PARTITION_ID_FIELD_DESC = new org.apache.thrift.protocol.TField("partitionId", org.apache.thrift.protocol.TType.I32, (short)1);
+
+    private static final Map<Class<? extends IScheme>, SchemeFactory> schemes = new HashMap<Class<? extends IScheme>, SchemeFactory>();
+    static {
+      schemes.put(StandardScheme.class, new replicate_argsStandardSchemeFactory());
+      schemes.put(TupleScheme.class, new replicate_argsTupleSchemeFactory());
+    }
+
+    public int partitionId; // required
+
+    /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
+    public enum _Fields implements org.apache.thrift.TFieldIdEnum {
+      PARTITION_ID((short)1, "partitionId");
+
+      private static final Map<String, _Fields> byName = new HashMap<String, _Fields>();
+
+      static {
+        for (_Fields field : EnumSet.allOf(_Fields.class)) {
+          byName.put(field.getFieldName(), field);
+        }
+      }
+
+      /**
+       * Find the _Fields constant that matches fieldId, or null if its not found.
+       */
+      public static _Fields findByThriftId(int fieldId) {
+        switch(fieldId) {
+          case 1: // PARTITION_ID
+            return PARTITION_ID;
+          default:
+            return null;
+        }
+      }
+
+      /**
+       * Find the _Fields constant that matches fieldId, throwing an exception
+       * if it is not found.
+       */
+      public static _Fields findByThriftIdOrThrow(int fieldId) {
+        _Fields fields = findByThriftId(fieldId);
+        if (fields == null) throw new IllegalArgumentException("Field " + fieldId + " doesn't exist!");
+        return fields;
+      }
+
+      /**
+       * Find the _Fields constant that matches name, or null if its not found.
+       */
+      public static _Fields findByName(String name) {
+        return byName.get(name);
+      }
+
+      private final short _thriftId;
+      private final String _fieldName;
+
+      _Fields(short thriftId, String fieldName) {
+        _thriftId = thriftId;
+        _fieldName = fieldName;
+      }
+
+      public short getThriftFieldId() {
+        return _thriftId;
+      }
+
+      public String getFieldName() {
+        return _fieldName;
+      }
+    }
+
+    // isset id assignments
+    private static final int __PARTITIONID_ISSET_ID = 0;
+    private byte __isset_bitfield = 0;
+    public static final Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> metaDataMap;
+    static {
+      Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift.meta_data.FieldMetaData>(_Fields.class);
+      tmpMap.put(_Fields.PARTITION_ID, new org.apache.thrift.meta_data.FieldMetaData("partitionId", org.apache.thrift.TFieldRequirementType.DEFAULT, 
+          new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.I32)));
+      metaDataMap = Collections.unmodifiableMap(tmpMap);
+      org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(replicate_args.class, metaDataMap);
+    }
+
+    public replicate_args() {
+    }
+
+    public replicate_args(
+      int partitionId)
+    {
+      this();
+      this.partitionId = partitionId;
+      setPartitionIdIsSet(true);
+    }
+
+    /**
+     * Performs a deep copy on <i>other</i>.
+     */
+    public replicate_args(replicate_args other) {
+      __isset_bitfield = other.__isset_bitfield;
+      this.partitionId = other.partitionId;
+    }
+
+    public replicate_args deepCopy() {
+      return new replicate_args(this);
+    }
+
+    @Override
+    public void clear() {
+      setPartitionIdIsSet(false);
+      this.partitionId = 0;
+    }
+
+    public int getPartitionId() {
+      return this.partitionId;
+    }
+
+    public replicate_args setPartitionId(int partitionId) {
+      this.partitionId = partitionId;
+      setPartitionIdIsSet(true);
+      return this;
+    }
+
+    public void unsetPartitionId() {
+      __isset_bitfield = EncodingUtils.clearBit(__isset_bitfield, __PARTITIONID_ISSET_ID);
+    }
+
+    /** Returns true if field partitionId is set (has been assigned a value) and false otherwise */
+    public boolean isSetPartitionId() {
+      return EncodingUtils.testBit(__isset_bitfield, __PARTITIONID_ISSET_ID);
+    }
+
+    public void setPartitionIdIsSet(boolean value) {
+      __isset_bitfield = EncodingUtils.setBit(__isset_bitfield, __PARTITIONID_ISSET_ID, value);
+    }
+
+    public void setFieldValue(_Fields field, Object value) {
+      switch (field) {
+      case PARTITION_ID:
+        if (value == null) {
+          unsetPartitionId();
+        } else {
+          setPartitionId((Integer)value);
+        }
+        break;
+
+      }
+    }
+
+    public Object getFieldValue(_Fields field) {
+      switch (field) {
+      case PARTITION_ID:
+        return Integer.valueOf(getPartitionId());
+
+      }
+      throw new IllegalStateException();
+    }
+
+    /** Returns true if field corresponding to fieldID is set (has been assigned a value) and false otherwise */
+    public boolean isSet(_Fields field) {
+      if (field == null) {
+        throw new IllegalArgumentException();
+      }
+
+      switch (field) {
+      case PARTITION_ID:
+        return isSetPartitionId();
+      }
+      throw new IllegalStateException();
+    }
+
+    @Override
+    public boolean equals(Object that) {
+      if (that == null)
+        return false;
+      if (that instanceof replicate_args)
+        return this.equals((replicate_args)that);
+      return false;
+    }
+
+    public boolean equals(replicate_args that) {
+      if (that == null)
+        return false;
+
+      boolean this_present_partitionId = true;
+      boolean that_present_partitionId = true;
+      if (this_present_partitionId || that_present_partitionId) {
+        if (!(this_present_partitionId && that_present_partitionId))
+          return false;
+        if (this.partitionId != that.partitionId)
+          return false;
+      }
+
+      return true;
+    }
+
+    @Override
+    public int hashCode() {
+      return 0;
+    }
+
+    public int compareTo(replicate_args other) {
+      if (!getClass().equals(other.getClass())) {
+        return getClass().getName().compareTo(other.getClass().getName());
+      }
+
+      int lastComparison = 0;
+      replicate_args typedOther = (replicate_args)other;
+
+      lastComparison = Boolean.valueOf(isSetPartitionId()).compareTo(typedOther.isSetPartitionId());
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+      if (isSetPartitionId()) {
+        lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.partitionId, typedOther.partitionId);
+        if (lastComparison != 0) {
+          return lastComparison;
+        }
+      }
+      return 0;
+    }
+
+    public _Fields fieldForId(int fieldId) {
+      return _Fields.findByThriftId(fieldId);
+    }
+
+    public void read(org.apache.thrift.protocol.TProtocol iprot) throws org.apache.thrift.TException {
+      schemes.get(iprot.getScheme()).getScheme().read(iprot, this);
+    }
+
+    public void write(org.apache.thrift.protocol.TProtocol oprot) throws org.apache.thrift.TException {
+      schemes.get(oprot.getScheme()).getScheme().write(oprot, this);
+    }
+
+    @Override
+    public String toString() {
+      StringBuilder sb = new StringBuilder("replicate_args(");
+      boolean first = true;
+
+      sb.append("partitionId:");
+      sb.append(this.partitionId);
+      first = false;
+      sb.append(")");
+      return sb.toString();
+    }
+
+    public void validate() throws org.apache.thrift.TException {
+      // check for required fields
+      // check for sub-struct validity
+    }
+
+    private void writeObject(java.io.ObjectOutputStream out) throws java.io.IOException {
+      try {
+        write(new org.apache.thrift.protocol.TCompactProtocol(new org.apache.thrift.transport.TIOStreamTransport(out)));
+      } catch (org.apache.thrift.TException te) {
+        throw new java.io.IOException(te);
+      }
+    }
+
+    private void readObject(java.io.ObjectInputStream in) throws java.io.IOException, ClassNotFoundException {
+      try {
+        // it doesn't seem like you should have to do this, but java serialization is wacky, and doesn't call the default constructor.
+        __isset_bitfield = 0;
+        read(new org.apache.thrift.protocol.TCompactProtocol(new org.apache.thrift.transport.TIOStreamTransport(in)));
+      } catch (org.apache.thrift.TException te) {
+        throw new java.io.IOException(te);
+      }
+    }
+
+    private static class replicate_argsStandardSchemeFactory implements SchemeFactory {
+      public replicate_argsStandardScheme getScheme() {
+        return new replicate_argsStandardScheme();
+      }
+    }
+
+    private static class replicate_argsStandardScheme extends StandardScheme<replicate_args> {
+
+      public void read(org.apache.thrift.protocol.TProtocol iprot, replicate_args struct) throws org.apache.thrift.TException {
+        org.apache.thrift.protocol.TField schemeField;
+        iprot.readStructBegin();
+        while (true)
+        {
+          schemeField = iprot.readFieldBegin();
+          if (schemeField.type == org.apache.thrift.protocol.TType.STOP) { 
+            break;
+          }
+          switch (schemeField.id) {
+            case 1: // PARTITION_ID
+              if (schemeField.type == org.apache.thrift.protocol.TType.I32) {
+                struct.partitionId = iprot.readI32();
+                struct.setPartitionIdIsSet(true);
+              } else { 
+                org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
+              }
+              break;
+            default:
+              org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
+          }
+          iprot.readFieldEnd();
+        }
+        iprot.readStructEnd();
+
+        // check for required fields of primitive type, which can't be checked in the validate method
+        struct.validate();
+      }
+
+      public void write(org.apache.thrift.protocol.TProtocol oprot, replicate_args struct) throws org.apache.thrift.TException {
+        struct.validate();
+
+        oprot.writeStructBegin(STRUCT_DESC);
+        oprot.writeFieldBegin(PARTITION_ID_FIELD_DESC);
+        oprot.writeI32(struct.partitionId);
+        oprot.writeFieldEnd();
+        oprot.writeFieldStop();
+        oprot.writeStructEnd();
+      }
+
+    }
+
+    private static class replicate_argsTupleSchemeFactory implements SchemeFactory {
+      public replicate_argsTupleScheme getScheme() {
+        return new replicate_argsTupleScheme();
+      }
+    }
+
+    private static class replicate_argsTupleScheme extends TupleScheme<replicate_args> {
+
+      @Override
+      public void write(org.apache.thrift.protocol.TProtocol prot, replicate_args struct) throws org.apache.thrift.TException {
+        TTupleProtocol oprot = (TTupleProtocol) prot;
+        BitSet optionals = new BitSet();
+        if (struct.isSetPartitionId()) {
+          optionals.set(0);
+        }
+        oprot.writeBitSet(optionals, 1);
+        if (struct.isSetPartitionId()) {
+          oprot.writeI32(struct.partitionId);
+        }
+      }
+
+      @Override
+      public void read(org.apache.thrift.protocol.TProtocol prot, replicate_args struct) throws org.apache.thrift.TException {
+        TTupleProtocol iprot = (TTupleProtocol) prot;
+        BitSet incoming = iprot.readBitSet(1);
+        if (incoming.get(0)) {
+          struct.partitionId = iprot.readI32();
+          struct.setPartitionIdIsSet(true);
+        }
+      }
+    }
+
+  }
+
+  public static class replicate_result implements org.apache.thrift.TBase<replicate_result, replicate_result._Fields>, java.io.Serializable, Cloneable   {
+    private static final org.apache.thrift.protocol.TStruct STRUCT_DESC = new org.apache.thrift.protocol.TStruct("replicate_result");
+
+    private static final org.apache.thrift.protocol.TField REPEX_FIELD_DESC = new org.apache.thrift.protocol.TField("repex", org.apache.thrift.protocol.TType.STRUCT, (short)1);
+
+    private static final Map<Class<? extends IScheme>, SchemeFactory> schemes = new HashMap<Class<? extends IScheme>, SchemeFactory>();
+    static {
+      schemes.put(StandardScheme.class, new replicate_resultStandardSchemeFactory());
+      schemes.put(TupleScheme.class, new replicate_resultTupleSchemeFactory());
+    }
+
+    public ReplicationException repex; // required
+
+    /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
+    public enum _Fields implements org.apache.thrift.TFieldIdEnum {
+      REPEX((short)1, "repex");
+
+      private static final Map<String, _Fields> byName = new HashMap<String, _Fields>();
+
+      static {
+        for (_Fields field : EnumSet.allOf(_Fields.class)) {
+          byName.put(field.getFieldName(), field);
+        }
+      }
+
+      /**
+       * Find the _Fields constant that matches fieldId, or null if its not found.
+       */
+      public static _Fields findByThriftId(int fieldId) {
+        switch(fieldId) {
+          case 1: // REPEX
+            return REPEX;
+          default:
+            return null;
+        }
+      }
+
+      /**
+       * Find the _Fields constant that matches fieldId, throwing an exception
+       * if it is not found.
+       */
+      public static _Fields findByThriftIdOrThrow(int fieldId) {
+        _Fields fields = findByThriftId(fieldId);
+        if (fields == null) throw new IllegalArgumentException("Field " + fieldId + " doesn't exist!");
+        return fields;
+      }
+
+      /**
+       * Find the _Fields constant that matches name, or null if its not found.
+       */
+      public static _Fields findByName(String name) {
+        return byName.get(name);
+      }
+
+      private final short _thriftId;
+      private final String _fieldName;
+
+      _Fields(short thriftId, String fieldName) {
+        _thriftId = thriftId;
+        _fieldName = fieldName;
+      }
+
+      public short getThriftFieldId() {
+        return _thriftId;
+      }
+
+      public String getFieldName() {
+        return _fieldName;
+      }
+    }
+
+    // isset id assignments
+    public static final Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> metaDataMap;
+    static {
+      Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift.meta_data.FieldMetaData>(_Fields.class);
+      tmpMap.put(_Fields.REPEX, new org.apache.thrift.meta_data.FieldMetaData("repex", org.apache.thrift.TFieldRequirementType.DEFAULT, 
+          new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.STRUCT)));
+      metaDataMap = Collections.unmodifiableMap(tmpMap);
+      org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(replicate_result.class, metaDataMap);
+    }
+
+    public replicate_result() {
+    }
+
+    public replicate_result(
+      ReplicationException repex)
+    {
+      this();
+      this.repex = repex;
+    }
+
+    /**
+     * Performs a deep copy on <i>other</i>.
+     */
+    public replicate_result(replicate_result other) {
+      if (other.isSetRepex()) {
+        this.repex = new ReplicationException(other.repex);
+      }
+    }
+
+    public replicate_result deepCopy() {
+      return new replicate_result(this);
+    }
+
+    @Override
+    public void clear() {
+      this.repex = null;
+    }
+
+    public ReplicationException getRepex() {
+      return this.repex;
+    }
+
+    public replicate_result setRepex(ReplicationException repex) {
+      this.repex = repex;
+      return this;
+    }
+
+    public void unsetRepex() {
+      this.repex = null;
+    }
+
+    /** Returns true if field repex is set (has been assigned a value) and false otherwise */
+    public boolean isSetRepex() {
+      return this.repex != null;
+    }
+
+    public void setRepexIsSet(boolean value) {
+      if (!value) {
+        this.repex = null;
+      }
+    }
+
+    public void setFieldValue(_Fields field, Object value) {
+      switch (field) {
+      case REPEX:
+        if (value == null) {
+          unsetRepex();
+        } else {
+          setRepex((ReplicationException)value);
+        }
+        break;
+
+      }
+    }
+
+    public Object getFieldValue(_Fields field) {
+      switch (field) {
+      case REPEX:
+        return getRepex();
+
+      }
+      throw new IllegalStateException();
+    }
+
+    /** Returns true if field corresponding to fieldID is set (has been assigned a value) and false otherwise */
+    public boolean isSet(_Fields field) {
+      if (field == null) {
+        throw new IllegalArgumentException();
+      }
+
+      switch (field) {
+      case REPEX:
+        return isSetRepex();
+      }
+      throw new IllegalStateException();
+    }
+
+    @Override
+    public boolean equals(Object that) {
+      if (that == null)
+        return false;
+      if (that instanceof replicate_result)
+        return this.equals((replicate_result)that);
+      return false;
+    }
+
+    public boolean equals(replicate_result that) {
+      if (that == null)
+        return false;
+
+      boolean this_present_repex = true && this.isSetRepex();
+      boolean that_present_repex = true && that.isSetRepex();
+      if (this_present_repex || that_present_repex) {
+        if (!(this_present_repex && that_present_repex))
+          return false;
+        if (!this.repex.equals(that.repex))
+          return false;
+      }
+
+      return true;
+    }
+
+    @Override
+    public int hashCode() {
+      return 0;
+    }
+
+    public int compareTo(replicate_result other) {
+      if (!getClass().equals(other.getClass())) {
+        return getClass().getName().compareTo(other.getClass().getName());
+      }
+
+      int lastComparison = 0;
+      replicate_result typedOther = (replicate_result)other;
+
+      lastComparison = Boolean.valueOf(isSetRepex()).compareTo(typedOther.isSetRepex());
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+      if (isSetRepex()) {
+        lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.repex, typedOther.repex);
+        if (lastComparison != 0) {
+          return lastComparison;
+        }
+      }
+      return 0;
+    }
+
+    public _Fields fieldForId(int fieldId) {
+      return _Fields.findByThriftId(fieldId);
+    }
+
+    public void read(org.apache.thrift.protocol.TProtocol iprot) throws org.apache.thrift.TException {
+      schemes.get(iprot.getScheme()).getScheme().read(iprot, this);
+    }
+
+    public void write(org.apache.thrift.protocol.TProtocol oprot) throws org.apache.thrift.TException {
+      schemes.get(oprot.getScheme()).getScheme().write(oprot, this);
+      }
+
+    @Override
+    public String toString() {
+      StringBuilder sb = new StringBuilder("replicate_result(");
+      boolean first = true;
+
+      sb.append("repex:");
+      if (this.repex == null) {
+        sb.append("null");
+      } else {
+        sb.append(this.repex);
+      }
+      first = false;
+      sb.append(")");
+      return sb.toString();
+    }
+
+    public void validate() throws org.apache.thrift.TException {
+      // check for required fields
+      // check for sub-struct validity
+    }
+
+    private void writeObject(java.io.ObjectOutputStream out) throws java.io.IOException {
+      try {
+        write(new org.apache.thrift.protocol.TCompactProtocol(new org.apache.thrift.transport.TIOStreamTransport(out)));
+      } catch (org.apache.thrift.TException te) {
+        throw new java.io.IOException(te);
+      }
+    }
+
+    private void readObject(java.io.ObjectInputStream in) throws java.io.IOException, ClassNotFoundException {
+      try {
+        read(new org.apache.thrift.protocol.TCompactProtocol(new org.apache.thrift.transport.TIOStreamTransport(in)));
+      } catch (org.apache.thrift.TException te) {
+        throw new java.io.IOException(te);
+      }
+    }
+
+    private static class replicate_resultStandardSchemeFactory implements SchemeFactory {
+      public replicate_resultStandardScheme getScheme() {
+        return new replicate_resultStandardScheme();
+      }
+    }
+
+    private static class replicate_resultStandardScheme extends StandardScheme<replicate_result> {
+
+      public void read(org.apache.thrift.protocol.TProtocol iprot, replicate_result struct) throws org.apache.thrift.TException {
+        org.apache.thrift.protocol.TField schemeField;
+        iprot.readStructBegin();
+        while (true)
+        {
+          schemeField = iprot.readFieldBegin();
+          if (schemeField.type == org.apache.thrift.protocol.TType.STOP) { 
+            break;
+          }
+          switch (schemeField.id) {
+            case 1: // REPEX
+              if (schemeField.type == org.apache.thrift.protocol.TType.STRUCT) {
+                struct.repex = new ReplicationException();
+                struct.repex.read(iprot);
+                struct.setRepexIsSet(true);
+              } else { 
+                org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
+              }
+              break;
+            default:
+              org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
+          }
+          iprot.readFieldEnd();
+        }
+        iprot.readStructEnd();
+
+        // check for required fields of primitive type, which can't be checked in the validate method
+        struct.validate();
+      }
+
+      public void write(org.apache.thrift.protocol.TProtocol oprot, replicate_result struct) throws org.apache.thrift.TException {
+        struct.validate();
+
+        oprot.writeStructBegin(STRUCT_DESC);
+        if (struct.repex != null) {
+          oprot.writeFieldBegin(REPEX_FIELD_DESC);
+          struct.repex.write(oprot);
+          oprot.writeFieldEnd();
+        }
+        oprot.writeFieldStop();
+        oprot.writeStructEnd();
+      }
+
+    }
+
+    private static class replicate_resultTupleSchemeFactory implements SchemeFactory {
+      public replicate_resultTupleScheme getScheme() {
+        return new replicate_resultTupleScheme();
+      }
+    }
+
+    private static class replicate_resultTupleScheme extends TupleScheme<replicate_result> {
+
+      @Override
+      public void write(org.apache.thrift.protocol.TProtocol prot, replicate_result struct) throws org.apache.thrift.TException {
+        TTupleProtocol oprot = (TTupleProtocol) prot;
+        BitSet optionals = new BitSet();
+        if (struct.isSetRepex()) {
+          optionals.set(0);
+        }
+        oprot.writeBitSet(optionals, 1);
+        if (struct.isSetRepex()) {
+          struct.repex.write(oprot);
+        }
+      }
+
+      @Override
+      public void read(org.apache.thrift.protocol.TProtocol prot, replicate_result struct) throws org.apache.thrift.TException {
+        TTupleProtocol iprot = (TTupleProtocol) prot;
+        BitSet incoming = iprot.readBitSet(1);
+        if (incoming.get(0)) {
+          struct.repex = new ReplicationException();
+          struct.repex.read(iprot);
+          struct.setRepexIsSet(true);
+        }
+      }
+    }
+
+  }
+
+  public static class partitionStatus_args implements org.apache.thrift.TBase<partitionStatus_args, partitionStatus_args._Fields>, java.io.Serializable, Cloneable   {
+    private static final org.apache.thrift.protocol.TStruct STRUCT_DESC = new org.apache.thrift.protocol.TStruct("partitionStatus_args");
+
+    private static final org.apache.thrift.protocol.TField PARTITION_ID_FIELD_DESC = new org.apache.thrift.protocol.TField("partitionId", org.apache.thrift.protocol.TType.I32, (short)1);
+
+    private static final Map<Class<? extends IScheme>, SchemeFactory> schemes = new HashMap<Class<? extends IScheme>, SchemeFactory>();
+    static {
+      schemes.put(StandardScheme.class, new partitionStatus_argsStandardSchemeFactory());
+      schemes.put(TupleScheme.class, new partitionStatus_argsTupleSchemeFactory());
+    }
+
+    public int partitionId; // required
+
+    /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
+    public enum _Fields implements org.apache.thrift.TFieldIdEnum {
+      PARTITION_ID((short)1, "partitionId");
+
+      private static final Map<String, _Fields> byName = new HashMap<String, _Fields>();
+
+      static {
+        for (_Fields field : EnumSet.allOf(_Fields.class)) {
+          byName.put(field.getFieldName(), field);
+        }
+      }
+
+      /**
+       * Find the _Fields constant that matches fieldId, or null if its not found.
+       */
+      public static _Fields findByThriftId(int fieldId) {
+        switch(fieldId) {
+          case 1: // PARTITION_ID
+            return PARTITION_ID;
+          default:
+            return null;
+        }
+      }
+
+      /**
+       * Find the _Fields constant that matches fieldId, throwing an exception
+       * if it is not found.
+       */
+      public static _Fields findByThriftIdOrThrow(int fieldId) {
+        _Fields fields = findByThriftId(fieldId);
+        if (fields == null) throw new IllegalArgumentException("Field " + fieldId + " doesn't exist!");
+        return fields;
+      }
+
+      /**
+       * Find the _Fields constant that matches name, or null if its not found.
+       */
+      public static _Fields findByName(String name) {
+        return byName.get(name);
+      }
+
+      private final short _thriftId;
+      private final String _fieldName;
+
+      _Fields(short thriftId, String fieldName) {
+        _thriftId = thriftId;
+        _fieldName = fieldName;
+      }
+
+      public short getThriftFieldId() {
+        return _thriftId;
+      }
+
+      public String getFieldName() {
+        return _fieldName;
+      }
+    }
+
+    // isset id assignments
+    private static final int __PARTITIONID_ISSET_ID = 0;
+    private byte __isset_bitfield = 0;
+    public static final Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> metaDataMap;
+    static {
+      Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift.meta_data.FieldMetaData>(_Fields.class);
+      tmpMap.put(_Fields.PARTITION_ID, new org.apache.thrift.meta_data.FieldMetaData("partitionId", org.apache.thrift.TFieldRequirementType.DEFAULT, 
+          new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.I32)));
+      metaDataMap = Collections.unmodifiableMap(tmpMap);
+      org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(partitionStatus_args.class, metaDataMap);
+    }
+
+    public partitionStatus_args() {
+    }
+
+    public partitionStatus_args(
+      int partitionId)
+    {
+      this();
+      this.partitionId = partitionId;
+      setPartitionIdIsSet(true);
+    }
+
+    /**
+     * Performs a deep copy on <i>other</i>.
+     */
+    public partitionStatus_args(partitionStatus_args other) {
+      __isset_bitfield = other.__isset_bitfield;
+      this.partitionId = other.partitionId;
+    }
+
+    public partitionStatus_args deepCopy() {
+      return new partitionStatus_args(this);
+    }
+
+    @Override
+    public void clear() {
+      setPartitionIdIsSet(false);
+      this.partitionId = 0;
+    }
+
+    public int getPartitionId() {
+      return this.partitionId;
+    }
+
+    public partitionStatus_args setPartitionId(int partitionId) {
+      this.partitionId = partitionId;
+      setPartitionIdIsSet(true);
+      return this;
+    }
+
+    public void unsetPartitionId() {
+      __isset_bitfield = EncodingUtils.clearBit(__isset_bitfield, __PARTITIONID_ISSET_ID);
+    }
+
+    /** Returns true if field partitionId is set (has been assigned a value) and false otherwise */
+    public boolean isSetPartitionId() {
+      return EncodingUtils.testBit(__isset_bitfield, __PARTITIONID_ISSET_ID);
+    }
+
+    public void setPartitionIdIsSet(boolean value) {
+      __isset_bitfield = EncodingUtils.setBit(__isset_bitfield, __PARTITIONID_ISSET_ID, value);
+    }
+
+    public void setFieldValue(_Fields field, Object value) {
+      switch (field) {
+      case PARTITION_ID:
+        if (value == null) {
+          unsetPartitionId();
+        } else {
+          setPartitionId((Integer)value);
+        }
+        break;
+
+      }
+    }
+
+    public Object getFieldValue(_Fields field) {
+      switch (field) {
+      case PARTITION_ID:
+        return Integer.valueOf(getPartitionId());
+
+      }
+      throw new IllegalStateException();
+    }
+
+    /** Returns true if field corresponding to fieldID is set (has been assigned a value) and false otherwise */
+    public boolean isSet(_Fields field) {
+      if (field == null) {
+        throw new IllegalArgumentException();
+      }
+
+      switch (field) {
+      case PARTITION_ID:
+        return isSetPartitionId();
+      }
+      throw new IllegalStateException();
+    }
+
+    @Override
+    public boolean equals(Object that) {
+      if (that == null)
+        return false;
+      if (that instanceof partitionStatus_args)
+        return this.equals((partitionStatus_args)that);
+      return false;
+    }
+
+    public boolean equals(partitionStatus_args that) {
+      if (that == null)
+        return false;
+
+      boolean this_present_partitionId = true;
+      boolean that_present_partitionId = true;
+      if (this_present_partitionId || that_present_partitionId) {
+        if (!(this_present_partitionId && that_present_partitionId))
+          return false;
+        if (this.partitionId != that.partitionId)
+          return false;
+      }
+
+      return true;
+    }
+
+    @Override
+    public int hashCode() {
+      return 0;
+    }
+
+    public int compareTo(partitionStatus_args other) {
+      if (!getClass().equals(other.getClass())) {
+        return getClass().getName().compareTo(other.getClass().getName());
+      }
+
+      int lastComparison = 0;
+      partitionStatus_args typedOther = (partitionStatus_args)other;
+
+      lastComparison = Boolean.valueOf(isSetPartitionId()).compareTo(typedOther.isSetPartitionId());
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+      if (isSetPartitionId()) {
+        lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.partitionId, typedOther.partitionId);
+        if (lastComparison != 0) {
+          return lastComparison;
+        }
+      }
+      return 0;
+    }
+
+    public _Fields fieldForId(int fieldId) {
+      return _Fields.findByThriftId(fieldId);
+    }
+
+    public void read(org.apache.thrift.protocol.TProtocol iprot) throws org.apache.thrift.TException {
+      schemes.get(iprot.getScheme()).getScheme().read(iprot, this);
+    }
+
+    public void write(org.apache.thrift.protocol.TProtocol oprot) throws org.apache.thrift.TException {
+      schemes.get(oprot.getScheme()).getScheme().write(oprot, this);
+    }
+
+    @Override
+    public String toString() {
+      StringBuilder sb = new StringBuilder("partitionStatus_args(");
+      boolean first = true;
+
+      sb.append("partitionId:");
+      sb.append(this.partitionId);
+      first = false;
+      sb.append(")");
+      return sb.toString();
+    }
+
+    public void validate() throws org.apache.thrift.TException {
+      // check for required fields
+      // check for sub-struct validity
+    }
+
+    private void writeObject(java.io.ObjectOutputStream out) throws java.io.IOException {
+      try {
+        write(new org.apache.thrift.protocol.TCompactProtocol(new org.apache.thrift.transport.TIOStreamTransport(out)));
+      } catch (org.apache.thrift.TException te) {
+        throw new java.io.IOException(te);
+      }
+    }
+
+    private void readObject(java.io.ObjectInputStream in) throws java.io.IOException, ClassNotFoundException {
+      try {
+        // it doesn't seem like you should have to do this, but java serialization is wacky, and doesn't call the default constructor.
+        __isset_bitfield = 0;
+        read(new org.apache.thrift.protocol.TCompactProtocol(new org.apache.thrift.transport.TIOStreamTransport(in)));
+      } catch (org.apache.thrift.TException te) {
+        throw new java.io.IOException(te);
+      }
+    }
+
+    private static class partitionStatus_argsStandardSchemeFactory implements SchemeFactory {
+      public partitionStatus_argsStandardScheme getScheme() {
+        return new partitionStatus_argsStandardScheme();
+      }
+    }
+
+    private static class partitionStatus_argsStandardScheme extends StandardScheme<partitionStatus_args> {
+
+      public void read(org.apache.thrift.protocol.TProtocol iprot, partitionStatus_args struct) throws org.apache.thrift.TException {
+        org.apache.thrift.protocol.TField schemeField;
+        iprot.readStructBegin();
+        while (true)
+        {
+          schemeField = iprot.readFieldBegin();
+          if (schemeField.type == org.apache.thrift.protocol.TType.STOP) { 
+            break;
+          }
+          switch (schemeField.id) {
+            case 1: // PARTITION_ID
+              if (schemeField.type == org.apache.thrift.protocol.TType.I32) {
+                struct.partitionId = iprot.readI32();
+                struct.setPartitionIdIsSet(true);
+              } else { 
+                org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
+              }
+              break;
+            default:
+              org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
+          }
+          iprot.readFieldEnd();
+        }
+        iprot.readStructEnd();
+
+        // check for required fields of primitive type, which can't be checked in the validate method
+        struct.validate();
+      }
+
+      public void write(org.apache.thrift.protocol.TProtocol oprot, partitionStatus_args struct) throws org.apache.thrift.TException {
+        struct.validate();
+
+        oprot.writeStructBegin(STRUCT_DESC);
+        oprot.writeFieldBegin(PARTITION_ID_FIELD_DESC);
+        oprot.writeI32(struct.partitionId);
+        oprot.writeFieldEnd();
+        oprot.writeFieldStop();
+        oprot.writeStructEnd();
+      }
+
+    }
+
+    private static class partitionStatus_argsTupleSchemeFactory implements SchemeFactory {
+      public partitionStatus_argsTupleScheme getScheme() {
+        return new partitionStatus_argsTupleScheme();
+      }
+    }
+
+    private static class partitionStatus_argsTupleScheme extends TupleScheme<partitionStatus_args> {
+
+      @Override
+      public void write(org.apache.thrift.protocol.TProtocol prot, partitionStatus_args struct) throws org.apache.thrift.TException {
+        TTupleProtocol oprot = (TTupleProtocol) prot;
+        BitSet optionals = new BitSet();
+        if (struct.isSetPartitionId()) {
+          optionals.set(0);
+        }
+        oprot.writeBitSet(optionals, 1);
+        if (struct.isSetPartitionId()) {
+          oprot.writeI32(struct.partitionId);
+        }
+      }
+
+      @Override
+      public void read(org.apache.thrift.protocol.TProtocol prot, partitionStatus_args struct) throws org.apache.thrift.TException {
+        TTupleProtocol iprot = (TTupleProtocol) prot;
+        BitSet incoming = iprot.readBitSet(1);
+        if (incoming.get(0)) {
+          struct.partitionId = iprot.readI32();
+          struct.setPartitionIdIsSet(true);
+        }
+      }
+    }
+
+  }
+
+  public static class partitionStatus_result implements org.apache.thrift.TBase<partitionStatus_result, partitionStatus_result._Fields>, java.io.Serializable, Cloneable   {
+    private static final org.apache.thrift.protocol.TStruct STRUCT_DESC = new org.apache.thrift.protocol.TStruct("partitionStatus_result");
+
+    private static final org.apache.thrift.protocol.TField SUCCESS_FIELD_DESC = new org.apache.thrift.protocol.TField("success", org.apache.thrift.protocol.TType.STRUCT, (short)0);
+    private static final org.apache.thrift.protocol.TField E_FIELD_DESC = new org.apache.thrift.protocol.TField("e", org.apache.thrift.protocol.TType.STRUCT, (short)1);
+
+    private static final Map<Class<? extends IScheme>, SchemeFactory> schemes = new HashMap<Class<? extends IScheme>, SchemeFactory>();
+    static {
+      schemes.put(StandardScheme.class, new partitionStatus_resultStandardSchemeFactory());
+      schemes.put(TupleScheme.class, new partitionStatus_resultTupleSchemeFactory());
+    }
+
+    public PartitionStatus success; // required
+    public NonExistentPartitionException e; // required
+
+    /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
+    public enum _Fields implements org.apache.thrift.TFieldIdEnum {
+      SUCCESS((short)0, "success"),
+      E((short)1, "e");
+
+      private static final Map<String, _Fields> byName = new HashMap<String, _Fields>();
+
+      static {
+        for (_Fields field : EnumSet.allOf(_Fields.class)) {
+          byName.put(field.getFieldName(), field);
+        }
+      }
+
+      /**
+       * Find the _Fields constant that matches fieldId, or null if its not found.
+       */
+      public static _Fields findByThriftId(int fieldId) {
+        switch(fieldId) {
+          case 0: // SUCCESS
+            return SUCCESS;
+          case 1: // E
+            return E;
+          default:
+            return null;
+        }
+      }
+
+      /**
+       * Find the _Fields constant that matches fieldId, throwing an exception
+       * if it is not found.
+       */
+      public static _Fields findByThriftIdOrThrow(int fieldId) {
+        _Fields fields = findByThriftId(fieldId);
+        if (fields == null) throw new IllegalArgumentException("Field " + fieldId + " doesn't exist!");
+        return fields;
+      }
+
+      /**
+       * Find the _Fields constant that matches name, or null if its not found.
+       */
+      public static _Fields findByName(String name) {
+        return byName.get(name);
+      }
+
+      private final short _thriftId;
+      private final String _fieldName;
+
+      _Fields(short thriftId, String fieldName) {
+        _thriftId = thriftId;
+        _fieldName = fieldName;
+      }
+
+      public short getThriftFieldId() {
+        return _thriftId;
+      }
+
+      public String getFieldName() {
+        return _fieldName;
+      }
+    }
+
+    // isset id assignments
+    public static final Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> metaDataMap;
+    static {
+      Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift.meta_data.FieldMetaData>(_Fields.class);
+      tmpMap.put(_Fields.SUCCESS, new org.apache.thrift.meta_data.FieldMetaData("success", org.apache.thrift.TFieldRequirementType.DEFAULT, 
+          new org.apache.thrift.meta_data.StructMetaData(org.apache.thrift.protocol.TType.STRUCT, PartitionStatus.class)));
+      tmpMap.put(_Fields.E, new org.apache.thrift.meta_data.FieldMetaData("e", org.apache.thrift.TFieldRequirementType.DEFAULT, 
+          new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.STRUCT)));
+      metaDataMap = Collections.unmodifiableMap(tmpMap);
+      org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(partitionStatus_result.class, metaDataMap);
+    }
+
+    public partitionStatus_result() {
+    }
+
+    public partitionStatus_result(
+      PartitionStatus success,
+      NonExistentPartitionException e)
+    {
+      this();
+      this.success = success;
+      this.e = e;
+    }
+
+    /**
+     * Performs a deep copy on <i>other</i>.
+     */
+    public partitionStatus_result(partitionStatus_result other) {
+      if (other.isSetSuccess()) {
+        this.success = new PartitionStatus(other.success);
+      }
+      if (other.isSetE()) {
+        this.e = new NonExistentPartitionException(other.e);
+      }
+    }
+
+    public partitionStatus_result deepCopy() {
+      return new partitionStatus_result(this);
+    }
+
+    @Override
+    public void clear() {
+      this.success = null;
+      this.e = null;
+    }
+
+    public PartitionStatus getSuccess() {
+      return this.success;
+    }
+
+    public partitionStatus_result setSuccess(PartitionStatus success) {
+      this.success = success;
+      return this;
+    }
+
+    public void unsetSuccess() {
+      this.success = null;
+    }
+
+    /** Returns true if field success is set (has been assigned a value) and false otherwise */
+    public boolean isSetSuccess() {
+      return this.success != null;
+    }
+
+    public void setSuccessIsSet(boolean value) {
+      if (!value) {
+        this.success = null;
+      }
+    }
+
+    public NonExistentPartitionException getE() {
+      return this.e;
+    }
+
+    public partitionStatus_result setE(NonExistentPartitionException e) {
+      this.e = e;
+      return this;
+    }
+
+    public void unsetE() {
+      this.e = null;
+    }
+
+    /** Returns true if field e is set (has been assigned a value) and false otherwise */
+    public boolean isSetE() {
+      return this.e != null;
+    }
+
+    public void setEIsSet(boolean value) {
+      if (!value) {
+        this.e = null;
+      }
+    }
+
+    public void setFieldValue(_Fields field, Object value) {
+      switch (field) {
+      case SUCCESS:
+        if (value == null) {
+          unsetSuccess();
+        } else {
+          setSuccess((PartitionStatus)value);
+        }
+        break;
+
+      case E:
+        if (value == null) {
+          unsetE();
+        } else {
+          setE((NonExistentPartitionException)value);
+        }
+        break;
+
+      }
+    }
+
+    public Object getFieldValue(_Fields field) {
+      switch (field) {
+      case SUCCESS:
+        return getSuccess();
+
+      case E:
+        return getE();
+
+      }
+      throw new IllegalStateException();
+    }
+
+    /** Returns true if field corresponding to fieldID is set (has been assigned a value) and false otherwise */
+    public boolean isSet(_Fields field) {
+      if (field == null) {
+        throw new IllegalArgumentException();
+      }
+
+      switch (field) {
+      case SUCCESS:
+        return isSetSuccess();
+      case E:
+        return isSetE();
+      }
+      throw new IllegalStateException();
+    }
+
+    @Override
+    public boolean equals(Object that) {
+      if (that == null)
+        return false;
+      if (that instanceof partitionStatus_result)
+        return this.equals((partitionStatus_result)that);
+      return false;
+    }
+
+    public boolean equals(partitionStatus_result that) {
+      if (that == null)
+        return false;
+
+      boolean this_present_success = true && this.isSetSuccess();
+      boolean that_present_success = true && that.isSetSuccess();
+      if (this_present_success || that_present_success) {
+        if (!(this_present_success && that_present_success))
+          return false;
+        if (!this.success.equals(that.success))
+          return false;
+      }
+
+      boolean this_present_e = true && this.isSetE();
+      boolean that_present_e = true && that.isSetE();
+      if (this_present_e || that_present_e) {
+        if (!(this_present_e && that_present_e))
+          return false;
+        if (!this.e.equals(that.e))
+          return false;
+      }
+
+      return true;
+    }
+
+    @Override
+    public int hashCode() {
+      return 0;
+    }
+
+    public int compareTo(partitionStatus_result other) {
+      if (!getClass().equals(other.getClass())) {
+        return getClass().getName().compareTo(other.getClass().getName());
+      }
+
+      int lastComparison = 0;
+      partitionStatus_result typedOther = (partitionStatus_result)other;
+
+      lastComparison = Boolean.valueOf(isSetSuccess()).compareTo(typedOther.isSetSuccess());
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+      if (isSetSuccess()) {
+        lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.success, typedOther.success);
+        if (lastComparison != 0) {
+          return lastComparison;
+        }
+      }
+      lastComparison = Boolean.valueOf(isSetE()).compareTo(typedOther.isSetE());
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+      if (isSetE()) {
+        lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.e, typedOther.e);
+        if (lastComparison != 0) {
+          return lastComparison;
+        }
+      }
+      return 0;
+    }
+
+    public _Fields fieldForId(int fieldId) {
+      return _Fields.findByThriftId(fieldId);
+    }
+
+    public void read(org.apache.thrift.protocol.TProtocol iprot) throws org.apache.thrift.TException {
+      schemes.get(iprot.getScheme()).getScheme().read(iprot, this);
+    }
+
+    public void write(org.apache.thrift.protocol.TProtocol oprot) throws org.apache.thrift.TException {
+      schemes.get(oprot.getScheme()).getScheme().write(oprot, this);
+      }
+
+    @Override
+    public String toString() {
+      StringBuilder sb = new StringBuilder("partitionStatus_result(");
+      boolean first = true;
+
+      sb.append("success:");
+      if (this.success == null) {
+        sb.append("null");
+      } else {
+        sb.append(this.success);
+      }
+      first = false;
+      if (!first) sb.append(", ");
+      sb.append("e:");
+      if (this.e == null) {
+        sb.append("null");
+      } else {
+        sb.append(this.e);
+      }
+      first = false;
+      sb.append(")");
+      return sb.toString();
+    }
+
+    public void validate() throws org.apache.thrift.TException {
+      // check for required fields
+      // check for sub-struct validity
+      if (success != null) {
+        success.validate();
+      }
+    }
+
+    private void writeObject(java.io.ObjectOutputStream out) throws java.io.IOException {
+      try {
+        write(new org.apache.thrift.protocol.TCompactProtocol(new org.apache.thrift.transport.TIOStreamTransport(out)));
+      } catch (org.apache.thrift.TException te) {
+        throw new java.io.IOException(te);
+      }
+    }
+
+    private void readObject(java.io.ObjectInputStream in) throws java.io.IOException, ClassNotFoundException {
+      try {
+        read(new org.apache.thrift.protocol.TCompactProtocol(new org.apache.thrift.transport.TIOStreamTransport(in)));
+      } catch (org.apache.thrift.TException te) {
+        throw new java.io.IOException(te);
+      }
+    }
+
+    private static class partitionStatus_resultStandardSchemeFactory implements SchemeFactory {
+      public partitionStatus_resultStandardScheme getScheme() {
+        return new partitionStatus_resultStandardScheme();
+      }
+    }
+
+    private static class partitionStatus_resultStandardScheme extends StandardScheme<partitionStatus_result> {
+
+      public void read(org.apache.thrift.protocol.TProtocol iprot, partitionStatus_result struct) throws org.apache.thrift.TException {
+        org.apache.thrift.protocol.TField schemeField;
+        iprot.readStructBegin();
+        while (true)
+        {
+          schemeField = iprot.readFieldBegin();
+          if (schemeField.type == org.apache.thrift.protocol.TType.STOP) { 
+            break;
+          }
+          switch (schemeField.id) {
+            case 0: // SUCCESS
+              if (schemeField.type == org.apache.thrift.protocol.TType.STRUCT) {
+                struct.success = new PartitionStatus();
+                struct.success.read(iprot);
+                struct.setSuccessIsSet(true);
+              } else { 
+                org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
+              }
+              break;
+            case 1: // E
+              if (schemeField.type == org.apache.thrift.protocol.TType.STRUCT) {
+                struct.e = new NonExistentPartitionException();
+                struct.e.read(iprot);
+                struct.setEIsSet(true);
+              } else { 
+                org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
+              }
+              break;
+            default:
+              org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
+          }
+          iprot.readFieldEnd();
+        }
+        iprot.readStructEnd();
+
+        // check for required fields of primitive type, which can't be checked in the validate method
+        struct.validate();
+      }
+
+      public void write(org.apache.thrift.protocol.TProtocol oprot, partitionStatus_result struct) throws org.apache.thrift.TException {
+        struct.validate();
+
+        oprot.writeStructBegin(STRUCT_DESC);
+        if (struct.success != null) {
+          oprot.writeFieldBegin(SUCCESS_FIELD_DESC);
+          struct.success.write(oprot);
+          oprot.writeFieldEnd();
+        }
+        if (struct.e != null) {
+          oprot.writeFieldBegin(E_FIELD_DESC);
+          struct.e.write(oprot);
+          oprot.writeFieldEnd();
+        }
+        oprot.writeFieldStop();
+        oprot.writeStructEnd();
+      }
+
+    }
+
+    private static class partitionStatus_resultTupleSchemeFactory implements SchemeFactory {
+      public partitionStatus_resultTupleScheme getScheme() {
+        return new partitionStatus_resultTupleScheme();
+      }
+    }
+
+    private static class partitionStatus_resultTupleScheme extends TupleScheme<partitionStatus_result> {
+
+      @Override
+      public void write(org.apache.thrift.protocol.TProtocol prot, partitionStatus_result struct) throws org.apache.thrift.TException {
+        TTupleProtocol oprot = (TTupleProtocol) prot;
+        BitSet optionals = new BitSet();
+        if (struct.isSetSuccess()) {
+          optionals.set(0);
+        }
+        if (struct.isSetE()) {
+          optionals.set(1);
+        }
+        oprot.writeBitSet(optionals, 2);
+        if (struct.isSetSuccess()) {
+          struct.success.write(oprot);
+        }
+        if (struct.isSetE()) {
+          struct.e.write(oprot);
+        }
+      }
+
+      @Override
+      public void read(org.apache.thrift.protocol.TProtocol prot, partitionStatus_result struct) throws org.apache.thrift.TException {
+        TTupleProtocol iprot = (TTupleProtocol) prot;
+        BitSet incoming = iprot.readBitSet(2);
+        if (incoming.get(0)) {
+          struct.success = new PartitionStatus();
+          struct.success.read(iprot);
+          struct.setSuccessIsSet(true);
+        }
+        if (incoming.get(1)) {
+          struct.e = new NonExistentPartitionException();
+          struct.e.read(iprot);
+          struct.setEIsSet(true);
+        }
+      }
+    }
+
+  }
+
+  public static class listPartitionFiles_args implements org.apache.thrift.TBase<listPartitionFiles_args, listPartitionFiles_args._Fields>, java.io.Serializable, Cloneable   {
+    private static final org.apache.thrift.protocol.TStruct STRUCT_DESC = new org.apache.thrift.protocol.TStruct("listPartitionFiles_args");
+
+    private static final org.apache.thrift.protocol.TField PARTITION_ID_FIELD_DESC = new org.apache.thrift.protocol.TField("partitionId", org.apache.thrift.protocol.TType.I32, (short)1);
+
+    private static final Map<Class<? extends IScheme>, SchemeFactory> schemes = new HashMap<Class<? extends IScheme>, SchemeFactory>();
+    static {
+      schemes.put(StandardScheme.class, new listPartitionFiles_argsStandardSchemeFactory());
+      schemes.put(TupleScheme.class, new listPartitionFiles_argsTupleSchemeFactory());
+    }
+
+    public int partitionId; // required
+
+    /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
+    public enum _Fields implements org.apache.thrift.TFieldIdEnum {
+      PARTITION_ID((short)1, "partitionId");
+
+      private static final Map<String, _Fields> byName = new HashMap<String, _Fields>();
+
+      static {
+        for (_Fields field : EnumSet.allOf(_Fields.class)) {
+          byName.put(field.getFieldName(), field);
+        }
+      }
+
+      /**
+       * Find the _Fields constant that matches fieldId, or null if its not found.
+       */
+      public static _Fields findByThriftId(int fieldId) {
+        switch(fieldId) {
+          case 1: // PARTITION_ID
+            return PARTITION_ID;
+          default:
+            return null;
+        }
+      }
+
+      /**
+       * Find the _Fields constant that matches fieldId, throwing an exception
+       * if it is not found.
+       */
+      public static _Fields findByThriftIdOrThrow(int fieldId) {
+        _Fields fields = findByThriftId(fieldId);
+        if (fields == null) throw new IllegalArgumentException("Field " + fieldId + " doesn't exist!");
+        return fields;
+      }
+
+      /**
+       * Find the _Fields constant that matches name, or null if its not found.
+       */
+      public static _Fields findByName(String name) {
+        return byName.get(name);
+      }
+
+      private final short _thriftId;
+      private final String _fieldName;
+
+      _Fields(short thriftId, String fieldName) {
+        _thriftId = thriftId;
+        _fieldName = fieldName;
+      }
+
+      public short getThriftFieldId() {
+        return _thriftId;
+      }
+
+      public String getFieldName() {
+        return _fieldName;
+      }
+    }
+
+    // isset id assignments
+    private static final int __PARTITIONID_ISSET_ID = 0;
+    private byte __isset_bitfield = 0;
+    public static final Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> metaDataMap;
+    static {
+      Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift.meta_data.FieldMetaData>(_Fields.class);
+      tmpMap.put(_Fields.PARTITION_ID, new org.apache.thrift.meta_data.FieldMetaData("partitionId", org.apache.thrift.TFieldRequirementType.DEFAULT, 
+          new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.I32)));
+      metaDataMap = Collections.unmodifiableMap(tmpMap);
+      org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(listPartitionFiles_args.class, metaDataMap);
+    }
+
+    public listPartitionFiles_args() {
+    }
+
+    public listPartitionFiles_args(
+      int partitionId)
+    {
+      this();
+      this.partitionId = partitionId;
+      setPartitionIdIsSet(true);
+    }
+
+    /**
+     * Performs a deep copy on <i>other</i>.
+     */
+    public listPartitionFiles_args(listPartitionFiles_args other) {
+      __isset_bitfield = other.__isset_bitfield;
+      this.partitionId = other.partitionId;
+    }
+
+    public listPartitionFiles_args deepCopy() {
+      return new listPartitionFiles_args(this);
+    }
+
+    @Override
+    public void clear() {
+      setPartitionIdIsSet(false);
+      this.partitionId = 0;
+    }
+
+    public int getPartitionId() {
+      return this.partitionId;
+    }
+
+    public listPartitionFiles_args setPartitionId(int partitionId) {
+      this.partitionId = partitionId;
+      setPartitionIdIsSet(true);
+      return this;
+    }
+
+    public void unsetPartitionId() {
+      __isset_bitfield = EncodingUtils.clearBit(__isset_bitfield, __PARTITIONID_ISSET_ID);
+    }
+
+    /** Returns true if field partitionId is set (has been assigned a value) and false otherwise */
+    public boolean isSetPartitionId() {
+      return EncodingUtils.testBit(__isset_bitfield, __PARTITIONID_ISSET_ID);
+    }
+
+    public void setPartitionIdIsSet(boolean value) {
+      __isset_bitfield = EncodingUtils.setBit(__isset_bitfield, __PARTITIONID_ISSET_ID, value);
+    }
+
+    public void setFieldValue(_Fields field, Object value) {
+      switch (field) {
+      case PARTITION_ID:
+        if (value == null) {
+          unsetPartitionId();
+        } else {
+          setPartitionId((Integer)value);
+        }
+        break;
+
+      }
+    }
+
+    public Object getFieldValue(_Fields field) {
+      switch (field) {
+      case PARTITION_ID:
+        return Integer.valueOf(getPartitionId());
+
+      }
+      throw new IllegalStateException();
+    }
+
+    /** Returns true if field corresponding to fieldID is set (has been assigned a value) and false otherwise */
+    public boolean isSet(_Fields field) {
+      if (field == null) {
+        throw new IllegalArgumentException();
+      }
+
+      switch (field) {
+      case PARTITION_ID:
+        return isSetPartitionId();
+      }
+      throw new IllegalStateException();
+    }
+
+    @Override
+    public boolean equals(Object that) {
+      if (that == null)
+        return false;
+      if (that instanceof listPartitionFiles_args)
+        return this.equals((listPartitionFiles_args)that);
+      return false;
+    }
+
+    public boolean equals(listPartitionFiles_args that) {
+      if (that == null)
+        return false;
+
+      boolean this_present_partitionId = true;
+      boolean that_present_partitionId = true;
+      if (this_present_partitionId || that_present_partitionId) {
+        if (!(this_present_partitionId && that_present_partitionId))
+          return false;
+        if (this.partitionId != that.partitionId)
+          return false;
+      }
+
+      return true;
+    }
+
+    @Override
+    public int hashCode() {
+      return 0;
+    }
+
+    public int compareTo(listPartitionFiles_args other) {
+      if (!getClass().equals(other.getClass())) {
+        return getClass().getName().compareTo(other.getClass().getName());
+      }
+
+      int lastComparison = 0;
+      listPartitionFiles_args typedOther = (listPartitionFiles_args)other;
+
+      lastComparison = Boolean.valueOf(isSetPartitionId()).compareTo(typedOther.isSetPartitionId());
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+      if (isSetPartitionId()) {
+        lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.partitionId, typedOther.partitionId);
+        if (lastComparison != 0) {
+          return lastComparison;
+        }
+      }
+      return 0;
+    }
+
+    public _Fields fieldForId(int fieldId) {
+      return _Fields.findByThriftId(fieldId);
+    }
+
+    public void read(org.apache.thrift.protocol.TProtocol iprot) throws org.apache.thrift.TException {
+      schemes.get(iprot.getScheme()).getScheme().read(iprot, this);
+    }
+
+    public void write(org.apache.thrift.protocol.TProtocol oprot) throws org.apache.thrift.TException {
+      schemes.get(oprot.getScheme()).getScheme().write(oprot, this);
+    }
+
+    @Override
+    public String toString() {
+      StringBuilder sb = new StringBuilder("listPartitionFiles_args(");
+      boolean first = true;
+
+      sb.append("partitionId:");
+      sb.append(this.partitionId);
+      first = false;
+      sb.append(")");
+      return sb.toString();
+    }
+
+    public void validate() throws org.apache.thrift.TException {
+      // check for required fields
+      // check for sub-struct validity
+    }
+
+    private void writeObject(java.io.ObjectOutputStream out) throws java.io.IOException {
+      try {
+        write(new org.apache.thrift.protocol.TCompactProtocol(new org.apache.thrift.transport.TIOStreamTransport(out)));
+      } catch (org.apache.thrift.TException te) {
+        throw new java.io.IOException(te);
+      }
+    }
+
+    private void readObject(java.io.ObjectInputStream in) throws java.io.IOException, ClassNotFoundException {
+      try {
+        // it doesn't seem like you should have to do this, but java serialization is wacky, and doesn't call the default constructor.
+        __isset_bitfield = 0;
+        read(new org.apache.thrift.protocol.TCompactProtocol(new org.apache.thrift.transport.TIOStreamTransport(in)));
+      } catch (org.apache.thrift.TException te) {
+        throw new java.io.IOException(te);
+      }
+    }
+
+    private static class listPartitionFiles_argsStandardSchemeFactory implements SchemeFactory {
+      public listPartitionFiles_argsStandardScheme getScheme() {
+        return new listPartitionFiles_argsStandardScheme();
+      }
+    }
+
+    private static class listPartitionFiles_argsStandardScheme extends StandardScheme<listPartitionFiles_args> {
+
+      public void read(org.apache.thrift.protocol.TProtocol iprot, listPartitionFiles_args struct) throws org.apache.thrift.TException {
+        org.apache.thrift.protocol.TField schemeField;
+        iprot.readStructBegin();
+        while (true)
+        {
+          schemeField = iprot.readFieldBegin();
+          if (schemeField.type == org.apache.thrift.protocol.TType.STOP) { 
+            break;
+          }
+          switch (schemeField.id) {
+            case 1: // PARTITION_ID
+              if (schemeField.type == org.apache.thrift.protocol.TType.I32) {
+                struct.partitionId = iprot.readI32();
+                struct.setPartitionIdIsSet(true);
+              } else { 
+                org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
+              }
+              break;
+            default:
+              org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
+          }
+          iprot.readFieldEnd();
+        }
+        iprot.readStructEnd();
+
+        // check for required fields of primitive type, which can't be checked in the validate method
+        struct.validate();
+      }
+
+      public void write(org.apache.thrift.protocol.TProtocol oprot, listPartitionFiles_args struct) throws org.apache.thrift.TException {
+        struct.validate();
+
+        oprot.writeStructBegin(STRUCT_DESC);
+        oprot.writeFieldBegin(PARTITION_ID_FIELD_DESC);
+        oprot.writeI32(struct.partitionId);
+        oprot.writeFieldEnd();
+        oprot.writeFieldStop();
+        oprot.writeStructEnd();
+      }
+
+    }
+
+    private static class listPartitionFiles_argsTupleSchemeFactory implements SchemeFactory {
+      public listPartitionFiles_argsTupleScheme getScheme() {
+        return new listPartitionFiles_argsTupleScheme();
+      }
+    }
+
+    private static class listPartitionFiles_argsTupleScheme extends TupleScheme<listPartitionFiles_args> {
+
+      @Override
+      public void write(org.apache.thrift.protocol.TProtocol prot, listPartitionFiles_args struct) throws org.apache.thrift.TException {
+        TTupleProtocol oprot = (TTupleProtocol) prot;
+        BitSet optionals = new BitSet();
+        if (struct.isSetPartitionId()) {
+          optionals.set(0);
+        }
+        oprot.writeBitSet(optionals, 1);
+        if (struct.isSetPartitionId()) {
+          oprot.writeI32(struct.partitionId);
+        }
+      }
+
+      @Override
+      public void read(org.apache.thrift.protocol.TProtocol prot, listPartitionFiles_args struct) throws org.apache.thrift.TException {
+        TTupleProtocol iprot = (TTupleProtocol) prot;
+        BitSet incoming = iprot.readBitSet(1);
+        if (incoming.get(0)) {
+          struct.partitionId = iprot.readI32();
+          struct.setPartitionIdIsSet(true);
+        }
+      }
+    }
+
+  }
+
+  public static class listPartitionFiles_result implements org.apache.thrift.TBase<listPartitionFiles_result, listPartitionFiles_result._Fields>, java.io.Serializable, Cloneable   {
+    private static final org.apache.thrift.protocol.TStruct STRUCT_DESC = new org.apache.thrift.protocol.TStruct("listPartitionFiles_result");
+
+    private static final org.apache.thrift.protocol.TField SUCCESS_FIELD_DESC = new org.apache.thrift.protocol.TField("success", org.apache.thrift.protocol.TType.LIST, (short)0);
+    private static final org.apache.thrift.protocol.TField E_FIELD_DESC = new org.apache.thrift.protocol.TField("e", org.apache.thrift.protocol.TType.STRUCT, (short)1);
+
+    private static final Map<Class<? extends IScheme>, SchemeFactory> schemes = new HashMap<Class<? extends IScheme>, SchemeFactory>();
+    static {
+      schemes.put(StandardScheme.class, new listPartitionFiles_resultStandardSchemeFactory());
+      schemes.put(TupleScheme.class, new listPartitionFiles_resultTupleSchemeFactory());
+    }
+
+    public List<String> success; // required
+    public NonExistentPartitionException e; // required
+
+    /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
+    public enum _Fields implements org.apache.thrift.TFieldIdEnum {
+      SUCCESS((short)0, "success"),
+      E((short)1, "e");
+
+      private static final Map<String, _Fields> byName = new HashMap<String, _Fields>();
+
+      static {
+        for (_Fields field : EnumSet.allOf(_Fields.class)) {
+          byName.put(field.getFieldName(), field);
+        }
+      }
+
+      /**
+       * Find the _Fields constant that matches fieldId, or null if its not found.
+       */
+      public static _Fields findByThriftId(int fieldId) {
+        switch(fieldId) {
+          case 0: // SUCCESS
+            return SUCCESS;
+          case 1: // E
+            return E;
+          default:
+            return null;
+        }
+      }
+
+      /**
+       * Find the _Fields constant that matches fieldId, throwing an exception
+       * if it is not found.
+       */
+      public static _Fields findByThriftIdOrThrow(int fieldId) {
+        _Fields fields = findByThriftId(fieldId);
+        if (fields == null) throw new IllegalArgumentException("Field " + fieldId + " doesn't exist!");
+        return fields;
+      }
+
+      /**
+       * Find the _Fields constant that matches name, or null if its not found.
+       */
+      public static _Fields findByName(String name) {
+        return byName.get(name);
+      }
+
+      private final short _thriftId;
+      private final String _fieldName;
+
+      _Fields(short thriftId, String fieldName) {
+        _thriftId = thriftId;
+        _fieldName = fieldName;
+      }
+
+      public short getThriftFieldId() {
+        return _thriftId;
+      }
+
+      public String getFieldName() {
+        return _fieldName;
+      }
+    }
+
+    // isset id assignments
+    public static final Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> metaDataMap;
+    static {
+      Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift.meta_data.FieldMetaData>(_Fields.class);
+      tmpMap.put(_Fields.SUCCESS, new org.apache.thrift.meta_data.FieldMetaData("success", org.apache.thrift.TFieldRequirementType.DEFAULT, 
+          new org.apache.thrift.meta_data.ListMetaData(org.apache.thrift.protocol.TType.LIST, 
+              new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.STRING))));
+      tmpMap.put(_Fields.E, new org.apache.thrift.meta_data.FieldMetaData("e", org.apache.thrift.TFieldRequirementType.DEFAULT, 
+          new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.STRUCT)));
+      metaDataMap = Collections.unmodifiableMap(tmpMap);
+      org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(listPartitionFiles_result.class, metaDataMap);
+    }
+
+    public listPartitionFiles_result() {
+    }
+
+    public listPartitionFiles_result(
+      List<String> success,
+      NonExistentPartitionException e)
+    {
+      this();
+      this.success = success;
+      this.e = e;
+    }
+
+    /**
+     * Performs a deep copy on <i>other</i>.
+     */
+    public listPartitionFiles_result(listPartitionFiles_result other) {
+      if (other.isSetSuccess()) {
+        List<String> __this__success = new ArrayList<String>();
+        for (String other_element : other.success) {
+          __this__success.add(other_element);
+        }
+        this.success = __this__success;
+      }
+      if (other.isSetE()) {
+        this.e = new NonExistentPartitionException(other.e);
+      }
+    }
+
+    public listPartitionFiles_result deepCopy() {
+      return new listPartitionFiles_result(this);
+    }
+
+    @Override
+    public void clear() {
+      this.success = null;
+      this.e = null;
+    }
+
+    public int getSuccessSize() {
+      return (this.success == null) ? 0 : this.success.size();
+    }
+
+    public java.util.Iterator<String> getSuccessIterator() {
+      return (this.success == null) ? null : this.success.iterator();
+    }
+
+    public void addToSuccess(String elem) {
+      if (this.success == null) {
+        this.success = new ArrayList<String>();
+      }
+      this.success.add(elem);
+    }
+
+    public List<String> getSuccess() {
+      return this.success;
+    }
+
+    public listPartitionFiles_result setSuccess(List<String> success) {
+      this.success = success;
+      return this;
+    }
+
+    public void unsetSuccess() {
+      this.success = null;
+    }
+
+    /** Returns true if field success is set (has been assigned a value) and false otherwise */
+    public boolean isSetSuccess() {
+      return this.success != null;
+    }
+
+    public void setSuccessIsSet(boolean value) {
+      if (!value) {
+        this.success = null;
+      }
+    }
+
+    public NonExistentPartitionException getE() {
+      return this.e;
+    }
+
+    public listPartitionFiles_result setE(NonExistentPartitionException e) {
+      this.e = e;
+      return this;
+    }
+
+    public void unsetE() {
+      this.e = null;
+    }
+
+    /** Returns true if field e is set (has been assigned a value) and false otherwise */
+    public boolean isSetE() {
+      return this.e != null;
+    }
+
+    public void setEIsSet(boolean value) {
+      if (!value) {
+        this.e = null;
+      }
+    }
+
+    public void setFieldValue(_Fields field, Object value) {
+      switch (field) {
+      case SUCCESS:
+        if (value == null) {
+          unsetSuccess();
+        } else {
+          setSuccess((List<String>)value);
+        }
+        break;
+
+      case E:
+        if (value == null) {
+          unsetE();
+        } else {
+          setE((NonExistentPartitionException)value);
+        }
+        break;
+
+      }
+    }
+
+    public Object getFieldValue(_Fields field) {
+      switch (field) {
+      case SUCCESS:
+        return getSuccess();
+
+      case E:
+        return getE();
+
+      }
+      throw new IllegalStateException();
+    }
+
+    /** Returns true if field corresponding to fieldID is set (has been assigned a value) and false otherwise */
+    public boolean isSet(_Fields field) {
+      if (field == null) {
+        throw new IllegalArgumentException();
+      }
+
+      switch (field) {
+      case SUCCESS:
+        return isSetSuccess();
+      case E:
+        return isSetE();
+      }
+      throw new IllegalStateException();
+    }
+
+    @Override
+    public boolean equals(Object that) {
+      if (that == null)
+        return false;
+      if (that instanceof listPartitionFiles_result)
+        return this.equals((listPartitionFiles_result)that);
+      return false;
+    }
+
+    public boolean equals(listPartitionFiles_result that) {
+      if (that == null)
+        return false;
+
+      boolean this_present_success = true && this.isSetSuccess();
+      boolean that_present_success = true && that.isSetSuccess();
+      if (this_present_success || that_present_success) {
+        if (!(this_present_success && that_present_success))
+          return false;
+        if (!this.success.equals(that.success))
+          return false;
+      }
+
+      boolean this_present_e = true && this.isSetE();
+      boolean that_present_e = true && that.isSetE();
+      if (this_present_e || that_present_e) {
+        if (!(this_present_e && that_present_e))
+          return false;
+        if (!this.e.equals(that.e))
+          return false;
+      }
+
+      return true;
+    }
+
+    @Override
+    public int hashCode() {
+      return 0;
+    }
+
+    public int compareTo(listPartitionFiles_result other) {
+      if (!getClass().equals(other.getClass())) {
+        return getClass().getName().compareTo(other.getClass().getName());
+      }
+
+      int lastComparison = 0;
+      listPartitionFiles_result typedOther = (listPartitionFiles_result)other;
+
+      lastComparison = Boolean.valueOf(isSetSuccess()).compareTo(typedOther.isSetSuccess());
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+      if (isSetSuccess()) {
+        lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.success, typedOther.success);
+        if (lastComparison != 0) {
+          return lastComparison;
+        }
+      }
+      lastComparison = Boolean.valueOf(isSetE()).compareTo(typedOther.isSetE());
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+      if (isSetE()) {
+        lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.e, typedOther.e);
+        if (lastComparison != 0) {
+          return lastComparison;
+        }
+      }
+      return 0;
+    }
+
+    public _Fields fieldForId(int fieldId) {
+      return _Fields.findByThriftId(fieldId);
+    }
+
+    public void read(org.apache.thrift.protocol.TProtocol iprot) throws org.apache.thrift.TException {
+      schemes.get(iprot.getScheme()).getScheme().read(iprot, this);
+    }
+
+    public void write(org.apache.thrift.protocol.TProtocol oprot) throws org.apache.thrift.TException {
+      schemes.get(oprot.getScheme()).getScheme().write(oprot, this);
+      }
+
+    @Override
+    public String toString() {
+      StringBuilder sb = new StringBuilder("listPartitionFiles_result(");
+      boolean first = true;
+
+      sb.append("success:");
+      if (this.success == null) {
+        sb.append("null");
+      } else {
+        sb.append(this.success);
+      }
+      first = false;
+      if (!first) sb.append(", ");
+      sb.append("e:");
+      if (this.e == null) {
+        sb.append("null");
+      } else {
+        sb.append(this.e);
+      }
+      first = false;
+      sb.append(")");
+      return sb.toString();
+    }
+
+    public void validate() throws org.apache.thrift.TException {
+      // check for required fields
+      // check for sub-struct validity
+    }
+
+    private void writeObject(java.io.ObjectOutputStream out) throws java.io.IOException {
+      try {
+        write(new org.apache.thrift.protocol.TCompactProtocol(new org.apache.thrift.transport.TIOStreamTransport(out)));
+      } catch (org.apache.thrift.TException te) {
+        throw new java.io.IOException(te);
+      }
+    }
+
+    private void readObject(java.io.ObjectInputStream in) throws java.io.IOException, ClassNotFoundException {
+      try {
+        read(new org.apache.thrift.protocol.TCompactProtocol(new org.apache.thrift.transport.TIOStreamTransport(in)));
+      } catch (org.apache.thrift.TException te) {
+        throw new java.io.IOException(te);
+      }
+    }
+
+    private static class listPartitionFiles_resultStandardSchemeFactory implements SchemeFactory {
+      public listPartitionFiles_resultStandardScheme getScheme() {
+        return new listPartitionFiles_resultStandardScheme();
+      }
+    }
+
+    private static class listPartitionFiles_resultStandardScheme extends StandardScheme<listPartitionFiles_result> {
+
+      public void read(org.apache.thrift.protocol.TProtocol iprot, listPartitionFiles_result struct) throws org.apache.thrift.TException {
+        org.apache.thrift.protocol.TField schemeField;
+        iprot.readStructBegin();
+        while (true)
+        {
+          schemeField = iprot.readFieldBegin();
+          if (schemeField.type == org.apache.thrift.protocol.TType.STOP) { 
+            break;
+          }
+          switch (schemeField.id) {
+            case 0: // SUCCESS
+              if (schemeField.type == org.apache.thrift.protocol.TType.LIST) {
+                {
+                  org.apache.thrift.protocol.TList _list82 = iprot.readListBegin();
+                  struct.success = new ArrayList<String>(_list82.size);
+                  for (int _i83 = 0; _i83 < _list82.size; ++_i83)
+                  {
+                    String _elem84; // required
+                    _elem84 = iprot.readString();
+                    struct.success.add(_elem84);
+                  }
+                  iprot.readListEnd();
+                }
+                struct.setSuccessIsSet(true);
+              } else { 
+                org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
+              }
+              break;
+            case 1: // E
+              if (schemeField.type == org.apache.thrift.protocol.TType.STRUCT) {
+                struct.e = new NonExistentPartitionException();
+                struct.e.read(iprot);
+                struct.setEIsSet(true);
+              } else { 
+                org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
+              }
+              break;
+            default:
+              org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
+          }
+          iprot.readFieldEnd();
+        }
+        iprot.readStructEnd();
+
+        // check for required fields of primitive type, which can't be checked in the validate method
+        struct.validate();
+      }
+
+      public void write(org.apache.thrift.protocol.TProtocol oprot, listPartitionFiles_result struct) throws org.apache.thrift.TException {
+        struct.validate();
+
+        oprot.writeStructBegin(STRUCT_DESC);
+        if (struct.success != null) {
+          oprot.writeFieldBegin(SUCCESS_FIELD_DESC);
+          {
+            oprot.writeListBegin(new org.apache.thrift.protocol.TList(org.apache.thrift.protocol.TType.STRING, struct.success.size()));
+            for (String _iter85 : struct.success)
+            {
+              oprot.writeString(_iter85);
+            }
+            oprot.writeListEnd();
+          }
+          oprot.writeFieldEnd();
+        }
+        if (struct.e != null) {
+          oprot.writeFieldBegin(E_FIELD_DESC);
+          struct.e.write(oprot);
+          oprot.writeFieldEnd();
+        }
+        oprot.writeFieldStop();
+        oprot.writeStructEnd();
+      }
+
+    }
+
+    private static class listPartitionFiles_resultTupleSchemeFactory implements SchemeFactory {
+      public listPartitionFiles_resultTupleScheme getScheme() {
+        return new listPartitionFiles_resultTupleScheme();
+      }
+    }
+
+    private static class listPartitionFiles_resultTupleScheme extends TupleScheme<listPartitionFiles_result> {
+
+      @Override
+      public void write(org.apache.thrift.protocol.TProtocol prot, listPartitionFiles_result struct) throws org.apache.thrift.TException {
+        TTupleProtocol oprot = (TTupleProtocol) prot;
+        BitSet optionals = new BitSet();
+        if (struct.isSetSuccess()) {
+          optionals.set(0);
+        }
+        if (struct.isSetE()) {
+          optionals.set(1);
+        }
+        oprot.writeBitSet(optionals, 2);
+        if (struct.isSetSuccess()) {
+          {
+            oprot.writeI32(struct.success.size());
+            for (String _iter86 : struct.success)
+            {
+              oprot.writeString(_iter86);
+            }
+          }
+        }
+        if (struct.isSetE()) {
+          struct.e.write(oprot);
+        }
+      }
+
+      @Override
+      public void read(org.apache.thrift.protocol.TProtocol prot, listPartitionFiles_result struct) throws org.apache.thrift.TException {
+        TTupleProtocol iprot = (TTupleProtocol) prot;
+        BitSet incoming = iprot.readBitSet(2);
+        if (incoming.get(0)) {
+          {
+            org.apache.thrift.protocol.TList _list87 = new org.apache.thrift.protocol.TList(org.apache.thrift.protocol.TType.STRING, iprot.readI32());
+            struct.success = new ArrayList<String>(_list87.size);
+            for (int _i88 = 0; _i88 < _list87.size; ++_i88)
+            {
+              String _elem89; // required
+              _elem89 = iprot.readString();
+              struct.success.add(_elem89);
+            }
+          }
+          struct.setSuccessIsSet(true);
+        }
+        if (incoming.get(1)) {
+          struct.e = new NonExistentPartitionException();
+          struct.e.read(iprot);
+          struct.setEIsSet(true);
         }
       }
     }

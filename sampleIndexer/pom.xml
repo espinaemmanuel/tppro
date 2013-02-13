@@ -34,7 +34,7 @@
 					</descriptorRefs>
 					<archive>
 						<manifest>
-							<mainClass>ar.uba.fi.tppro.client.PostDocs</mainClass>
+							<mainClass>ar.uba.fi.tppro.client.PostDocsBase</mainClass>
 						</manifest>
 					</archive>
 				</configuration>
