@@ -66,17 +66,14 @@ class main extends CI_Controller {
           $get=array('query'=>'text:'.$query, 'parts'=>$part);
 		  $res=$this->curl->simple_get(URLGET,$get);
         
-          $res2=json_decode($res);
-          
-          if(isset($res2->hits)){
-            foreach ($res2->hits as $hit) {
-              print "<p>".$hit->doc->fields->text."</p>";
-            }
-          }
+          $result=json_decode($res);
           
           $this->load->view('include/header');
-          $this->load->view("main", array('user_id'=> $this->session->userdata('user_id'),'query'=>$query));
+          $this->load->view("main", array('user_id'=> $this->session->userdata('user_id'),'query'=>$query, 'result'=>$result));
           $this->load->view('include/footer');
+        }
+        else{ 
+          $this->login();
         }
     }
     
