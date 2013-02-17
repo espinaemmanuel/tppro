@@ -22,9 +22,7 @@ class main extends CI_Controller {
         if(!$this->session->userdata('logged_in')) 
           $this->login();
         else{
-          $this->load->view('include/header');
           $this->load->view("main", array('user_id'=> $this->session->userdata('user_id'), 'query'=>''));
-          $this->load->view('include/footer');
         }  
 	}
 	
@@ -49,9 +47,7 @@ class main extends CI_Controller {
 		{
 			redirect(base_url().'/index.php/main');
 		}
-		$this->load->view('include/header');
 		$this->load->view("login");
-        $this->load->view('include/footer');
 	}
     
     function search(){
@@ -68,9 +64,7 @@ class main extends CI_Controller {
         
           $result=json_decode($res);
           
-          $this->load->view('include/header');
           $this->load->view("main", array('user_id'=> $this->session->userdata('user_id'),'query'=>$query, 'result'=>$result));
-          $this->load->view('include/footer');
         }
         else{ 
           $this->login();
