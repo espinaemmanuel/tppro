@@ -5,3 +5,11 @@
 body {
    padding-top: 15px;
 }
+
+.inactive {
+  background-color: red;
+}
+
+.active {
+  background-color: green;
+}

@@ -1,6 +1,6 @@
 <?php
 
-define("URLGET", 'http://localhost/tppro/phpClient/service.php');
+define("URLGET", 'http://localhost/tppro/phpClient/getStatus.php');
 
 class reports extends CI_Controller {
 	
@@ -35,11 +35,43 @@ class reports extends CI_Controller {
     
     function dinamic_type ($id){
       
-      $partitions=$this->User_partitions->get($id);
-      $mirrors=array('mirror1', 'mirror2', 'mirror3');
+      $parts=$this->User_partitions->getList($id);
       
-      $this->load->view("reports/dinamic", array('partitions'=> $partitions, 'mirrors'=>$mirrors));
+      /*
+      $mirrors=array();
+      if($partitions){
+        $mirrors=$this->curl->simple_get(URLGET,$get);
+      }
+      */
+      
+      $mirrors["1"]=array(true, false, true, false, false);
+      $mirrors["2"]=array(false, false, true, false, true);
+      $mirrors["4"]=array(true, false, true, false, true);
+      $mirrors["10"]=array(false, true, true, true, true);
+      
+      for ($j=0; $j<count($mirrors['1']); $j++) {
+        
+        for($i=0; $i<count($parts); $i++){
+         
+          $mirror=$mirrors[$parts[$i]][$j];
+          
+          //echo "mirror: $mirror<br>";
+          $class=($mirror ? 'active' : 'inactive');
+          //echo '"'.$parts[$i].'"'."-$j<br>";
+          //echo "class: $class<br>";
+          
+          $mirrors[$parts[$i]][$j]=$class;
+        }
+      }
+      
+      echo '<pre>';
+      //print_r($mirrors);
+      echo '</pre>';
+      
+      $this->load->view("reports/dinamic", array('partitions'=> $parts, 'mirrors'=>$mirrors));
     }
+    
+    
 }
 
 /* End of file reports.php */

@@ -11,17 +11,20 @@
           <tr>
             <th>Mirrors</th>
             <?php foreach ($partitions as $part){ ?>
-                <th><?= $part->partition_id ?></th>
+                <th><?= $part ?></th>
             <?php }?>
           </tr>
           <?php
+            $i=1;
             foreach ($mirrors as $mirror) {
             echo "<tr>";
-              echo "<th>".$mirror."</th>";
-              echo "<th>".$mirror."</th>";
-              echo "<th>".$mirror."</th>";
-              echo "<th>".$mirror."</th>";
+              echo "<th>$i</th>";
+              echo "<th class='$mirror[1]'>".$mirror[1]."</th>";
+              echo "<th class='$mirror[2]'>".$mirror[2]."</th>";
+              echo "<th class='$mirror[3]'>".$mirror[3]."</th>";
+              echo "<th class='$mirror[4]'>".$mirror[4]."</th>";
             echo "</tr>";  
+            $i++;
           }?>
       </tbody>
   </table>

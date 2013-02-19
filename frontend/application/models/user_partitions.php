@@ -14,6 +14,17 @@ class User_partitions extends CI_Model {
 		$query = $this->db->query('select * from user_partitions where user_id = '.$id);
         return $query->result();
 	}
+    
+    function getList($id)
+	{
+		$parts=$this->get($id);
+        $result=array();
+        
+        foreach ($parts as $part) 
+          $result[]=$part->partition_id;
+        
+        return $result;
+	}
 	
 	function insertPartition($campos){ 
     }
