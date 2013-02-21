@@ -38,39 +38,39 @@ class reports extends CI_Controller {
       $parts=$this->User_partitions->getList($id);
       
       /*
+      
       $mirrors=array();
       if($partitions){
-        $mirrors=$this->curl->simple_get(URLGET,$get);
+        $mirrors=$this->curl->simple_get(URLGET,$parts);
       }
       */
       
-      $mirrors["1"]=array(true, false, true, false, false);
-      $mirrors["2"]=array(false, false, true, false, true);
-      $mirrors["4"]=array(true, false, true, false, true);
-      $mirrors["10"]=array(false, true, true, true, true);
-      
-      for ($j=0; $j<count($mirrors['1']); $j++) {
+      $node1 = (object) array('desc'=>'Descr node 1', 'status'=>'active');
+      $node2 = (object) array('desc'=>'Descr node 2', 'status'=>'inactive');
+      $node3 = (object) array('desc'=>'Descr node 3', 'status'=>'activating');
         
+      $mirrors["1"]= array($node1,  $node2, $node1, $node2, $node3);
+      $mirrors["2"]= array($node2, $node2, $node1, $node2, $node1 );
+      $mirrors["4"]= array($node1,  $node2, $node1, $node2, $node1 );
+      $mirrors["10"]=array($node2, $node1,  $node1, $node3,  $node1 );
+      
+      //Count the mirrors of the first element of mirrors array
+      /*$total_mirrors=count(reset($mirrors));
+      
+      for ($j=0; $j<$total_mirrors; $j++) {
         for($i=0; $i<count($parts); $i++){
-         
           $mirror=$mirrors[$parts[$i]][$j];
-          
-          //echo "mirror: $mirror<br>";
           $class=($mirror ? 'active' : 'inactive');
-          //echo '"'.$parts[$i].'"'."-$j<br>";
-          //echo "class: $class<br>";
-          
           $mirrors[$parts[$i]][$j]=$class;
         }
-      }
-      
-      echo '<pre>';
-      //print_r($mirrors);
-      echo '</pre>';
-      
+      }*/
+      /*echo '<pre>'; print_r($mirrors);echo '</pre>';*/
       $this->load->view("reports/dinamic", array('partitions'=> $parts, 'mirrors'=>$mirrors));
     }
     
+    function getStatus(){
+      
+    }
     
 }
 

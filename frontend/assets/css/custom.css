@@ -7,9 +7,19 @@ body {
 }
 
 .inactive {
-  background-color: red;
+  background-image: url(../img/inactive.png);
+  background-repeat: no-repeat;
+  height: 41px;
 }
 
 .active {
-  background-color: green;
+  background-image: url(../img/active.jpg);
+  background-repeat: no-repeat;
+  height: 41px;
+}
+
+.activating {
+  background-image: url(../img/activating.jpg);
+  background-repeat: no-repeat;
+  height: 41px;
 }
