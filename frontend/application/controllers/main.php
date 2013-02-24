@@ -38,6 +38,7 @@ class main extends CI_Controller {
 				{
 					$this->session->set_userdata('logged_in',TRUE);
 					$this->session->set_userdata('user_id',$user->id);
+                    $this->session->set_userdata('is_admin',$user->is_admin);
 					
 					redirect(base_url().'/index.php/main');
 				}

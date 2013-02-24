@@ -24,11 +24,11 @@ class users extends CI_Controller {
 	
 	function list_users(){
 		
-		if($this->session->userdata('user_type')!='admin')
+		if(!$this->session->userdata('is_admin'))
 			redirect('main');
 		
 		$users=$this->User->getUsers();
-		$this->load->view("list_users",array('users' => $users));
+		$this->load->view("users/list",array('users' => $users));
 	}
 	
 	function add_user() {

@@ -1,42 +1,27 @@
 <div class="navbar navbar-inverse navbar-fixed-top">
     <div class="navbar-inner">
-        <a class="brand" href="#">Title</a>
+        <a class="brand" href="<?php echo base_url();?>index.php/main">Home</a>
         <ul class="nav">
-            <li class="active">
-                <a href="#">Home</a>
+            <?php if($this->session->userdata('is_admin')){?>
+            <li>
+                <a href="<?php echo base_url();?>index.php/users">Users</a>
+            </li>
+            <?php }?>
+            <li>
+                <a href="<?php echo base_url();?>index.php/reports/dinamic_type/<?=$this->session->userdata('user_id')?>">Dinamic View</a>
             </li>
             <li>
-                <a href="<?php echo base_url();?>index.php/reports/static">Static View</a>
+                <a href="<?php echo base_url();?>index.php/reports/dinamic_type/<?=$this->session->userdata('user_id')?>">Static View</a>
             </li>
             <li>
-                <a href="#">Dinamic View</a>
+                <a href="<?php echo base_url();?>index.php/reports/dinamic_type/<?=$this->session->userdata('user_id')?>">Index</a>
+            </li>
+            <li>
+                <a href="<?php echo base_url();?>index.php/main">Search</a>
+            </li>
+            <li>
+                <a class="logOut" href="<?php echo base_url();?>/index.php/main/logout">Logout</a>
             </li>
         </ul>
     </div>
 </div>
-
-<!--? php if($this->session->userdata('user_type')=='admin'){?>
-	<a class="addUser" href="< ?php echo base_url();?>/index.php/users/add_user">
-		Add user
-	</a>
-	&nbsp;|&nbsp;
-	<a class="listUsers" href="< ?php echo base_url();?>/index.php/users">
-		List users
-	</a>&nbsp;
-< ?php }
-else {?>
-	<a class="ListCols" href="< ?php echo base_url();?>/index.php/collections">
-		My collections
-	</a>
-	&nbsp;|&nbsp;
-	<a class="addCol" href="< ?php echo base_url();?>/index.php/collections/add_collection">
-		Add collection
-	</a>&nbsp;
-< ?php }?>
-
-<br/>
-
-<a class="logOut" style="float:right; position:absolute; left: 700px; top:5px;" href="< ?php echo base_url();?>/index.php/main/logout">
-	Loguot
-</a>
-<br/-->
