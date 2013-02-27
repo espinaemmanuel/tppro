@@ -9,9 +9,9 @@
       <tbody>
           <tr class="list_header">
               <th>User</th>
-              <th>Name</th>
-              <th>Surname</th>
-              <th style="width:200px;">Views</th>
+              <th style="width:150px;">Name</th>
+              <th style="width:150px;">Surname</th>
+              <th style="width:150px;">Views</th>
           </tr>
           <?php foreach ($users as $user) {?>
             <tr>  

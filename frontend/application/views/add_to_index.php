@@ -24,26 +24,36 @@ $(function() {
         'swf'      : '<?=base_url()?>uploadify/uploadify.swf',
         'uploader' : '<?=base_url()?>uploadify/uploadify.php',
         // Your options here
-        'onUploadSuccess' : function(file, data, response) {
-            //alert('ahhh');
+        'onUploadSuccess' : function() {
+            //console.log('listo un upload');
+        },
+        'onQueueComplete': function() {
+            console.log('listo');
+            indexAll(<?= $this->session->userdata('user_id') ?>);
+        },
+        'onError' : function (event,ID,fileObj,errorObj) {
+          alert(errorObj.type + ' Error: ' + errorObj.info);
         },
         'method':'get',
-        'formData' : { 'id' : '1' , 'tipo':'event'}
+		'formData' : { 'user_id' : '<?= $this->session->userdata('user_id') ?>' }
     });
 });
 
-/*function cargarImagenes() {
-    var resultado = '';
-    /*$.get('/backend/services/imagenes/tipo/event/id/< ?=$event->id?>', function (data) {
+function indexAll(user_id) {
+    
+    console.log('indexa todos los arch del usuario', user_id);
+    
+    /*var resultado = '';
+    $.get('/backend/services/imagenes/tipo/event/id/< ?=$event->id?>', function (data) {
         $.each(data, function(index, value) {
             resultado += "<a href='"+value.url+"'><img src='"+value.url+"' class='imagenThumb'/></a>";
             resultado += "<a href='#' onclick='borrarImagen(\""+value.imagen+"\")' ><img class='deleteIcon' src='/backend/img/delete.png' /></a>";
         });
         $('#imagenes').html(resultado);
-    }, "json");
+    }, "json");*/
 }
 
-$(function() {
+/*$(function() {
     cargarImagenes();
 });   */ 
 </script>  

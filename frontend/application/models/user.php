@@ -11,7 +11,7 @@ class User extends CI_Model {
 	//Devuelve los archivos pdf
 	function getUsers()
 	{
-		$query = $this->db->query('select * from user');
+		$query = $this->db->query('select * from user where is_admin = 0');
         return $query->result();
 	}
 	

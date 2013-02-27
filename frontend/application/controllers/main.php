@@ -26,6 +26,15 @@ class main extends CI_Controller {
         }  
 	}
 	
+    function add_to_index() {
+
+        if(!$this->session->userdata('logged_in')) 
+          $this->login();
+        else{
+          $this->load->view("add_to_index", array('user_id'=> $this->session->userdata('user_id'), 'query'=>''));
+        }  
+	}
+    
 	function login(){
 		
 		if(isset($_POST['username'])&& isset($_POST['pass']) )	{	
