@@ -15,17 +15,12 @@
     <table class="table">
         <tbody>
             <?php if(isset($result->hits)){ ?>
-            <h3>Result</h3>
-            <tr>
-                <th>header 1</th>
-                <th>header 2</th>
-                <th>header 3</th>
+            <tr class="list_header">
+                <th style="width:800px;">Results</th>
             </tr>
             <?php
               foreach ($result->hits as $hit) {
               echo "<tr>";  
-                echo "<th>".$hit->doc->fields->text."</th>";
-                echo "<th>".$hit->doc->fields->text."</th>";
                 echo "<th>".$hit->doc->fields->text."</th>";
               echo "</tr>";  
               }
