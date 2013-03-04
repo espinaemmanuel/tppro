@@ -1,6 +1,9 @@
 package ar.uba.fi.tppro.core.service;
 
 import java.io.File;
+import java.net.InetAddress;
+import java.net.SocketException;
+import java.util.Collection;
 import java.util.List;
 
 import org.apache.commons.lang.StringUtils;
@@ -17,36 +20,53 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Lists;
+import com.netflix.curator.x.discovery.ServiceInstanceBuilder;
 
+import ar.uba.fi.tppro.core.index.IndexNodeDescriptor;
+import ar.uba.fi.tppro.core.index.IndexPartitionsGroup;
+import ar.uba.fi.tppro.core.index.RemoteIndexNodeDescriptor;
 import ar.uba.fi.tppro.core.service.thrift.IndexNode;
+import ar.uba.fi.tppro.util.NetworkUtils;
 
-public class IndexCore implements Runnable {
+public class IndexServer implements Runnable {
 
-	final Logger logger = LoggerFactory.getLogger(IndexCoreHandler.class);
+	final Logger logger = LoggerFactory.getLogger(IndexPartitionsGroup.class);
 
 	protected int port;
 	protected File dataDir;
 
-	protected IndexCoreHandler handler;
+	protected IndexPartitionsGroup handler;
 
 	protected IndexNode.Processor<IndexNode.Iface> processor;
 
 	protected TServer server;
 
-	public static void main(String[] args) {
+	public static void main(String[] args) throws NumberFormatException,
+			Exception {
 
 		String port = System.getProperty("port", "9090");
 		String dataDir = System.getProperty("dataDir", "data");
 
-		new Thread(new IndexCore(Integer.parseInt(port), new File(dataDir)))
+		new Thread(new IndexServer(Integer.parseInt(port), new File(dataDir)))
 				.start();
+
 	}
 
-	public IndexCore(int port, File dataDir) {
+	public IndexServer(int port, File dataDir) throws Exception {
 		this.port = port;
 		this.dataDir = dataDir;
+
+		Collection<InetAddress> ips = NetworkUtils.getAllLocalIPs();
+		if (ips.size() == 0) {
+			throw new Exception("Could not retrieve the local ip");
+		}
+		String address = ips.iterator().next().getHostAddress();
+		IndexNodeDescriptor localNodeDescriptor = new RemoteIndexNodeDescriptor(
+				address, port);
 		
-		handler = new IndexCoreHandler(this.dataDir);
+		
+		this.handler = new IndexPartitionsGroup(localNodeDescriptor, null, null);
+		this.handler.open(this.dataDir);
 	}
 
 	public void stop() {
@@ -71,8 +91,8 @@ public class IndexCore implements Runnable {
 					partitions.add(partId);
 				}
 			}
-			
-			if(!this.dataDir.exists()){
+
+			if (!this.dataDir.exists()) {
 				this.dataDir.mkdir();
 			}
 
@@ -94,7 +114,7 @@ public class IndexCore implements Runnable {
 			handlers.setHandlers(new Handler[] { resource_handler,
 					new DefaultHandler() });
 			webServer.setHandler(handlers);
-			
+
 			logger.info("Starting http server on port port " + (this.port + 1)
 					+ "...");
 			webServer.start();
@@ -112,8 +132,8 @@ public class IndexCore implements Runnable {
 			e.printStackTrace();
 		}
 	}
-	
-	public IndexCoreHandler getHandler() {
+
+	public IndexPartitionsGroup getHandler() {
 		return handler;
 	}
 }

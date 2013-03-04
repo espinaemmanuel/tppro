@@ -5,6 +5,9 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
 
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import org.apache.thrift.TException;
 import org.apache.thrift.protocol.TBinaryProtocol;
 import org.apache.thrift.protocol.TProtocol;
@@ -18,17 +21,19 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.io.Files;
 
-import ar.uba.fi.tppro.core.service.IndexCore;
+import ar.uba.fi.tppro.core.index.versionTracker.PartitionVersionTracker;
+import ar.uba.fi.tppro.core.service.IndexServer;
 import ar.uba.fi.tppro.core.service.thrift.Document;
 import ar.uba.fi.tppro.core.service.thrift.IndexNode;
 import ar.uba.fi.tppro.core.service.thrift.QueryResult;
+import ar.uba.fi.tppro.partition.PartitionResolver;
 
 public class ThriftIndexCoreTest {
 
 	private static final int PORT = 7911;
 
 	@BeforeClass
-	public static void startServer() throws URISyntaxException, IOException {
+	public static void startServer() throws Exception {
 		// Start thrift server in a seperate thread
 		
 		//Create temp dir
@@ -38,7 +43,17 @@ public class ThriftIndexCoreTest {
 		if(tempDir.list().length > 0)
 			fail("temp directory not empty");
 		
-		new Thread(new IndexCore(PORT, tempDir)).start();
+		IndexServer server = new IndexServer(PORT, tempDir);
+		
+		PartitionVersionTracker versionTracker = mock(PartitionVersionTracker.class);
+		when(versionTracker.getCurrentVersion(123)).thenReturn(0);
+		
+		PartitionResolver partitionResolver = mock(PartitionResolver.class);
+		
+		server.getHandler().setVersionTracker(versionTracker);
+		server.getHandler().setPartitionResolver(partitionResolver);
+		
+		new Thread(server).start();
 		try {
 			// wait for the server start up
 			Thread.sleep(5000);

@@ -1,4 +1,4 @@
-package ar.uba.fi.tppro.core.index;
+package ar.uba.fi.tppro.core.index.httpClient;
 
 import java.io.IOException;
 import java.io.InputStream;

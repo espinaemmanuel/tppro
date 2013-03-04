@@ -6,6 +6,7 @@ import org.apache.thrift.transport.TSocket;
 import org.apache.thrift.transport.TTransport;
 import org.apache.thrift.transport.TTransportException;
 
+import ar.uba.fi.tppro.core.index.httpClient.PartitionHttpClient;
 import ar.uba.fi.tppro.core.service.thrift.IndexNode;
 
 public class RemoteIndexNodeDescriptor implements IndexNodeDescriptor {
@@ -53,6 +54,16 @@ public class RemoteIndexNodeDescriptor implements IndexNodeDescriptor {
 	@Override
 	public PartitionHttpClient getHttpClient(int partition) {
 		return new PartitionHttpClient(host, port + 1, partition);
+	}
+
+	@Override
+	public String getHost() {
+		return this.host;
+	}
+
+	@Override
+	public int getPort() {
+		return this.port;
 	}
 	
 

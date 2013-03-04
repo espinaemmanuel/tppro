@@ -7,87 +7,116 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.List;
 
-import org.apache.thrift.TException;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import ar.uba.fi.tppro.core.index.PartitionStatusObserver;
+import com.netflix.curator.framework.CuratorFramework;
+import com.netflix.curator.framework.CuratorFrameworkFactory;
+import com.netflix.curator.retry.RetryOneTime;
+import com.netflix.curator.test.TestingServer;
+
+import ar.uba.fi.tppro.core.index.IndexPartition;
 import ar.uba.fi.tppro.core.index.RemoteNodePool;
-import ar.uba.fi.tppro.core.index.StaticSocketPartitionResolver;
 import ar.uba.fi.tppro.core.index.TestUtil;
 import ar.uba.fi.tppro.core.index.lock.IndexLock;
-import ar.uba.fi.tppro.core.index.lock.LockAquireTimeoutException;
 import ar.uba.fi.tppro.core.index.lock.LockManager;
 import ar.uba.fi.tppro.core.index.lock.LockManager.LockType;
+import ar.uba.fi.tppro.core.index.versionTracker.PartitionVersionTracker;
 import ar.uba.fi.tppro.core.service.thrift.Document;
 import ar.uba.fi.tppro.core.service.thrift.IndexNode;
-import ar.uba.fi.tppro.core.service.thrift.NonExistentPartitionException;
 import ar.uba.fi.tppro.core.service.thrift.QueryResult;
+import ar.uba.fi.tppro.partition.PartitionResolver;
+import ar.uba.fi.tppro.partition.StaticSocketPartitionResolver;
 
 public class ReplicationTest {
 	
+	final Logger logger = LoggerFactory.getLogger(ReplicationTest.class);
+
 	@Rule
 	public TemporaryFolder testFolder = new TemporaryFolder();
 
-
 	@Test
-	public void testReplication() throws IOException, NonExistentPartitionException, TException, InterruptedException, LockAquireTimeoutException {
-		File data1 = testFolder.newFolder();
-		File data2 = testFolder.newFolder();
+	public void testReplication() throws Exception {
+		TestingServer server = new TestingServer();
 
-		// create index cores
-		IndexCore core1 = new IndexCore(9000, data1);
-		IndexCore core2 = new IndexCore(9090, data2);
-		
-		LockManager lockManager = mock(LockManager.class);
-		IndexLock indexLock = mock(IndexLock.class);
-		when(lockManager.aquire(eq(LockType.ADD), anyInt())).thenReturn(indexLock);
-		core2.getHandler().setLockManager(lockManager);
-		
-		RemoteNodePool nodePool = new RemoteNodePool();
-		StaticSocketPartitionResolver resolver = new StaticSocketPartitionResolver(nodePool);
-		resolver.addReplica("localhost", 9000, 1);
-		core2.getHandler().setPartitionResolver(resolver);
-		
-		PartitionStatusObserver statusObserver = mock(PartitionStatusObserver.class);
-		core2.getHandler().setPartitionObserver(statusObserver);
-		
-		new Thread(core1).start();
-		new Thread(core2).start();
-		
-		Thread.sleep(1000);
-
-		IndexNode.Iface node1 = TestUtil.getCoreClient("localhost", 9000);
-		IndexNode.Iface node2 = TestUtil.getCoreClient("localhost", 9090);
-		
+		try {
 			
-		// index some files
-		List<Document> documents = TestUtil.createDocuments(this.getClass().getResource("movies.json").getPath());
-		
-		int numDocs = documents.size();
-		
-		node1.createPartition(1);
-		node1.index(1, documents);
-		
-		// replicate
-		node2.replicate(1);
-		
-		for(int i = 0; i < 10; i ++){
-			Thread.sleep(5000);
-			String status = node2.partitionStatus(1).status;
-			if(status.equals("READY")){
-				break;
+			File data1 = testFolder.newFolder();
+			File data2 = testFolder.newFolder();
+			
+			logger.debug("Temp dir 1: " + data1);
+			logger.debug("Temp dir 2: " + data2);
+
+			// create index cores
+			IndexServer core1 = new IndexServer(9000, data1);
+			IndexServer core2 = new IndexServer(9090, data2);
+
+			CuratorFramework client = CuratorFrameworkFactory.newClient(
+					server.getConnectString(), new RetryOneTime(1));
+			
+			client.start();
+			
+			PartitionVersionTracker versionTracker = new PartitionVersionTracker(client);
+
+			core1.getHandler().setVersionTracker(versionTracker);
+			core2.getHandler().setVersionTracker(versionTracker);
+
+			LockManager lockManager = mock(LockManager.class);
+			IndexLock indexLock = mock(IndexLock.class);
+			when(lockManager.aquire(eq(LockType.ADD), anyInt())).thenReturn(
+					indexLock);
+			core2.getHandler().setLockManager(lockManager);
+
+			RemoteNodePool nodePool = new RemoteNodePool();
+			StaticSocketPartitionResolver resolver = new StaticSocketPartitionResolver(
+					nodePool);
+			resolver.addReplica("localhost", 9000, 1);
+			core2.getHandler().setPartitionResolver(resolver);
+			core1.getHandler().setPartitionResolver(resolver);
+
+			new Thread(core1).start();
+			new Thread(core2).start();
+
+			Thread.sleep(1000);
+
+			IndexNode.Iface node1 = TestUtil.getCoreClient("localhost", 9000);
+			IndexNode.Iface node2 = TestUtil.getCoreClient("localhost", 9090);
+
+			// index some files
+			List<Document> documents = TestUtil.createDocuments(this.getClass()
+					.getResource("movies.json").getPath());
+
+			int numDocs = documents.size();
+
+			node1.createPartition(1);
+			node1.index(1, documents);
+			
+			versionTracker.setPartitionVersion(1, 1);
+
+			// replicate
+			// node2.replicate(1);
+			node2.createPartition(1);
+
+			for (int i = 0; i < 10; i++) {
+				Thread.sleep(5000);
+				String status = node2.partitionStatus(1).status;
+				if (status.equals("READY")) {
+					break;
+				}
 			}
+
+			// search and check
+			QueryResult result = node2.search(1, "*:*", 10, 0);
+
+			assertEquals(numDocs, result.totalHits);
+		} finally {
+			server.close();
 		}
-		
-		// search and check
-		QueryResult result = node2.search(1, "*:*", 10, 0);
-		
-		assertEquals(numDocs, result.totalHits);
 	}
 
 }

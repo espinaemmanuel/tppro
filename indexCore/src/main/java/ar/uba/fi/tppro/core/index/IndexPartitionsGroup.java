@@ -1,4 +1,4 @@
-package ar.uba.fi.tppro.core.service;
+package ar.uba.fi.tppro.core.index;
 
 import java.io.File;
 import java.io.IOException;
@@ -13,13 +13,10 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
 import ar.uba.fi.tppro.core.index.IndexInterface;
-import ar.uba.fi.tppro.core.index.IndexPartition;
-import ar.uba.fi.tppro.core.index.PartitionNotReadyException;
-import ar.uba.fi.tppro.core.index.PartitionResolver;
-import ar.uba.fi.tppro.core.index.IndexPartition.Status;
-import ar.uba.fi.tppro.core.index.PartitionStatusObserver;
+import ar.uba.fi.tppro.core.index.IndexNodeDescriptor;
+import ar.uba.fi.tppro.core.index.IndexPartitionStatus;
 import ar.uba.fi.tppro.core.index.lock.LockManager;
-import ar.uba.fi.tppro.core.index.PartitionReplicator;
+import ar.uba.fi.tppro.core.index.versionTracker.PartitionVersionTracker;
 import ar.uba.fi.tppro.core.service.thrift.Document;
 import ar.uba.fi.tppro.core.service.thrift.NonExistentPartitionException;
 import ar.uba.fi.tppro.core.service.thrift.ParseException;
@@ -27,44 +24,77 @@ import ar.uba.fi.tppro.core.service.thrift.PartitionAlreadyExistsException;
 import ar.uba.fi.tppro.core.service.thrift.PartitionStatus;
 import ar.uba.fi.tppro.core.service.thrift.QueryResult;
 import ar.uba.fi.tppro.core.service.thrift.ReplicationException;
+import ar.uba.fi.tppro.partition.PartitionResolver;
+import ar.uba.fi.tppro.partition.PartitionResolverException;
 
-public class IndexCoreHandler implements IndexInterface {
 
-	final Logger logger = LoggerFactory.getLogger(IndexCoreHandler.class);
+/**
+ * A node that contains several partitions
+ * 
+ * @author emmanuelespina
+ *
+ */
+public class IndexPartitionsGroup implements IndexInterface, PartitionStatusObserver {
+
+	final Logger logger = LoggerFactory.getLogger(IndexPartitionsGroup.class);
 
 	private File dataPath;
 	private ConcurrentMap<Integer, IndexPartition> partitionMap = Maps.newConcurrentMap();
 	private PartitionResolver partitionResolver;
 	private LockManager lockManager;
-	private PartitionStatusObserver partitionObserver;
+	private IndexNodeDescriptor thisNodeDescriptor;
+	private PartitionVersionTracker versionTracker;
 
-	public IndexCoreHandler(File dataPath) {
+	public IndexPartitionsGroup(IndexNodeDescriptor thisNode, PartitionResolver partitionResolver, PartitionVersionTracker versionTracker) {
+		this.thisNodeDescriptor = thisNode;
+		this.partitionResolver = partitionResolver;
+		this.versionTracker = versionTracker;
+	}
+	
+	public void open(File dataPath){
 		this.dataPath = dataPath;
+
+		for(File partitionDir : dataPath.listFiles()){
+
+			if (!partitionDir.isDirectory()) {
+				continue;
+			}
+
+			int partitionId = Integer.parseInt(partitionDir.getName());
+			IndexPartition partition = new IndexPartition(partitionId, partitionDir, this.versionTracker);
+			
+			try {
+				
+				partition.open();
+				partitionMap.put(partitionId, partition);
+
+			} catch (IOException e) {
+				logger.error("Could not open partition " + partitionId, e);
+			}
+		}
+		
+		//Check and replicate failed partitions
+		for(IndexPartition partition : partitionMap.values()){
+			if(partition.getStatus() == IndexPartitionStatus.RESTORING){
+				PartitionReplicator replicator = new PartitionReplicator();
+				replicator.setPartitionResolver(partitionResolver);
+				replicator.setLockManager(lockManager);
+				replicator.setStatusObserver(this);
+
+				partition.runReplicator(replicator);
+			}
+		}
 	}
 
 	protected IndexPartition getIndexPartition(int partitionId)
 			throws IOException {
-
-		// TODO: check concurrency
-		if (partitionMap.containsKey(partitionId))
 			return partitionMap.get(partitionId);
-
-		File path = new File(dataPath, new Integer(partitionId).toString());
-
-		if (!path.exists() || !path.isDirectory() || !path.canWrite()) {
-			return null;
-		}
-
-		IndexPartition partition = new IndexPartition(path);
-		partition.setStatus(Status.READY);
-		partitionMap.put(partitionId, partition);
-
-		return partition;
 	}
 
 	@Override
 	public void deleteByQuery(int partitionId, String query) throws TException {
 		logger.debug("DeleteByQuery request");
+		throw new UnsupportedOperationException("delete Not yet implemented");
 	}
 
 	@Override
@@ -94,26 +124,52 @@ public class IndexCoreHandler implements IndexInterface {
 	}
 
 	@Override
+	/**
+	 * Creates a partition and tries to replicate it from another node. If the partition already exists
+	 */
 	public void createPartition(int partitionId)
-			throws PartitionAlreadyExistsException, TException {
+			throws TException {
 		logger.debug("createPartition request");
 
 		File partitionPath = new File(dataPath,
 				new Integer(partitionId).toString());
 
 		if (partitionPath.exists()) {
-			throw new PartitionAlreadyExistsException(partitionId);
+			throw new PartitionAlreadyExistsException();
 		}
 
 		if (!partitionPath.mkdirs()) {
 			throw new TException("Could not create the partition directory");
 		}
 		
-		IndexPartition newPartition = new IndexPartition(partitionPath);
-		newPartition.setStatus(Status.READY);
-		
+		IndexPartition newPartition = new IndexPartition(partitionId, partitionPath, this.versionTracker);
 		partitionMap.put(partitionId, newPartition);
+		
+		try {
+			newPartition.open();
+		} catch (IOException e) {
+			throw new TException("Could not open the partition", e);
+		}
+		
+		try {
+			this.partitionResolver.registerPartition(partitionId, this.getThisNodeDescriptor(), newPartition.getStatus());
+		} catch (PartitionResolverException e) {
+			partitionPath.delete();
+			partitionMap.remove(partitionId);
+			throw new TException("Coudl not register the new partition");
+		}
+		
+		//If the partition is stale, replicate it
+		if(newPartition.getStatus() == IndexPartitionStatus.RESTORING){
+			if(newPartition.getStatus() == IndexPartitionStatus.RESTORING){
+				PartitionReplicator replicator = new PartitionReplicator();
+				replicator.setPartitionResolver(partitionResolver);
+				replicator.setLockManager(lockManager);
+				replicator.setStatusObserver(this);
 
+				newPartition.runReplicator(replicator);
+			}
+		}
 	}
 
 	@Override
@@ -152,11 +208,9 @@ public class IndexCoreHandler implements IndexInterface {
 	@Override
 	public boolean containsPartition(int partitionId) throws TException {
 		logger.debug("containsPartition request");
+		
+		return partitionMap.containsKey(partitionId);
 
-		File partitionPath = new File(dataPath,
-				new Integer(partitionId).toString());
-
-		return partitionPath.exists();
 	}
 
 	@Override
@@ -164,10 +218,18 @@ public class IndexCoreHandler implements IndexInterface {
 			TException {
 		
 		IndexPartition partition = partitionMap.get(partitionId);
+		
+		if(partition == null){
+			//Partition does not exists. Create a new one and replicate
+			this.createPartition(partitionId);
+			return;
+		}
+		
+		//The partition already exists and must be replicated from another node
 		if(partition != null){
 			switch(partition.getStatus()){				
 			case FAILURE:
-			case REPLICATION_FAILED:
+			case RESTORE_FAILED:
 				try {
 					partition.clear();					
 				} catch (IOException e) {
@@ -178,26 +240,17 @@ public class IndexCoreHandler implements IndexInterface {
 
 			case READY:
 				throw new ReplicationException(1, "The partition " + partitionId + " already exists");
-			case REPLICATING:
+			case RESTORING:
 				throw new ReplicationException(2, "The partition " + partitionId + " is already replicating");
 			default:
 				break;
 			}
-		} else {
-			File partitionPath = new File(dataPath,
-					new Integer(partitionId).toString());
-
-			partition = new IndexPartition(partitionPath);
-			partition.setStatus(Status.CREATED);
 		}
-		
-		assert partition.getStatus() == Status.CREATED;
-		
+				
 		PartitionReplicator replicator = new PartitionReplicator();
-		replicator.setPartitionId(partitionId);
 		replicator.setPartitionResolver(partitionResolver);
 		replicator.setLockManager(lockManager);
-		replicator.setStatusObserver(partitionObserver);
+		replicator.setStatusObserver(this);
 
 		partition.runReplicator(replicator);
 		
@@ -273,12 +326,25 @@ public class IndexCoreHandler implements IndexInterface {
 		this.lockManager = lockManager;
 	}
 
-	public PartitionStatusObserver getPartitionObserver() {
-		return partitionObserver;
+	public IndexNodeDescriptor getThisNodeDescriptor() {
+		return thisNodeDescriptor;
 	}
 
-	public void setPartitionObserver(PartitionStatusObserver partitionObserver) {
-		this.partitionObserver = partitionObserver;
+	public void setThisNodeDescriptor(IndexNodeDescriptor thisNodeDescriptor) {
+		this.thisNodeDescriptor = thisNodeDescriptor;
+	}
+
+	@Override
+	public void notifyStatusChange(IndexPartition indexPartition) {
+		// TODO Auto-generated method stub		
+	}
+
+	public PartitionVersionTracker getVersionTracker() {
+		return versionTracker;
+	}
+
+	public void setVersionTracker(PartitionVersionTracker versionTracker) {
+		this.versionTracker = versionTracker;
 	}
 
 }
