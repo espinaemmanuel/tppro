@@ -8,14 +8,15 @@
   <form action="" method="post">
     <input type="file" name="file_upload" id="file_upload" />
   </form>
+  <div class="indexing" style="display: none;">Indexing...</div>
   
 </div>  
     
 <?php $this->load->view('include/footer');?>
 
-<script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js"></script>
-<script src="//netdna.bootstrapcdn.com/twitter-bootstrap/2.3.0/js/bootstrap.min.js"></script>
-<script src="<?=base_url()?>uploadify/jquery.uploadify.min.js"></script>
+<script src="<?=base_url('assets/js/jquery.min.js')?>"></script>
+<script src="<?=base_url('assets/js/bootstrap.min.js')?>"></script>
+<script src="<?=base_url('uploadify/jquery.uploadify.min.js')?>"></script>
 
 <script type="text/javascript">
     
@@ -28,6 +29,7 @@ $(function() {
         'onQueueComplete': function() {
             console.log('listo');
             indexAll(<?= $this->session->userdata('user_id') ?>);
+            $('.indexing').show();
         },
         'onError' : function () {},
         'method':'get',
@@ -35,8 +37,17 @@ $(function() {
     });
 });
 
+/*function indexAll(user_id) {
+    console.log('indexa todos los arch del usuario', user_id);
+    $.get('/tppro/phpClient/indexService.php', { user_id: user_id, partitions: 2 }, function(){
+      $('.indexing').hide();;
+    } );
+}*/
+
 function indexAll(user_id) {
     console.log('indexa todos los arch del usuario', user_id);
-    $.get('/tppro/phpClient/indexService.php', { user_id: user_id, partitions: 2 }, function(){alert('ahhh');} );
-}
+    $.get('<?=base_url()?>main/make_index/'+user_id, function(){
+      $('.indexing').hide();;
+    } );
+}    
 </script>  

@@ -2,6 +2,15 @@ body {
    padding-top: 15px;
 }
 
+#file_upload{
+   background: url("/frontend/assets/img/upload.png") no-repeat scroll 0 0 transparent;
+   color: transparent;
+    height: 50px !important;
+    margin-left: 1px;
+    position: relative;
+    width: 127px !important;
+}
+
 .inactive {
   background-image: url(../img/inactive.png);
   background-repeat: no-repeat;

@@ -1,6 +1,7 @@
 <?php
 
 define("URLGET", 'http://localhost/tppro/phpClient/service.php');
+define("URL_MAKE_INDEX", 'http://localhost/tppro/phpClient/indexService.php');
 
 class main extends CI_Controller {
 	
@@ -35,6 +36,40 @@ class main extends CI_Controller {
         }  
 	}
     
+    function make_index($user_id) {
+
+      $directory = "../frontend/uploads/";
+    
+      $parts=$this->User_partitions->get($user_id);
+      $files = glob($directory . $user_id."*.txt");
+      $documents = array();
+	  
+	  foreach($files as $file){
+		$documents[]=$this->parse($file);
+		//unlink($file);
+  	  }
+      
+      //TODO harcodeado para q agarre solo una particion
+      $part=$parts[0]->partition_id;
+      
+      //1: partition id
+      $get=array('documents'=>$documents, 'partitions'=>$part);
+	  $res=$this->curl->simple_get(URL_MAKE_INDEX,$get);
+      
+      //echo '<pre>'; print_r($res); echo '</pre>';
+	}
+    
+    function parse($file=null){
+      if (file_exists($file)) {
+        $fp = fopen($file, "r");
+        $content = fread($fp, filesize($file));
+        fclose($fp);
+      }
+      $content=json_decode($content, true);
+
+      return $content;
+    }
+    
 	function login(){
 		
 		if(isset($_POST['username'])&& isset($_POST['pass']) )	{	
@@ -67,11 +102,12 @@ class main extends CI_Controller {
           $query=$_POST['query'];
           
           //TODO harcodeado para q agarre solo una particion
-          $part=$parts[0]->user_id;
+          $part=$parts[0]->partition_id;
           
           $get=array('query'=>'text:'.$query, 'parts'=>$part);
-		  $res=$this->curl->simple_get(URLGET,$get);
-        
+          
+ 		  $res=$this->curl->simple_get(URLGET,$get);
+          
           $result=json_decode($res);
           
           $this->load->view("main", array('user_id'=> $this->session->userdata('user_id'),'query'=>$query, 'result'=>$result));
