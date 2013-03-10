@@ -1,4 +1,4 @@
-package ar.uba.fi.tppro.core.index;
+package ar.uba.fi.tppro.partition;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -10,6 +10,8 @@ import java.util.Collection;
 import java.util.List;
 
 import ar.uba.fi.tppro.core.index.IndexNodeDescriptor;
+import ar.uba.fi.tppro.core.index.IndexPartitionStatus;
+import ar.uba.fi.tppro.core.index.RemoteNodePool;
 
 import com.google.common.collect.LinkedListMultimap;
 import com.google.common.collect.Multimap;
@@ -43,6 +45,14 @@ public class CSVPartitionResolver extends AbstractPartitionResolver {
 			
 			line = reader.readLine();
 		}
+	}
+
+	@Override
+	public void registerPartition(int partitionId,
+			IndexNodeDescriptor descriptor, IndexPartitionStatus status)
+			throws PartitionResolverException {
+		// TODO Auto-generated method stub
+		
 	}
 
 	

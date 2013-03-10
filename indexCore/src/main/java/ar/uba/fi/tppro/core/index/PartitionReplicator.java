@@ -19,20 +19,21 @@ import com.google.common.collect.Multimap;
 import com.google.common.io.ByteStreams;
 import com.google.common.io.Files;
 
-import ar.uba.fi.tppro.core.index.IndexPartition.Status;
+import ar.uba.fi.tppro.core.index.httpClient.PartitionHttpClient;
+import ar.uba.fi.tppro.core.index.httpClient.PartitionHttpClientException;
 import ar.uba.fi.tppro.core.index.lock.IndexLock;
 import ar.uba.fi.tppro.core.index.lock.LockAquireTimeoutException;
 import ar.uba.fi.tppro.core.index.lock.LockManager;
 import ar.uba.fi.tppro.core.index.lock.LockManager.LockType;
-import ar.uba.fi.tppro.core.service.IndexCoreHandler;
 import ar.uba.fi.tppro.core.service.thrift.IndexNode;
 import ar.uba.fi.tppro.core.service.thrift.NonExistentPartitionException;
+import ar.uba.fi.tppro.partition.PartitionResolver;
+import ar.uba.fi.tppro.partition.PartitionResolverException;
 
 public class PartitionReplicator extends Thread {
 
-	final Logger logger = LoggerFactory.getLogger(IndexCoreHandler.class);
+	final Logger logger = LoggerFactory.getLogger(IndexPartitionsGroup.class);
 
-	private Integer partitionId;
 	private LockManager lockManager;
 	private IndexPartition indexPartition;
 	private PartitionStatusObserver statusObserver;
@@ -49,9 +50,9 @@ public class PartitionReplicator extends Thread {
 		try {
 			lock = lockManager.aquire(LockType.ADD, LOCK_TIMEOUT);
 			Multimap<Integer, IndexNodeDescriptor> partitions = partitionResolver
-					.resolve(Lists.newArrayList(partitionId));
+					.resolve(Lists.newArrayList(indexPartition.getPartitionId()));
 			Collection<IndexNodeDescriptor> nodeDescriptors = partitions
-					.get(partitionId);
+					.get(indexPartition.getPartitionId());
 
 			for (int i = 0; i < nodeDescriptors.size(); i++) {
 				IndexNodeDescriptor nodeDescriptor = Iterables.get(
@@ -62,7 +63,7 @@ public class PartitionReplicator extends Thread {
 
 				try {
 					nodeClient = nodeDescriptor.getClient();
-					files = nodeClient.listPartitionFiles(partitionId);
+					files = nodeClient.listPartitionFiles(indexPartition.getPartitionId());
 
 				} catch (IndexNodeDescriptorException e) {
 					logger.error("Could not get node descriptor client", e);
@@ -75,7 +76,7 @@ public class PartitionReplicator extends Thread {
 					continue;
 				}
 
-				PartitionHttpClient httpClient = nodeDescriptor.getHttpClient(partitionId);
+				PartitionHttpClient httpClient = nodeDescriptor.getHttpClient(indexPartition.getPartitionId());
 
 				File tempDir = Files.createTempDir();
 
@@ -108,25 +109,32 @@ public class PartitionReplicator extends Thread {
 				}
 				
 				Files.move(tempDir, indexPartition.getDataPath());
-				indexPartition.setStatus(Status.READY);
+				indexPartition.reload();
+				
 				statusObserver.notifyStatusChange(indexPartition);
 				
 				return;
 			}
 			
-			indexPartition.setStatus(Status.REPLICATION_FAILED);
+			indexPartition.setStatus(IndexPartitionStatus.RESTORE_FAILED);
 			indexPartition
-					.setError("Could not retrieve the partition from any replica");
+					.setLastError("Could not retrieve the partition from any replica");
 			statusObserver.notifyStatusChange(indexPartition);
 
 		} catch (LockAquireTimeoutException e) {
-			indexPartition.setStatus(Status.REPLICATION_FAILED);
+			indexPartition.setStatus(IndexPartitionStatus.RESTORE_FAILED);
 			statusObserver.notifyStatusChange(indexPartition);
 			return;
 		} catch (IOException e) {
 			logger.error("Error moving index directory", e);
 			
-			indexPartition.setStatus(Status.REPLICATION_FAILED);
+			indexPartition.setStatus(IndexPartitionStatus.RESTORE_FAILED);
+			statusObserver.notifyStatusChange(indexPartition);
+			return;
+		} catch (PartitionResolverException e) {
+			logger.error("Could not resolve partitions", e);
+			
+			indexPartition.setStatus(IndexPartitionStatus.RESTORE_FAILED);
 			statusObserver.notifyStatusChange(indexPartition);
 			return;
 		} finally {
@@ -135,10 +143,6 @@ public class PartitionReplicator extends Thread {
 			}
 		}
 
-	}
-
-	public void setPartitionId(int partitionId) {
-		this.partitionId = partitionId;
 	}
 
 	public void setPartitionResolver(PartitionResolver partitionResolver) {
@@ -159,14 +163,6 @@ public class PartitionReplicator extends Thread {
 
 	public void setStatusObserver(PartitionStatusObserver statusObserver) {
 		this.statusObserver = statusObserver;
-	}
-
-	public Integer getPartitionId() {
-		return partitionId;
-	}
-
-	public void setPartitionId(Integer partitionId) {
-		this.partitionId = partitionId;
 	}
 
 	public IndexPartition getIndexPartition() {

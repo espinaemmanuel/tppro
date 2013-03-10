@@ -1,9 +1,11 @@
-package ar.uba.fi.tppro.core.index;
+package ar.uba.fi.tppro.partition;
 
 import java.util.Collection;
 import java.util.List;
 
 import ar.uba.fi.tppro.core.index.IndexNodeDescriptor;
+import ar.uba.fi.tppro.core.index.RemoteNodePool;
+import ar.uba.fi.tppro.core.index.SocketDescription;
 
 import com.google.common.collect.LinkedListMultimap;
 import com.google.common.collect.Multimap;

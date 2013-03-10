@@ -11,7 +11,6 @@ import com.google.common.collect.Multimap;
 
 import ar.uba.fi.tppro.core.index.BrokerIterface;
 import ar.uba.fi.tppro.core.index.IndexNodeDescriptor;
-import ar.uba.fi.tppro.core.index.PartitionResolver;
 import ar.uba.fi.tppro.core.index.lock.LockAquireTimeoutException;
 import ar.uba.fi.tppro.core.index.lock.LockManager;
 import ar.uba.fi.tppro.core.service.thrift.Document;
@@ -20,6 +19,8 @@ import ar.uba.fi.tppro.core.service.thrift.NonExistentPartitionException;
 import ar.uba.fi.tppro.core.service.thrift.ParalellIndexException;
 import ar.uba.fi.tppro.core.service.thrift.ParalellSearchException;
 import ar.uba.fi.tppro.core.service.thrift.ParalellSearchResult;
+import ar.uba.fi.tppro.partition.PartitionResolver;
+import ar.uba.fi.tppro.partition.PartitionResolverException;
 
 
 public class IndexBrokerHandler implements BrokerIterface {
@@ -44,8 +45,14 @@ public class IndexBrokerHandler implements BrokerIterface {
 	public ParalellSearchResult search(List<Integer> partitionIds, String query,
 			int limit, int offset) throws ParalellSearchException, NonExistentPartitionException, TException {
 		
-		Multimap<Integer, IndexNodeDescriptor> partitionsMap = resolver
-				.resolve(partitionIds);
+		Multimap<Integer, IndexNodeDescriptor> partitionsMap;
+		try {
+			partitionsMap = resolver
+					.resolve(partitionIds);
+		} catch (PartitionResolverException e) {
+			logger.error("Could not resolve partitions", e);
+			throw new ParalellSearchException("Could not resolve partitions");
+		}
 
 		try {
 			// Check existence of partitions
@@ -84,8 +91,14 @@ public class IndexBrokerHandler implements BrokerIterface {
 			List<Document> documents) throws ParalellIndexException,
 			NonExistentPartitionException, TException {
 
-		Multimap<Integer, IndexNodeDescriptor> partitionsMap = resolver
-				.resolve(partitionIds);
+		Multimap<Integer, IndexNodeDescriptor> partitionsMap;
+		try {
+			partitionsMap = resolver
+					.resolve(partitionIds);
+		} catch (PartitionResolverException e) {
+			logger.error("Could not resolve partitions", e);
+			throw new ParalellSearchException("Could not resolve partitions");
+		}
 
 		try {
 			// Check existence of partitions
