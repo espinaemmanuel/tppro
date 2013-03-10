@@ -24,40 +24,37 @@ use Thrift\Exception\TException;
 //Service call
 $data = RestUtils::processRequest();
 
-$data->response=  index($data->request_vars['user_id'], $data->request_vars['partitions']);
+//print_r($data->request_vars);
+
+$data->response=  index($data->request_vars['documents'], $data->request_vars['partitions']);
 $data->response= json_encode($data->response);
 RestUtils::sendResponse(200, $data->response, 'application/json');
 
 //TODO el segundo parametro deberian ser varias particiones pertenecientes al usuario.
-function index($user_id=null, $partition_id=1){
+function index($doc_array=null, $partitions=0){
   try{
+	  //echo '<pre>'; //print_r($documents); echo '</pre>';
+      $documents=array();
+      foreach ($doc_array as $content){
+         $doc=new Document();
+         $doc->fields=$content;
+         $documents[]=$doc;
+      }
   
       $socket = new TSocket ( 'localhost', 9090 );
       $transport = new TBufferedTransport ( $socket, 1024, 1024 );
       $protocol = new TBinaryProtocol ( $transport );
-	  $directory = "../../frontend/uploads/";
-    
+	 
       $client = new IndexNodeClient($protocol);
 
       $transport->open ();
       
-	  if(!$client->containsPartition($partition_id)){
-		$client->createPartition($partition_id);
+	  if(!$client->containsPartition($partitions)){
+		$client->createPartition($partitions);
 	  }
 	
-	  $files = glob($directory . $user_id."*.txt");
-      $documents = array();
-	  
-	  //var_dump($files);
-	  foreach($files as $file){
-		//echo "Se procesa: $file<br>";
-		$documents[]=parse($file);
-		unlink($file);
-  	  }
-
-  	  foreach ($documents as $document) {
-        $client->index($partition_id, array($document));
-      }
+      $client->index($partitions, $documents);
+      
 	  return 1;
     } 
 	catch ( TException $tx ) {
