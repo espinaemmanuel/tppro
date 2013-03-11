@@ -18,7 +18,6 @@
 			<groupId>ar.fi.uba</groupId>
 			<artifactId>indexCore</artifactId>
 			<version>0.0.1-SNAPSHOT</version>
-			<scope>test</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.lucene</groupId>

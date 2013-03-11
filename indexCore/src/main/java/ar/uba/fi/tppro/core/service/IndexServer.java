@@ -86,7 +86,7 @@ public class IndexServer implements Runnable {
 		
 		
 		this.handler = new IndexPartitionsGroup(localNodeDescriptor, partitionResolver, versionTracker, lockManager);
-		this.handler.open(this.dataDir);
+		this.handler.open(this.dataDir, true);
 	}
 
 	public void stop() {

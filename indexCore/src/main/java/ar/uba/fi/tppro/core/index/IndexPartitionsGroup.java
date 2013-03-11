@@ -56,8 +56,12 @@ public class IndexPartitionsGroup implements IndexInterface,
 		this.lockManager = lockManager;
 	}
 
-	public void open(File dataPath) {
+	public void open(File dataPath, boolean checkVersions) {
 		this.dataPath = dataPath;
+		
+		if(!this.dataPath.exists()){
+			this.dataPath.mkdir();			
+		}
 
 		for (File partitionDir : dataPath.listFiles()) {
 
@@ -76,7 +80,7 @@ public class IndexPartitionsGroup implements IndexInterface,
 
 			try {
 
-				partition.open();
+				partition.open(checkVersions);
 				partitionMap.put(new PartitionIdentifier(shardId, partitionId), partition);
 
 			} catch (IOException e) {
@@ -129,7 +133,7 @@ public class IndexPartitionsGroup implements IndexInterface,
 		partitionMap.put(new PartitionIdentifier(shardId, partitionId), newPartition);
 
 		try {
-			newPartition.open();
+			newPartition.open(true);
 		} catch (IOException e) {
 			throw new TException("Could not open the partition", e);
 		}

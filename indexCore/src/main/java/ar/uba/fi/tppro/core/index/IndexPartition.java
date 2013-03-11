@@ -83,7 +83,7 @@ public class IndexPartition implements Closeable, ShardVersionObserver {
 		this.analyzer = new StandardAnalyzer(Version.LUCENE_40);
 	}
 	
-	public void open() throws IOException{
+	public void open(boolean checkVersion) throws IOException{
 					
 		indexDir = FSDirectory.open(dataPath);
 		config = new IndexWriterConfig(Version.LUCENE_40, analyzer);
@@ -95,24 +95,29 @@ public class IndexPartition implements Closeable, ShardVersionObserver {
 			initialWriter.close();
 		}
 		
-		int clusterVersion;
-		try {
-			
-			clusterVersion = this.versionTracker.getCurrentVersion(this.shardId);
-			this.versionTracker.addVersionObserver(this.shardId, this);
-			
-		} catch (VersionTrackerServerException e) {
-			throw new IOException("could not retrieve version from server", e);
-		}
-		
 		this.lastCommittedMessageId = this.readCurrentVersion();
-		
-		if(clusterVersion == this.lastCommittedMessageId){
-			logger.info("Partition up to date");
-			this.status = IndexPartitionStatus.READY;
+
+		if(checkVersion){
+			int clusterVersion;
+			try {
+				
+				clusterVersion = this.versionTracker.getCurrentVersion(this.shardId);
+				this.versionTracker.addVersionObserver(this.shardId, this);
+				
+			} catch (VersionTrackerServerException e) {
+				throw new IOException("could not retrieve version from server", e);
+			}
+			
+			
+			if(clusterVersion == this.lastCommittedMessageId){
+				logger.info("Partition up to date");
+				this.status = IndexPartitionStatus.READY;
+			} else {
+				logger.info(String.format("Index stale - Local version = %d, Cluster version = %d. Will eventally restore", this.lastCommittedMessageId, clusterVersion));
+				this.status = IndexPartitionStatus.RESTORING;
+			}
 		} else {
-			logger.info(String.format("Index stale - Local version = %d, Cluster version = %d. Will eventally restore", this.lastCommittedMessageId, clusterVersion));
-			this.status = IndexPartitionStatus.RESTORING;
+			this.status = IndexPartitionStatus.READY;
 		}
 			
 		mgr = new SearcherManager(indexDir, new SearcherFactory());	
@@ -150,7 +155,7 @@ public class IndexPartition implements Closeable, ShardVersionObserver {
 
 	protected void ensureOpen() throws IOException{
 		if(!isOpen){
-			this.open();
+			this.open(true);
 		}
 	}
 
@@ -386,7 +391,7 @@ public class IndexPartition implements Closeable, ShardVersionObserver {
 
 	public void reload() throws IOException {
 		this.close();
-		this.open();
+		this.open(true);
 	}
 
 	@Override

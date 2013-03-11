@@ -14,11 +14,8 @@ import com.netflix.curator.framework.CuratorFrameworkFactory;
 import com.netflix.curator.retry.RetryOneTime;
 
 import ar.uba.fi.tppro.core.broker.IndexBrokerHandler;
-import ar.uba.fi.tppro.core.index.IndexNodeDescriptor;
 import ar.uba.fi.tppro.core.index.IndexPartitionsGroup;
 import ar.uba.fi.tppro.core.index.LocalNodeDescriptor;
-import ar.uba.fi.tppro.core.index.RemoteIndexNodeDescriptor;
-import ar.uba.fi.tppro.core.index.RemoteNodePool;
 import ar.uba.fi.tppro.core.index.lock.LockManager;
 import ar.uba.fi.tppro.core.index.lock.NullLockManager;
 import ar.uba.fi.tppro.core.index.versionTracker.LocalShardVersionTracker;
@@ -44,9 +41,9 @@ public class Broker implements Runnable {
 
 	public static void main(String[] args) {
 		
-		boolean localMode = System.getProperties().contains("localMode");
+		boolean localMode = System.getProperties().containsKey("localMode");
 		String port = System.getProperty("port", "9090");
-		String dataDir = System.getProperty("dataDir", "data");
+		String dataDir = System.getProperty("dataDir", "./data");
 
 		new Thread(new Broker(Integer.parseInt(port), new File(dataDir), localMode)).start();
 	}
@@ -74,10 +71,12 @@ public class Broker implements Runnable {
 				this.localIndexServer = new IndexPartitionsGroup(descriptor, partitionResolver, versionTracker, lockManager);
 				descriptor.setlocalIndex(this.localIndexServer);
 				
-				this.localIndexServer.open(this.dataDir);
+				this.localIndexServer.open(this.dataDir, false);
 				
-				this.localIndexServer.createPartition(1, 1);
-				
+				if(!this.localIndexServer.containsPartition(1, 1)){
+					this.localIndexServer.createPartition(1, 1);
+				}
+						
 				handler = new IndexBrokerHandler(partitionResolver, lockManager, versionTracker);
 
 			} else {
