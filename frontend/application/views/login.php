@@ -9,8 +9,8 @@
 <body>
 <h2>Ingrese su usuario y contrase&ntilde;a</h2>
 <form action="main/login" method="post">
-	Usuario&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input name="username" type="text" value=""/><br/><br/>
-    Contraseña&nbsp;</label><input name="pass" type="password" value=""/><br/><br/>
+	<input name="username" placeholder="User Name" required focus type="text" value=""/><br/><br/>
+    </label><input name="pass" placeholder="Password" required type="password" value=""/><br/><br/>
     <input class="btn btn-primary btn-large" type="submit" value="Aceptar" name="" class="button"/>
 </form>
 </body>
