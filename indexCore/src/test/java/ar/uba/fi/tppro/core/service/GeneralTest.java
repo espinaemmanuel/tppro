@@ -46,7 +46,7 @@ public class GeneralTest {
 		IndexPartitionsGroup partitionsGroup = new IndexPartitionsGroup(localNodeDescriptor, partitionResolver, versionTracker, lockManager);
 		
 		File existingIndex = new File(getClass().getResource("./sampleIndex").getFile());
-		partitionsGroup.open(existingIndex);
+		partitionsGroup.open(existingIndex, false);
 		
 		String docTitle = "Apache Lucene";
 		String docText = "Apache Lucene is a free/open source information retrieval software library, originally created in Java by Doug Cutting. It is supported by the Apache Software Foundation and is released under the Apache Software License.";
@@ -68,7 +68,7 @@ public class GeneralTest {
 		LockManager lockManager = new NullLockManager();
 		
 		IndexPartitionsGroup partitionsGroup = new IndexPartitionsGroup(localNodeDescriptor, partitionResolver, versionTracker, lockManager);
-		partitionsGroup.open(testFolder.getRoot());
+		partitionsGroup.open(testFolder.getRoot(), false);
 		
 		logger.info("Creating index in directory " + testFolder.getRoot());
 		
