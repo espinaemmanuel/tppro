@@ -67,8 +67,8 @@ public class IndexPartitionsGroup implements IndexInterface,
 
 			String[] nameParts = partitionDir.getName().split("_");
 			
-			int partitionId = Integer.parseInt(nameParts[0]);
-			int shardId = Integer.parseInt(nameParts[1]);
+			int shardId = Integer.parseInt(nameParts[0]);
+			int partitionId = Integer.parseInt(nameParts[1]);
 
 			
 			IndexPartition partition = new IndexPartition(shardId, partitionId,
