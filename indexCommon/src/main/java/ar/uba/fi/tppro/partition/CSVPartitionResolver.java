@@ -39,19 +39,19 @@ public class CSVPartitionResolver extends AbstractPartitionResolver {
 			
 			String host = parts[0];
 			String port = parts[1];
-			String pId = parts[2];
+			String sId = parts[2];
+			String pId = parts[3];
 			
-			addSocketDescription(host, Integer.parseInt(port), Integer.parseInt(pId));
+			addSocketDescription(host, Integer.parseInt(port), Integer.parseInt(pId), Integer.parseInt(pId));
 			
 			line = reader.readLine();
 		}
 	}
 
 	@Override
-	public void registerPartition(int partitionId,
+	public void registerPartition(int shardId, int partitionId,
 			IndexNodeDescriptor descriptor, IndexPartitionStatus status)
 			throws PartitionResolverException {
-		// TODO Auto-generated method stub
 		
 	}
 

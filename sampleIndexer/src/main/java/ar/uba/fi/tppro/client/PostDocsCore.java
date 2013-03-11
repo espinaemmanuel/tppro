@@ -35,13 +35,15 @@ public class PostDocsCore extends PostDocsBase {
 			return;
 		}
 		
-		if(!client.containsPartition(partition)){
-			client.createPartition(partition);
+		if(!client.containsPartition(1, partition)){
+			client.createPartition(1, partition);
 		}
 		
+		int i=1;
 		for(String jsonFile : args){
 			List<Document> documents = createDocuments(jsonFile);
-			client.index(partition, documents);
+			client.prepareCommit(1, partition, i++, documents);
+			client.commit(1, partition);
 			logger.info("Indexed " + documents.size() + " documents");		
 		}
 	}

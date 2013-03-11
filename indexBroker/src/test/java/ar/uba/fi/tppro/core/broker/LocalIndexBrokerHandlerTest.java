@@ -1,17 +1,8 @@
 package ar.uba.fi.tppro.core.broker;
 
 import static org.junit.Assert.*;
-import static org.mockito.Matchers.anyInt;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
-import java.io.Closeable;
-import java.io.File;
-import java.io.IOException;
-import java.net.URISyntaxException;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 
 import org.apache.thrift.TException;
@@ -19,52 +10,45 @@ import org.apache.thrift.protocol.TBinaryProtocol;
 import org.apache.thrift.protocol.TProtocol;
 import org.apache.thrift.transport.TSocket;
 import org.apache.thrift.transport.TTransport;
-import org.apache.thrift.transport.TTransportException;
-import org.junit.BeforeClass;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import ar.uba.fi.tppro.core.index.RemoteNodePool;
-import ar.uba.fi.tppro.core.index.lock.IndexLock;
-import ar.uba.fi.tppro.core.index.lock.LockAquireTimeoutException;
-import ar.uba.fi.tppro.core.index.lock.LockManager;
-import ar.uba.fi.tppro.core.index.lock.LockManager.LockType;
-import ar.uba.fi.tppro.core.service.IndexServer;
+import ar.uba.fi.tppro.core.service.Broker;
 import ar.uba.fi.tppro.core.service.thrift.Document;
+import ar.uba.fi.tppro.core.service.thrift.IndexBroker;
 import ar.uba.fi.tppro.core.service.thrift.IndexNode;
-import ar.uba.fi.tppro.core.service.thrift.NonExistentPartitionException;
-import ar.uba.fi.tppro.core.service.thrift.ParalellIndexException;
 import ar.uba.fi.tppro.core.service.thrift.ParalellSearchResult;
 import ar.uba.fi.tppro.core.service.thrift.PartitionAlreadyExistsException;
-import ar.uba.fi.tppro.core.service.thrift.QueryResult;
-import ar.uba.fi.tppro.partition.PartitionResolver;
-import ar.uba.fi.tppro.partition.StaticSocketPartitionResolver;
-import ar.uba.fi.tppro.partition.ZookeeperPartitionResolver;
 
-import com.google.common.collect.LinkedListMultimap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import com.google.common.collect.Multimap;
-import com.google.common.io.Closeables;
-import com.google.common.io.Files;
-import com.netflix.curator.framework.CuratorFramework;
-import com.netflix.curator.framework.CuratorFrameworkFactory;
-import com.netflix.curator.retry.RetryOneTime;
-import com.netflix.curator.test.TestingServer;
 
-public class ZkIndexBrokerHandlerTest {
+public class LocalIndexBrokerHandlerTest {
 
-	protected IndexServer initServer(int port) throws Exception {
-		File tempDir = Files.createTempDir();
-		tempDir.deleteOnExit();
+	final Logger logger = LoggerFactory
+			.getLogger(LocalIndexBrokerHandlerTest.class);
 
-		if (tempDir.list().length > 0)
-			fail("temp directory not empty");
+	@Rule
+	public TemporaryFolder folder = new TemporaryFolder();
 
-		IndexServer core = new IndexServer(port, tempDir);
 
-		new Thread(core).start();
+	protected void createPartitions(int port, Collection<Integer> partitions)
+			throws PartitionAlreadyExistsException, TException {
+		TTransport transport = new TSocket("localhost", port);
+		TProtocol protocol = new TBinaryProtocol(transport);
+		IndexNode.Client client = new IndexNode.Client(protocol);
+		transport.open();
 
-		return core;
+		for (int pId : partitions) {
+			if (!client.containsPartition(1, pId)) {
+				client.createPartition(1, pId);
+			}
+		}
+
+		transport.close();
 	}
 
 	protected Document doc(String... fields) {
@@ -182,77 +166,38 @@ public class ZkIndexBrokerHandlerTest {
 	@Test
 	public void testIndexAndSearch() throws Exception {
 
-		List<Closeable> closeables = Lists.newArrayList();
-		TestingServer server = new TestingServer();
-		closeables.add(server);
+		new Thread(new Broker(9000, folder.newFolder(), true)).start();
+		Thread.sleep(5000);
 
-		try {
-			CuratorFramework client = CuratorFrameworkFactory.newClient(
-					server.getConnectString(), new RetryOneTime(1));
-			closeables.add(client);
-			client.start();
+		// Run the test
 
-			PartitionResolver partitionResolver = new ZookeeperPartitionResolver(
-					client);
+		TTransport transport = new TSocket("localhost", 9000);
+		TProtocol protocol = new TBinaryProtocol(transport);
+		IndexBroker.Client client = new IndexBroker.Client(protocol);
+		transport.open();
 
-			IndexServer core1 = initServer(9000);
-			IndexServer core2 = initServer(9010);
-			IndexServer core3 = initServer(9020);
-			Thread.sleep(5000);
+		logger.info("First index");
+		client.index(1, createDocuments());
 
-			core1.getHandler().setPartitionResolver(partitionResolver);
-			core2.getHandler().setPartitionResolver(partitionResolver);
-			core3.getHandler().setPartitionResolver(partitionResolver);
+		logger.info("Waiting propagation of indexed documents");
+		Thread.sleep(5000);
 
-			core1.getHandler().createPartition(1);
-			core1.getHandler().createPartition(2);
-			core2.getHandler().createPartition(1);
-			core2.getHandler().createPartition(3);
-			core3.getHandler().createPartition(2);
-			core3.getHandler().createPartition(3);
+		ParalellSearchResult result = client.search(1, "*:*", 10, 0);
+		assertEquals(12, result.qr.totalHits);
 
-			RemoteNodePool nodePool = new RemoteNodePool();
+		result = client.search(1, "title:Blade OR title:Star", 10, 0);
+		assertEquals(2, result.qr.totalHits);
 
-			LockManager lockManager = mock(LockManager.class);
-			IndexLock indexLock = mock(IndexLock.class);
-			when(lockManager.aquire(eq(LockType.ADD), anyInt())).thenReturn(
-					indexLock);
+		logger.info("Second index");
+		client.index(1, createDocuments());
+		logger.info("Waiting propagation of indexed documents");
+		Thread.sleep(5000);
 
-			IndexBrokerHandler broker = new IndexBrokerHandler(
-					partitionResolver, lockManager);
+		result = client.search(1, "*:*", 10, 0);
+		assertEquals(24, result.qr.totalHits);
 
-			broker.index(Lists.newArrayList(1, 2, 3), createDocuments());
-
-			ParalellSearchResult result = broker.search(
-					Lists.newArrayList(1, 2, 3), "*:*", 10, 0);
-			assertEquals(12, result.qr.totalHits);
-
-			result = broker.search(Lists.newArrayList(1, 2, 3),
-					"title:Blade OR title:Star", 10, 0);
-			assertEquals(2, result.qr.totalHits);
-
-			broker.index(Lists.newArrayList(1, 2), createDocuments());
-
-			result = broker.search(Lists.newArrayList(1, 2, 3), "*:*", 10, 0);
-			assertEquals(24, result.qr.totalHits);
-
-			result = broker.search(Lists.newArrayList(1, 2),
-					"title:Blade OR title:Star", 10, 0);
-			assertEquals(3, result.qr.totalHits);
-
-			core1.stop();
-			Thread.sleep(5000);
-
-			result = broker.search(Lists.newArrayList(1, 2),
-					"title:Blade OR title:Star", 10, 0);
-			assertEquals(3, result.qr.totalHits);
-
-		} finally {
-			Collections.reverse(closeables);
-			for (Closeable c : closeables) {
-				c.close();
-			}
-		}
+		result = client.search(1, "title:Blade OR title:Star", 10, 0);
+		assertEquals(4, result.qr.totalHits);
 
 	}
 

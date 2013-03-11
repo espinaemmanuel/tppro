@@ -39,7 +39,7 @@ public class ParalellSearcher {
 	
 	protected long timeout = 800000;
 	
-	public ParalellSearchResult parallelSearch(final Multimap<Integer, IndexNodeDescriptor> partitions, final String query, final int limit, final int offset) throws SearcherException{
+	public ParalellSearchResult parallelSearch(final int shardId, final Multimap<Integer, IndexNodeDescriptor> partitions, final String query, final int limit, final int offset) throws SearcherException{
 		
 		Map<Future<QueryResult>, Integer> futuresMap = Maps.newHashMap();
 		
@@ -62,7 +62,7 @@ public class ParalellSearcher {
 						QueryResult result = null;
 						
 						try {
-							result = indexNode.getClient().search(pId, query, limit, offset);
+							result = indexNode.getClient().search(shardId, pId, query, limit, offset);
 						} catch (IndexNodeDescriptorException e){
 							logger.info("CLUSTER FAILURE: Could not connect to node " + indexNode + ". A replica will be used");
 							coughtExceptions.put(indexNode, e);

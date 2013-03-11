@@ -9,11 +9,25 @@ import org.apache.thrift.transport.TServerTransport;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.netflix.curator.framework.CuratorFramework;
+import com.netflix.curator.framework.CuratorFrameworkFactory;
+import com.netflix.curator.retry.RetryOneTime;
+
 import ar.uba.fi.tppro.core.broker.IndexBrokerHandler;
-import ar.uba.fi.tppro.core.broker.NullLockManager;
+import ar.uba.fi.tppro.core.index.IndexNodeDescriptor;
+import ar.uba.fi.tppro.core.index.IndexPartitionsGroup;
+import ar.uba.fi.tppro.core.index.LocalNodeDescriptor;
+import ar.uba.fi.tppro.core.index.RemoteIndexNodeDescriptor;
 import ar.uba.fi.tppro.core.index.RemoteNodePool;
+import ar.uba.fi.tppro.core.index.lock.LockManager;
+import ar.uba.fi.tppro.core.index.lock.NullLockManager;
+import ar.uba.fi.tppro.core.index.versionTracker.LocalShardVersionTracker;
+import ar.uba.fi.tppro.core.index.versionTracker.ShardVersionTracker;
+import ar.uba.fi.tppro.core.index.versionTracker.ZkShardVersionTracker;
 import ar.uba.fi.tppro.core.service.thrift.IndexBroker;
-import ar.uba.fi.tppro.partition.CSVPartitionResolver;
+import ar.uba.fi.tppro.partition.LocalPartitionResolver;
+import ar.uba.fi.tppro.partition.PartitionResolver;
+import ar.uba.fi.tppro.partition.ZookeeperPartitionResolver;
 
 public class Broker implements Runnable {
 
@@ -24,47 +38,78 @@ public class Broker implements Runnable {
 
 	protected IndexBrokerHandler handler;
 	protected IndexBroker.Processor<IndexBroker.Iface> processor;
+	private boolean localMode;
+	
+	private IndexPartitionsGroup localIndexServer;
 
 	public static void main(String[] args) {
 		
+		boolean localMode = System.getProperties().contains("localMode");
 		String port = System.getProperty("port", "9090");
 		String dataDir = System.getProperty("dataDir", "data");
 
-		new Thread(new Broker(Integer.parseInt(port), new File(dataDir))).start();
+		new Thread(new Broker(Integer.parseInt(port), new File(dataDir), localMode)).start();
 	}
 	
-	public Broker(int port, File dataDir){
+	public Broker(int port, File dataDir, boolean localMode){
 		this.port = port;
 		this.dataDir = dataDir;
+		this.localMode = localMode;
+	}
+	
+	private static CuratorFramework createZookeeperClient(String zookeeperHost) {
+		return CuratorFrameworkFactory.newClient(zookeeperHost, new RetryOneTime(1));
 	}
 
 	@Override
 	public void run() {
 		try {
-			String partitions = System.getProperty("partitions", "partitions.csv");
+			if(this.localMode){
+				PartitionResolver partitionResolver = new LocalPartitionResolver();
+				NullLockManager lockManager = new NullLockManager();
+				ShardVersionTracker versionTracker = new LocalShardVersionTracker();
+				
+				LocalNodeDescriptor descriptor = new LocalNodeDescriptor();
+				
+				this.localIndexServer = new IndexPartitionsGroup(descriptor, partitionResolver, versionTracker, lockManager);
+				descriptor.setlocalIndex(this.localIndexServer);
+				
+				this.localIndexServer.open(this.dataDir);
+				
+				this.localIndexServer.createPartition(1, 1);
+				
+				handler = new IndexBrokerHandler(partitionResolver, lockManager, versionTracker);
+
+			} else {
+				//Distributed mode
+				String zookeeperHost = System.getProperty("zookeeper");
+				if(zookeeperHost == null){
+					System.out.println("Zookeeper server not specified");
+					return;
+				}
+				
+				CuratorFramework curatorClient = createZookeeperClient(zookeeperHost);
+				curatorClient.start();
+				
+				PartitionResolver partitionResolver = new ZookeeperPartitionResolver(curatorClient);
+				ShardVersionTracker versionTracker = new ZkShardVersionTracker(curatorClient);
+				LockManager lockManager = null;
+				
+				handler = new IndexBrokerHandler(partitionResolver, lockManager, versionTracker);
+			}
 			
-			RemoteNodePool nodePool = new RemoteNodePool();
-			CSVPartitionResolver partitionResolver = new CSVPartitionResolver(nodePool);
 			
-			File partitionsFile = new File(partitions);
-			partitionResolver.load(partitionsFile);
-			
-			NullLockManager lockManager = new NullLockManager();
-			
-			handler = new IndexBrokerHandler(partitionResolver, lockManager);
 			processor = new IndexBroker.Processor<IndexBroker.Iface>(handler);
 			
 			TServerTransport serverTransport = new TServerSocket(this.port);
 			TServer server = new TThreadPoolServer(new TThreadPoolServer.Args(
 					serverTransport).processor(processor));
 			
-			logger.info("Starting the Index server on port " + this.port + "...");
+			logger.info("Starting the Index broker on port " + this.port + "...");
 			server.serve();
 
 		} catch (Exception e) {
-			// TODO: mejorar esto
-			e.printStackTrace();
+			logger.error("Fatal error", e);
 		}
-
 	}
 }

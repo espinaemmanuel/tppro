@@ -39,7 +39,6 @@ public class SearchDocsCore extends SearchDocsBase {
 			NonExistentPartitionException, TException {
 		String host = System.getProperty("host", "localhost");
 		String port = System.getProperty("port", "9090");
-		int partition = Integer.parseInt(System.getProperty("partition", "0"));
 
 		TTransport transport = new TSocket(host, Integer.parseInt(port));
 		TProtocol protocol = new TBinaryProtocol(transport);
@@ -57,7 +56,7 @@ public class SearchDocsCore extends SearchDocsBase {
 
 			if (!(curLine.equals("quit"))) {
 				try {
-					QueryResult result = client.search(partition, curLine, 10,
+					QueryResult result = client.search(1, 0, curLine, 10,
 							0);
 
 					System.out.println("Num Found: " + result.totalHits);

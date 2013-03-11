@@ -7,8 +7,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.io.File;
-import java.io.IOException;
-import java.net.URISyntaxException;
 import java.util.Collection;
 import java.util.List;
 
@@ -17,72 +15,85 @@ import org.apache.thrift.protocol.TBinaryProtocol;
 import org.apache.thrift.protocol.TProtocol;
 import org.apache.thrift.transport.TSocket;
 import org.apache.thrift.transport.TTransport;
-import org.apache.thrift.transport.TTransportException;
-import org.junit.BeforeClass;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import ar.uba.fi.tppro.core.index.RemoteNodePool;
 import ar.uba.fi.tppro.core.index.lock.IndexLock;
-import ar.uba.fi.tppro.core.index.lock.LockAquireTimeoutException;
 import ar.uba.fi.tppro.core.index.lock.LockManager;
-import ar.uba.fi.tppro.core.index.lock.LockManager.LockType;
+import ar.uba.fi.tppro.core.index.lock.NullLockManager;
+import ar.uba.fi.tppro.core.index.versionTracker.ShardVersionTracker;
+import ar.uba.fi.tppro.core.index.versionTracker.ZkShardVersionTracker;
 import ar.uba.fi.tppro.core.service.IndexServer;
 import ar.uba.fi.tppro.core.service.thrift.Document;
 import ar.uba.fi.tppro.core.service.thrift.IndexNode;
-import ar.uba.fi.tppro.core.service.thrift.NonExistentPartitionException;
-import ar.uba.fi.tppro.core.service.thrift.ParalellIndexException;
 import ar.uba.fi.tppro.core.service.thrift.ParalellSearchResult;
 import ar.uba.fi.tppro.core.service.thrift.PartitionAlreadyExistsException;
-import ar.uba.fi.tppro.core.service.thrift.QueryResult;
-import ar.uba.fi.tppro.partition.StaticSocketPartitionResolver;
+import ar.uba.fi.tppro.partition.PartitionResolver;
+import ar.uba.fi.tppro.partition.ZookeeperPartitionResolver;
 
 import com.google.common.collect.LinkedListMultimap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import com.google.common.io.Files;
+import com.netflix.curator.framework.CuratorFramework;
+import com.netflix.curator.framework.CuratorFrameworkFactory;
+import com.netflix.curator.retry.RetryOneTime;
+import com.netflix.curator.test.TestingServer;
 
 public class IndexBrokerHandlerTest {
 	
-	protected IndexServer initServer(int port) throws Exception{
-			File tempDir = Files.createTempDir();
-			tempDir.deleteOnExit();
-			
-			if(tempDir.list().length > 0)
-				fail("temp directory not empty");
-			
-			IndexServer core = new IndexServer(port, tempDir);
-			
-			new Thread(core).start();
-			
-			return core;
+	final Logger logger = LoggerFactory.getLogger(IndexBrokerHandlerTest.class);
+
+	protected IndexServer initServer(int port, CuratorFramework client)
+			throws Exception {
+		File tempDir = Files.createTempDir();
+		tempDir.deleteOnExit();
+
+		if (tempDir.list().length > 0)
+			fail("temp directory not empty");
+
+		PartitionResolver partitionResolver = new ZookeeperPartitionResolver(
+				client);
+		ShardVersionTracker versionTracker = new ZkShardVersionTracker(client);
+		LockManager lockManager = new NullLockManager();
+
+		IndexServer core = new IndexServer(port, tempDir, partitionResolver,
+				versionTracker, lockManager);
+
+		new Thread(core).start();
+
+		return core;
 	}
-	
-	protected void createPartitions(int port, Collection<Integer> partitions) throws PartitionAlreadyExistsException, TException{
+
+	protected void createPartitions(int port, Collection<Integer> partitions)
+			throws PartitionAlreadyExistsException, TException {
 		TTransport transport = new TSocket("localhost", port);
 		TProtocol protocol = new TBinaryProtocol(transport);
 		IndexNode.Client client = new IndexNode.Client(protocol);
 		transport.open();
-		
-		for(int pId : partitions){
-			if(!client.containsPartition(pId)){
-				client.createPartition(pId);
+
+		for (int pId : partitions) {
+			if (!client.containsPartition(1, pId)) {
+				client.createPartition(1, pId);
 			}
 		}
 
 		transport.close();
 	}
-	
-	protected Document doc(String ... fields){
+
+	protected Document doc(String... fields) {
 		Document doc = new Document();
-		doc.fields = Maps.newHashMap();		
-		for(int i=0; i<fields.length; i+=2){
-			doc.fields.put(fields[i], fields[i+1]);
+		doc.fields = Maps.newHashMap();
+		for (int i = 0; i < fields.length; i += 2) {
+			doc.fields.put(fields[i], fields[i + 1]);
 		}
 		return doc;
 	}
-	
-	protected List<Document> createDocuments(){
+
+	protected List<Document> createDocuments() {
 		List<Document> documents = Lists.newArrayList();
 
 		documents
@@ -184,66 +195,94 @@ public class IndexBrokerHandlerTest {
 
 		return documents;
 	}
-	
-	
 
 	@Test
 	public void testIndexAndSearch() throws Exception {
-		
-		IndexServer core1 = initServer(9000);
-		IndexServer core2 = initServer(9010);
-		IndexServer core3 = initServer(9020);
-		Thread.sleep(5000);
-		
-		Multimap<Integer, Integer> parts = LinkedListMultimap.create();
 
-		parts.put(9000, 2);
-		parts.put(9000, 3);
-		parts.put(9010, 1);
-		parts.put(9010, 3);
-		parts.put(9020, 1);
-		parts.put(9020, 2);
-		
-		for(int pId : parts.keySet()){
-			createPartitions(pId, parts.get(pId));
+		TestingServer server = new TestingServer();
+		IndexServer indexServer1 = null;
+		IndexServer indexServer2 = null;
+		IndexServer indexServer3 = null;
+
+		try {
+			CuratorFramework client1 = CuratorFrameworkFactory.newClient(
+					server.getConnectString(), new RetryOneTime(1));
+			client1.start();
+
+			CuratorFramework client2 = CuratorFrameworkFactory.newClient(
+					server.getConnectString(), new RetryOneTime(1));
+			client2.start();
+
+			CuratorFramework client3 = CuratorFrameworkFactory.newClient(
+					server.getConnectString(), new RetryOneTime(1));
+			client3.start();
+
+			indexServer1 = initServer(9000, client1);
+			indexServer2 = initServer(9010, client2);
+			indexServer3 = initServer(9020, client3);
+			Thread.sleep(5000);
+
+			Multimap<Integer, Integer> parts = LinkedListMultimap.create();
+
+			parts.put(9000, 2);
+			parts.put(9000, 3);
+			parts.put(9010, 1);
+			parts.put(9010, 3);
+			parts.put(9020, 1);
+			parts.put(9020, 2);
+
+			for (int pId : parts.keySet()) {
+				createPartitions(pId, parts.get(pId));
+			}
+
+			CuratorFramework brokerClient = CuratorFrameworkFactory.newClient(
+					server.getConnectString(), new RetryOneTime(1));
+			brokerClient.start();
+
+			LockManager lockManager = new NullLockManager();
+			ShardVersionTracker versionTracker = new ZkShardVersionTracker(brokerClient);
+			PartitionResolver resolver = new ZookeeperPartitionResolver(brokerClient);
+			
+			
+			IndexBrokerHandler broker = new IndexBrokerHandler(resolver, lockManager, versionTracker);
+			
+			//Run the test
+
+			logger.info("First index");
+			broker.index(1, createDocuments());
+			
+			logger.info("Waiting propagation of indexed documents");
+			Thread.sleep(5000);
+
+			ParalellSearchResult result = broker.search(1, "*:*", 10, 0);
+			assertEquals(12, result.qr.totalHits);
+
+			result = broker.search(1, "title:Blade OR title:Star", 10, 0);
+			assertEquals(2, result.qr.totalHits);
+
+			logger.info("Second index");
+			broker.index(1, createDocuments());
+			logger.info("Waiting propagation of indexed documents");
+			Thread.sleep(5000);
+
+			result = broker.search(1, "*:*", 10, 0);
+			assertEquals(24, result.qr.totalHits);
+
+			result = broker.search(1, "title:Blade OR title:Star", 10, 0);
+			assertEquals(4, result.qr.totalHits);
+
+			client1.close();
+			Thread.sleep(5000);
+
+			result = broker.search(1, "title:Blade OR title:Star", 10, 0);
+			assertEquals(4, result.qr.totalHits);
+
+		} finally {
+			server.close();
+			indexServer1.stop();
+			indexServer2.stop();
+			indexServer3.stop();
 		}
-		
-		RemoteNodePool nodePool = new RemoteNodePool();
-		StaticSocketPartitionResolver resolver = new StaticSocketPartitionResolver(nodePool);
-		resolver.addReplica("localhost", 9000, 2);
-		resolver.addReplica("localhost", 9000, 3);
-		resolver.addReplica("localhost", 9010, 1);
-		resolver.addReplica("localhost", 9010, 3);
-		resolver.addReplica("localhost", 9020, 1);
-		resolver.addReplica("localhost", 9020, 2);
-		
-		LockManager lockManager = mock(LockManager.class);
-		IndexLock indexLock = mock(IndexLock.class);
-		when(lockManager.aquire(eq(LockType.ADD), anyInt())).thenReturn(indexLock);
-		
-		IndexBrokerHandler broker = new IndexBrokerHandler(resolver, lockManager);
-		
-		broker.index(Lists.newArrayList(1, 2, 3), createDocuments());
-		
-		ParalellSearchResult result = broker.search(Lists.newArrayList(1, 2, 3), "*:*", 10, 0);
-		assertEquals(12, result.qr.totalHits);
-		
-		result = broker.search(Lists.newArrayList(1, 2, 3), "title:Blade OR title:Star", 10, 0);
-		assertEquals(2, result.qr.totalHits);
-		
-		broker.index(Lists.newArrayList(1, 2), createDocuments());
-		
-		result = broker.search(Lists.newArrayList(1, 2, 3), "*:*", 10, 0);
-		assertEquals(24, result.qr.totalHits);
-		
-		result = broker.search(Lists.newArrayList(1, 2), "title:Blade OR title:Star", 10, 0);
-		assertEquals(3, result.qr.totalHits);
-
-		core1.stop();
-		Thread.sleep(5000);
-		
-		result = broker.search(Lists.newArrayList(1, 2), "title:Blade OR title:Star", 10, 0);
-		assertEquals(3, result.qr.totalHits);
 
 	}
 

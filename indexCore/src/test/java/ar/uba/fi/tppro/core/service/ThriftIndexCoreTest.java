@@ -21,7 +21,9 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.io.Files;
 
-import ar.uba.fi.tppro.core.index.versionTracker.PartitionVersionTracker;
+import ar.uba.fi.tppro.core.index.lock.LockManager;
+import ar.uba.fi.tppro.core.index.lock.NullLockManager;
+import ar.uba.fi.tppro.core.index.versionTracker.ShardVersionTracker;
 import ar.uba.fi.tppro.core.service.IndexServer;
 import ar.uba.fi.tppro.core.service.thrift.Document;
 import ar.uba.fi.tppro.core.service.thrift.IndexNode;
@@ -43,12 +45,14 @@ public class ThriftIndexCoreTest {
 		if(tempDir.list().length > 0)
 			fail("temp directory not empty");
 		
-		IndexServer server = new IndexServer(PORT, tempDir);
-		
-		PartitionVersionTracker versionTracker = mock(PartitionVersionTracker.class);
+		ShardVersionTracker versionTracker = mock(ShardVersionTracker.class);
 		when(versionTracker.getCurrentVersion(123)).thenReturn(0);
 		
 		PartitionResolver partitionResolver = mock(PartitionResolver.class);
+		
+		LockManager lockManager = new NullLockManager();
+		
+		IndexServer server = new IndexServer(PORT, tempDir, partitionResolver, versionTracker, lockManager);
 		
 		server.getHandler().setVersionTracker(versionTracker);
 		server.getHandler().setPartitionResolver(partitionResolver);
@@ -69,8 +73,8 @@ public class ThriftIndexCoreTest {
 		IndexNode.Client client = new IndexNode.Client(protocol);
 		transport.open();
 
-		if(!client.containsPartition(123)){
-			client.createPartition(123);
+		if(!client.containsPartition(1, 123)){
+			client.createPartition(1, 123);
 		}
 
 		transport.close();
@@ -92,12 +96,13 @@ public class ThriftIndexCoreTest {
 		doc.fields.put("title", docTitle);
 		doc.fields.put("text", docText);
 		
-		if(!client.containsPartition(123)){
-			client.createPartition(123);
+		if(!client.containsPartition(1, 123)){
+			client.createPartition(1, 123);
 		}
 		
-		client.index(123, Lists.newArrayList(doc));		
-		QueryResult queryResult = client.search(123, "information", 10, 0);
+		client.prepareCommit(1, 123, 1, Lists.newArrayList(doc));
+		client.commit(1, 123);
+		QueryResult queryResult = client.search(1, 123, "information", 10, 0);
 		
 		assertEquals(1, queryResult.totalHits);
 		assertEquals(1, queryResult.hits.size());

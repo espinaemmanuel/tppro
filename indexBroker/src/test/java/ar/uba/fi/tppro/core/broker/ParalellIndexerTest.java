@@ -1,6 +1,7 @@
 package ar.uba.fi.tppro.core.broker;
 
 import static org.mockito.Mockito.*;
+
 import java.util.List;
 
 import org.apache.thrift.TException;
@@ -15,7 +16,9 @@ import ar.uba.fi.tppro.core.index.IndexNodeDescriptorException;
 import ar.uba.fi.tppro.core.index.lock.IndexLock;
 import ar.uba.fi.tppro.core.index.lock.LockAquireTimeoutException;
 import ar.uba.fi.tppro.core.index.lock.LockManager;
-import ar.uba.fi.tppro.core.index.lock.LockManager.LockType;
+import ar.uba.fi.tppro.core.index.versionTracker.ShardVersionTracker;
+import ar.uba.fi.tppro.core.index.versionTracker.StaleVersionException;
+import ar.uba.fi.tppro.core.index.versionTracker.VersionTrackerServerException;
 import ar.uba.fi.tppro.core.service.thrift.Document;
 import ar.uba.fi.tppro.core.service.thrift.IndexNode;
 import ar.uba.fi.tppro.core.service.thrift.NonExistentPartitionException;
@@ -46,7 +49,7 @@ public class ParalellIndexerTest {
 	}
 
 	@Test
-	public void distributeAndIndexTest() throws LockAquireTimeoutException, NonExistentPartitionException, TException, IndexNodeDescriptorException {
+	public void distributeAndIndexTest() throws LockAquireTimeoutException, NonExistentPartitionException, TException, IndexNodeDescriptorException, VersionTrackerServerException, StaleVersionException {
 		
 		IndexNode.Iface p1_r1 = mock(IndexNode.Iface.class);
 		IndexNode.Iface p1_r2 = mock(IndexNode.Iface.class);
@@ -65,19 +68,21 @@ public class ParalellIndexerTest {
 		
 		LockManager lockManager = mock(LockManager.class);
 		IndexLock indexLock = mock(IndexLock.class);
-		when(lockManager.aquire(eq(LockType.ADD), anyInt())).thenReturn(indexLock);
+		when(lockManager.aquire(eq(1), anyInt())).thenReturn(indexLock);
 		
-		ParalellIndexer indexer = new ParalellIndexer(lockManager);
+		ShardVersionTracker versionTracker = mock(ShardVersionTracker.class);
+
+		ParalellIndexer indexer = new ParalellIndexer(lockManager, versionTracker);
 		
 		List<Document> documents = sampleDocs();
-		indexer.distributeAndIndex(partitions, documents);
+		indexer.distributeAndIndex(1, partitions, documents);
 		
-		verify(p1_r1).index(1, Lists.newArrayList(documents.get(0), documents.get(2), documents.get(4), documents.get(6), documents.get(8)));
-		verify(p1_r2).index(1, Lists.newArrayList(documents.get(0), documents.get(2), documents.get(4), documents.get(6), documents.get(8)));
-		verify(p1_r3).index(1, Lists.newArrayList(documents.get(0), documents.get(2), documents.get(4), documents.get(6), documents.get(8)));
-		verify(p2_r1).index(2, Lists.newArrayList(documents.get(1), documents.get(3), documents.get(5), documents.get(7), documents.get(9)));
-		verify(p2_r2).index(2, Lists.newArrayList(documents.get(1), documents.get(3), documents.get(5), documents.get(7), documents.get(9)));
-		verify(p2_r3).index(2, Lists.newArrayList(documents.get(1), documents.get(3), documents.get(5), documents.get(7), documents.get(9)));
+		verify(p1_r1).prepareCommit(1, 1, 1, Lists.newArrayList(documents.get(0), documents.get(2), documents.get(4), documents.get(6), documents.get(8)));
+		verify(p1_r2).prepareCommit(1, 1, 1, Lists.newArrayList(documents.get(0), documents.get(2), documents.get(4), documents.get(6), documents.get(8)));
+		verify(p1_r3).prepareCommit(1, 1, 1, Lists.newArrayList(documents.get(0), documents.get(2), documents.get(4), documents.get(6), documents.get(8)));
+		verify(p2_r1).prepareCommit(1, 2, 1, Lists.newArrayList(documents.get(1), documents.get(3), documents.get(5), documents.get(7), documents.get(9)));
+		verify(p2_r2).prepareCommit(1, 2, 1, Lists.newArrayList(documents.get(1), documents.get(3), documents.get(5), documents.get(7), documents.get(9)));
+		verify(p2_r3).prepareCommit(1, 2, 1, Lists.newArrayList(documents.get(1), documents.get(3), documents.get(5), documents.get(7), documents.get(9)));
 		
 		verifyNoMoreInteractions(p1_r1);
 		verifyNoMoreInteractions(p1_r2);

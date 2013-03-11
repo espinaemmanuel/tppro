@@ -77,9 +77,9 @@ public class ParalellSearcherTest {
 		IndexNode.Iface p2 = mock(IndexNode.Iface.class);
 		IndexNode.Iface p3 = mock(IndexNode.Iface.class);
 		
-		when(p1.search(1, "test", 3, 0)).thenReturn(qr1);
-		when(p2.search(2, "test", 3, 0)).thenReturn(qr2);
-		when(p3.search(3, "test", 3, 0)).thenReturn(qr3);
+		when(p1.search(1, 1, "test", 3, 0)).thenReturn(qr1);
+		when(p2.search(1, 2, "test", 3, 0)).thenReturn(qr2);
+		when(p3.search(1, 3, "test", 3, 0)).thenReturn(qr3);
 		
 		Multimap<Integer, IndexNodeDescriptor> partitions = LinkedListMultimap.create();
 		partitions.put(1, buildDescriptor(p1));
@@ -88,7 +88,7 @@ public class ParalellSearcherTest {
 
 		
 		ParalellSearcher searcher = new ParalellSearcher();
-		ParalellSearchResult result = searcher.parallelSearch(partitions, "test", 3, 0);
+		ParalellSearchResult result = searcher.parallelSearch(1, partitions, "test", 3, 0);
 		
 		assertEquals(900, result.qr.totalHits);
 		assertEquals("test", result.qr.parsedQuery);

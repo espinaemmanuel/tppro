@@ -33,15 +33,15 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
-import ar.uba.fi.tppro.core.index.versionTracker.PartitionVersionObserver;
-import ar.uba.fi.tppro.core.index.versionTracker.PartitionVersionTracker;
+import ar.uba.fi.tppro.core.index.versionTracker.ShardVersionObserver;
+import ar.uba.fi.tppro.core.index.versionTracker.ShardVersionTracker;
 import ar.uba.fi.tppro.core.index.versionTracker.VersionTrackerServerException;
 import ar.uba.fi.tppro.core.service.thrift.Document;
 import ar.uba.fi.tppro.core.service.thrift.Hit;
 import ar.uba.fi.tppro.core.service.thrift.ParseException;
 import ar.uba.fi.tppro.core.service.thrift.QueryResult;
 
-public class IndexPartition implements Closeable, PartitionVersionObserver {
+public class IndexPartition implements Closeable, ShardVersionObserver {
 
 	final Logger logger = LoggerFactory.getLogger(IndexPartition.class);
 
@@ -55,9 +55,10 @@ public class IndexPartition implements Closeable, PartitionVersionObserver {
 	private StandardAnalyzer analyzer;
 	private SearcherManager mgr;
 	boolean isOpen = false;
-	private PartitionVersionTracker versionTracker;
+	private ShardVersionTracker versionTracker;
 	
 	private int partitionId;
+	private int shardId;
 	
 	/*
 	 * Two phase commit implementation
@@ -72,8 +73,9 @@ public class IndexPartition implements Closeable, PartitionVersionObserver {
 
 	private String lastError;
 
-	public IndexPartition(int partitionId, File dataPath, PartitionVersionTracker versionTracker) {
+	public IndexPartition(int shardId, int partitionId, File dataPath, ShardVersionTracker versionTracker) {
 		this.partitionId = partitionId;
+		this.shardId = shardId;
 		this.dataPath = dataPath;
 		this.versionTracker = versionTracker;
 		
@@ -96,8 +98,8 @@ public class IndexPartition implements Closeable, PartitionVersionObserver {
 		int clusterVersion;
 		try {
 			
-			clusterVersion = this.versionTracker.getCurrentVersion(this.partitionId);
-			this.versionTracker.addVersionObserver(this.partitionId, this);
+			clusterVersion = this.versionTracker.getCurrentVersion(this.shardId);
+			this.versionTracker.addVersionObserver(this.shardId, this);
 			
 		} catch (VersionTrackerServerException e) {
 			throw new IOException("could not retrieve version from server", e);
@@ -405,7 +407,10 @@ public class IndexPartition implements Closeable, PartitionVersionObserver {
 	}
 
 	@Override
-	public void onVersionChanged(int partitionId, int newVersion) {
+	public void onVersionChanged(int groupId, int newVersion) {
+		logger.info("Group " + groupId + " version changed. New version: " + newVersion);
+		logger.debug(String.format("lastPreparedMessageId = %d, newVersion = %d", this.lastPreparedMessageId, newVersion));
+		
 		if(this.lastPreparedMessageId != null  && this.lastPreparedMessageId == newVersion){
 			try {
 				this.commit();
@@ -413,6 +418,18 @@ public class IndexPartition implements Closeable, PartitionVersionObserver {
 				logger.error("Could not commit index", e);
 			}		
 		}
+	}
+
+	public Integer getLastCommittedMessageId() {
+		return lastCommittedMessageId;
+	}
+
+	public Integer getLastPreparedMessageId() {
+		return lastPreparedMessageId;
+	}
+
+	public int getShardId() {
+		return shardId;
 	}
 
 }

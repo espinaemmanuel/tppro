@@ -24,16 +24,6 @@ public class PostDocsBroker extends PostDocsBase {
 	protected void run(String[] args) throws PartitionAlreadyExistsException, TException, JsonIOException, JsonSyntaxException, FileNotFoundException{	
 		String host = System.getProperty("host", "localhost");
 		String port = System.getProperty("port", "9090");
-		String partitions = System.getProperty("partitions", "1,2,3");
-		
-		String[] partitionsStr = StringUtils.split(partitions, ',');
-		
-		List<Integer> partitionIds = Lists.newArrayList();
-		
-		for(String partitionStr : partitionsStr){
-			partitionIds.add(Integer.parseInt(partitionStr));
-		}
-
 
 		TTransport transport = new TSocket(host, Integer.parseInt(port));
 		TProtocol protocol = new TBinaryProtocol(transport);
@@ -47,7 +37,7 @@ public class PostDocsBroker extends PostDocsBase {
 		
 		for(String jsonFile : args){
 			List<Document> documents = createDocuments(jsonFile);
-			client.index(partitionIds, documents);
+			client.index(1, documents);
 			logger.info("Indexed " + documents.size() + " documents");		
 		}
 	}

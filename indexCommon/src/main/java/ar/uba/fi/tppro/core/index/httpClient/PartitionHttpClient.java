@@ -15,16 +15,18 @@ public class PartitionHttpClient {
 	public String host;
 	public int port;
 	public int partition;
+	public int group;
 	
-	public PartitionHttpClient(String host, int port, int partition) {
+	public PartitionHttpClient(String host, int port, int groupId, int partitionId) {
 		super();
 		this.host = host;
 		this.port = port;
-		this.partition = partition;
+		this.partition = partitionId;
+		this.group = groupId;
 	}
 	
 	protected String buildUrl(String name){
-		return String.format("http://%s:%d/%d/%s", host, port, partition, name);
+		return String.format("http://%s:%d/%d_%d/%s", host, port, group, partition, name);
 	}
 	
 	public InputStream getFile(String name) throws PartitionHttpClientException{

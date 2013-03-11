@@ -26,16 +26,7 @@ public class SearchDocsBroker extends SearchDocsBase {
 	public void run(String[] args) throws IOException,
 			NonExistentPartitionException, TException {
 		String host = System.getProperty("host", "localhost");
-		String port = System.getProperty("port", "9090");		
-		String partitions = System.getProperty("partitions", "1,2,3");
-		
-		String[] partitionsStr = StringUtils.split(partitions, ',');
-		
-		List<Integer> partitionIds = Lists.newArrayList();
-		
-		for(String partitionStr : partitionsStr){
-			partitionIds.add(Integer.parseInt(partitionStr));
-		}
+		String port = System.getProperty("port", "9090");
 
 		TTransport transport = new TSocket(host, Integer.parseInt(port));
 		TProtocol protocol = new TBinaryProtocol(transport);
@@ -53,7 +44,7 @@ public class SearchDocsBroker extends SearchDocsBase {
 
 			if (!(curLine.equals("quit"))) {
 				try {
-					ParalellSearchResult result = client.search(partitionIds, curLine, 10,
+					ParalellSearchResult result = client.search(1, curLine, 10,
 							0);
 					
 					for(ar.uba.fi.tppro.core.service.thrift.Error error : result.errors){

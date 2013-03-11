@@ -9,8 +9,7 @@ import com.google.common.collect.Multimap;
 
 public interface PartitionResolver {
 
-	public Multimap<Integer, IndexNodeDescriptor> resolve(
-			List<Integer> partitionIds) throws PartitionResolverException;
+	public Multimap<Integer, IndexNodeDescriptor> resolve(int shardId) throws PartitionResolverException;
 
 	/**
 	 * Registers or updates a partition
@@ -20,7 +19,7 @@ public interface PartitionResolver {
 	 * @param status
 	 * @throws PartitionResolverException
 	 */
-	void registerPartition(int partitionId, IndexNodeDescriptor descriptor,
+	void registerPartition(int shardId, int partitionId, IndexNodeDescriptor descriptor,
 			IndexPartitionStatus status) throws PartitionResolverException;
 
 }

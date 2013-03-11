@@ -52,8 +52,8 @@ public class RemoteIndexNodeDescriptor implements IndexNodeDescriptor {
 	}
 
 	@Override
-	public PartitionHttpClient getHttpClient(int partition) {
-		return new PartitionHttpClient(host, port + 1, partition);
+	public PartitionHttpClient getHttpClient(int groupId, int partitionId) {
+		return new PartitionHttpClient(host, port + 1, groupId, partitionId);
 	}
 
 	@Override

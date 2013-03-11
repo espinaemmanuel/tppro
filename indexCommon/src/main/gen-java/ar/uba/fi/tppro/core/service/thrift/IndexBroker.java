@@ -34,21 +34,21 @@ public class IndexBroker {
 
   public interface Iface {
 
-    public ParalellSearchResult search(List<Integer> partitionId, String query, int limit, int offset) throws ParalellSearchException, NonExistentPartitionException, org.apache.thrift.TException;
+    public ParalellSearchResult search(int shardId, String query, int limit, int offset) throws ParalellSearchException, NonExistentPartitionException, org.apache.thrift.TException;
 
-    public IndexResult deleteByQuery(List<Integer> partitionId, String query) throws org.apache.thrift.TException;
+    public IndexResult deleteByQuery(int shardId, String query) throws org.apache.thrift.TException;
 
-    public IndexResult index(List<Integer> partitionIds, List<Document> documents) throws ParalellIndexException, NonExistentPartitionException, org.apache.thrift.TException;
+    public IndexResult index(int shardId, List<Document> documents) throws ParalellIndexException, NonExistentPartitionException, org.apache.thrift.TException;
 
   }
 
   public interface AsyncIface {
 
-    public void search(List<Integer> partitionId, String query, int limit, int offset, org.apache.thrift.async.AsyncMethodCallback<AsyncClient.search_call> resultHandler) throws org.apache.thrift.TException;
+    public void search(int shardId, String query, int limit, int offset, org.apache.thrift.async.AsyncMethodCallback<AsyncClient.search_call> resultHandler) throws org.apache.thrift.TException;
 
-    public void deleteByQuery(List<Integer> partitionId, String query, org.apache.thrift.async.AsyncMethodCallback<AsyncClient.deleteByQuery_call> resultHandler) throws org.apache.thrift.TException;
+    public void deleteByQuery(int shardId, String query, org.apache.thrift.async.AsyncMethodCallback<AsyncClient.deleteByQuery_call> resultHandler) throws org.apache.thrift.TException;
 
-    public void index(List<Integer> partitionIds, List<Document> documents, org.apache.thrift.async.AsyncMethodCallback<AsyncClient.index_call> resultHandler) throws org.apache.thrift.TException;
+    public void index(int shardId, List<Document> documents, org.apache.thrift.async.AsyncMethodCallback<AsyncClient.index_call> resultHandler) throws org.apache.thrift.TException;
 
   }
 
@@ -72,16 +72,16 @@ public class IndexBroker {
       super(iprot, oprot);
     }
 
-    public ParalellSearchResult search(List<Integer> partitionId, String query, int limit, int offset) throws ParalellSearchException, NonExistentPartitionException, org.apache.thrift.TException
+    public ParalellSearchResult search(int shardId, String query, int limit, int offset) throws ParalellSearchException, NonExistentPartitionException, org.apache.thrift.TException
     {
-      send_search(partitionId, query, limit, offset);
+      send_search(shardId, query, limit, offset);
       return recv_search();
     }
 
-    public void send_search(List<Integer> partitionId, String query, int limit, int offset) throws org.apache.thrift.TException
+    public void send_search(int shardId, String query, int limit, int offset) throws org.apache.thrift.TException
     {
       search_args args = new search_args();
-      args.setPartitionId(partitionId);
+      args.setShardId(shardId);
       args.setQuery(query);
       args.setLimit(limit);
       args.setOffset(offset);
@@ -104,16 +104,16 @@ public class IndexBroker {
       throw new org.apache.thrift.TApplicationException(org.apache.thrift.TApplicationException.MISSING_RESULT, "search failed: unknown result");
     }
 
-    public IndexResult deleteByQuery(List<Integer> partitionId, String query) throws org.apache.thrift.TException
+    public IndexResult deleteByQuery(int shardId, String query) throws org.apache.thrift.TException
     {
-      send_deleteByQuery(partitionId, query);
+      send_deleteByQuery(shardId, query);
       return recv_deleteByQuery();
     }
 
-    public void send_deleteByQuery(List<Integer> partitionId, String query) throws org.apache.thrift.TException
+    public void send_deleteByQuery(int shardId, String query) throws org.apache.thrift.TException
     {
       deleteByQuery_args args = new deleteByQuery_args();
-      args.setPartitionId(partitionId);
+      args.setShardId(shardId);
       args.setQuery(query);
       sendBase("deleteByQuery", args);
     }
@@ -128,16 +128,16 @@ public class IndexBroker {
       throw new org.apache.thrift.TApplicationException(org.apache.thrift.TApplicationException.MISSING_RESULT, "deleteByQuery failed: unknown result");
     }
 
-    public IndexResult index(List<Integer> partitionIds, List<Document> documents) throws ParalellIndexException, NonExistentPartitionException, org.apache.thrift.TException
+    public IndexResult index(int shardId, List<Document> documents) throws ParalellIndexException, NonExistentPartitionException, org.apache.thrift.TException
     {
-      send_index(partitionIds, documents);
+      send_index(shardId, documents);
       return recv_index();
     }
 
-    public void send_index(List<Integer> partitionIds, List<Document> documents) throws org.apache.thrift.TException
+    public void send_index(int shardId, List<Document> documents) throws org.apache.thrift.TException
     {
       index_args args = new index_args();
-      args.setPartitionIds(partitionIds);
+      args.setShardId(shardId);
       args.setDocuments(documents);
       sendBase("index", args);
     }
@@ -176,21 +176,21 @@ public class IndexBroker {
       super(protocolFactory, clientManager, transport);
     }
 
-    public void search(List<Integer> partitionId, String query, int limit, int offset, org.apache.thrift.async.AsyncMethodCallback<search_call> resultHandler) throws org.apache.thrift.TException {
+    public void search(int shardId, String query, int limit, int offset, org.apache.thrift.async.AsyncMethodCallback<search_call> resultHandler) throws org.apache.thrift.TException {
       checkReady();
-      search_call method_call = new search_call(partitionId, query, limit, offset, resultHandler, this, ___protocolFactory, ___transport);
+      search_call method_call = new search_call(shardId, query, limit, offset, resultHandler, this, ___protocolFactory, ___transport);
       this.___currentMethod = method_call;
       ___manager.call(method_call);
     }
 
     public static class search_call extends org.apache.thrift.async.TAsyncMethodCall {
-      private List<Integer> partitionId;
+      private int shardId;
       private String query;
       private int limit;
       private int offset;
-      public search_call(List<Integer> partitionId, String query, int limit, int offset, org.apache.thrift.async.AsyncMethodCallback<search_call> resultHandler, org.apache.thrift.async.TAsyncClient client, org.apache.thrift.protocol.TProtocolFactory protocolFactory, org.apache.thrift.transport.TNonblockingTransport transport) throws org.apache.thrift.TException {
+      public search_call(int shardId, String query, int limit, int offset, org.apache.thrift.async.AsyncMethodCallback<search_call> resultHandler, org.apache.thrift.async.TAsyncClient client, org.apache.thrift.protocol.TProtocolFactory protocolFactory, org.apache.thrift.transport.TNonblockingTransport transport) throws org.apache.thrift.TException {
         super(client, protocolFactory, transport, resultHandler, false);
-        this.partitionId = partitionId;
+        this.shardId = shardId;
         this.query = query;
         this.limit = limit;
         this.offset = offset;
@@ -199,7 +199,7 @@ public class IndexBroker {
       public void write_args(org.apache.thrift.protocol.TProtocol prot) throws org.apache.thrift.TException {
         prot.writeMessageBegin(new org.apache.thrift.protocol.TMessage("search", org.apache.thrift.protocol.TMessageType.CALL, 0));
         search_args args = new search_args();
-        args.setPartitionId(partitionId);
+        args.setShardId(shardId);
         args.setQuery(query);
         args.setLimit(limit);
         args.setOffset(offset);
@@ -217,26 +217,26 @@ public class IndexBroker {
       }
     }
 
-    public void deleteByQuery(List<Integer> partitionId, String query, org.apache.thrift.async.AsyncMethodCallback<deleteByQuery_call> resultHandler) throws org.apache.thrift.TException {
+    public void deleteByQuery(int shardId, String query, org.apache.thrift.async.AsyncMethodCallback<deleteByQuery_call> resultHandler) throws org.apache.thrift.TException {
       checkReady();
-      deleteByQuery_call method_call = new deleteByQuery_call(partitionId, query, resultHandler, this, ___protocolFactory, ___transport);
+      deleteByQuery_call method_call = new deleteByQuery_call(shardId, query, resultHandler, this, ___protocolFactory, ___transport);
       this.___currentMethod = method_call;
       ___manager.call(method_call);
     }
 
     public static class deleteByQuery_call extends org.apache.thrift.async.TAsyncMethodCall {
-      private List<Integer> partitionId;
+      private int shardId;
       private String query;
-      public deleteByQuery_call(List<Integer> partitionId, String query, org.apache.thrift.async.AsyncMethodCallback<deleteByQuery_call> resultHandler, org.apache.thrift.async.TAsyncClient client, org.apache.thrift.protocol.TProtocolFactory protocolFactory, org.apache.thrift.transport.TNonblockingTransport transport) throws org.apache.thrift.TException {
+      public deleteByQuery_call(int shardId, String query, org.apache.thrift.async.AsyncMethodCallback<deleteByQuery_call> resultHandler, org.apache.thrift.async.TAsyncClient client, org.apache.thrift.protocol.TProtocolFactory protocolFactory, org.apache.thrift.transport.TNonblockingTransport transport) throws org.apache.thrift.TException {
         super(client, protocolFactory, transport, resultHandler, false);
-        this.partitionId = partitionId;
+        this.shardId = shardId;
         this.query = query;
       }
 
       public void write_args(org.apache.thrift.protocol.TProtocol prot) throws org.apache.thrift.TException {
         prot.writeMessageBegin(new org.apache.thrift.protocol.TMessage("deleteByQuery", org.apache.thrift.protocol.TMessageType.CALL, 0));
         deleteByQuery_args args = new deleteByQuery_args();
-        args.setPartitionId(partitionId);
+        args.setShardId(shardId);
         args.setQuery(query);
         args.write(prot);
         prot.writeMessageEnd();
@@ -252,26 +252,26 @@ public class IndexBroker {
       }
     }
 
-    public void index(List<Integer> partitionIds, List<Document> documents, org.apache.thrift.async.AsyncMethodCallback<index_call> resultHandler) throws org.apache.thrift.TException {
+    public void index(int shardId, List<Document> documents, org.apache.thrift.async.AsyncMethodCallback<index_call> resultHandler) throws org.apache.thrift.TException {
       checkReady();
-      index_call method_call = new index_call(partitionIds, documents, resultHandler, this, ___protocolFactory, ___transport);
+      index_call method_call = new index_call(shardId, documents, resultHandler, this, ___protocolFactory, ___transport);
       this.___currentMethod = method_call;
       ___manager.call(method_call);
     }
 
     public static class index_call extends org.apache.thrift.async.TAsyncMethodCall {
-      private List<Integer> partitionIds;
+      private int shardId;
       private List<Document> documents;
-      public index_call(List<Integer> partitionIds, List<Document> documents, org.apache.thrift.async.AsyncMethodCallback<index_call> resultHandler, org.apache.thrift.async.TAsyncClient client, org.apache.thrift.protocol.TProtocolFactory protocolFactory, org.apache.thrift.transport.TNonblockingTransport transport) throws org.apache.thrift.TException {
+      public index_call(int shardId, List<Document> documents, org.apache.thrift.async.AsyncMethodCallback<index_call> resultHandler, org.apache.thrift.async.TAsyncClient client, org.apache.thrift.protocol.TProtocolFactory protocolFactory, org.apache.thrift.transport.TNonblockingTransport transport) throws org.apache.thrift.TException {
         super(client, protocolFactory, transport, resultHandler, false);
-        this.partitionIds = partitionIds;
+        this.shardId = shardId;
         this.documents = documents;
       }
 
       public void write_args(org.apache.thrift.protocol.TProtocol prot) throws org.apache.thrift.TException {
         prot.writeMessageBegin(new org.apache.thrift.protocol.TMessage("index", org.apache.thrift.protocol.TMessageType.CALL, 0));
         index_args args = new index_args();
-        args.setPartitionIds(partitionIds);
+        args.setShardId(shardId);
         args.setDocuments(documents);
         args.write(prot);
         prot.writeMessageEnd();
@@ -322,7 +322,7 @@ public class IndexBroker {
       public search_result getResult(I iface, search_args args) throws org.apache.thrift.TException {
         search_result result = new search_result();
         try {
-          result.success = iface.search(args.partitionId, args.query, args.limit, args.offset);
+          result.success = iface.search(args.shardId, args.query, args.limit, args.offset);
         } catch (ParalellSearchException searex) {
           result.searex = searex;
         } catch (NonExistentPartitionException partex) {
@@ -347,7 +347,7 @@ public class IndexBroker {
 
       public deleteByQuery_result getResult(I iface, deleteByQuery_args args) throws org.apache.thrift.TException {
         deleteByQuery_result result = new deleteByQuery_result();
-        result.success = iface.deleteByQuery(args.partitionId, args.query);
+        result.success = iface.deleteByQuery(args.shardId, args.query);
         return result;
       }
     }
@@ -368,7 +368,7 @@ public class IndexBroker {
       public index_result getResult(I iface, index_args args) throws org.apache.thrift.TException {
         index_result result = new index_result();
         try {
-          result.success = iface.index(args.partitionIds, args.documents);
+          result.success = iface.index(args.shardId, args.documents);
         } catch (ParalellIndexException parex) {
           result.parex = parex;
         } catch (NonExistentPartitionException noex) {
@@ -383,7 +383,7 @@ public class IndexBroker {
   public static class search_args implements org.apache.thrift.TBase<search_args, search_args._Fields>, java.io.Serializable, Cloneable   {
     private static final org.apache.thrift.protocol.TStruct STRUCT_DESC = new org.apache.thrift.protocol.TStruct("search_args");
 
-    private static final org.apache.thrift.protocol.TField PARTITION_ID_FIELD_DESC = new org.apache.thrift.protocol.TField("partitionId", org.apache.thrift.protocol.TType.LIST, (short)1);
+    private static final org.apache.thrift.protocol.TField SHARD_ID_FIELD_DESC = new org.apache.thrift.protocol.TField("shardId", org.apache.thrift.protocol.TType.I32, (short)1);
     private static final org.apache.thrift.protocol.TField QUERY_FIELD_DESC = new org.apache.thrift.protocol.TField("query", org.apache.thrift.protocol.TType.STRING, (short)2);
     private static final org.apache.thrift.protocol.TField LIMIT_FIELD_DESC = new org.apache.thrift.protocol.TField("limit", org.apache.thrift.protocol.TType.I32, (short)3);
     private static final org.apache.thrift.protocol.TField OFFSET_FIELD_DESC = new org.apache.thrift.protocol.TField("offset", org.apache.thrift.protocol.TType.I32, (short)4);
@@ -394,14 +394,14 @@ public class IndexBroker {
       schemes.put(TupleScheme.class, new search_argsTupleSchemeFactory());
     }
 
-    public List<Integer> partitionId; // required
+    public int shardId; // required
     public String query; // required
     public int limit; // required
     public int offset; // required
 
     /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
     public enum _Fields implements org.apache.thrift.TFieldIdEnum {
-      PARTITION_ID((short)1, "partitionId"),
+      SHARD_ID((short)1, "shardId"),
       QUERY((short)2, "query"),
       LIMIT((short)3, "limit"),
       OFFSET((short)4, "offset");
@@ -419,8 +419,8 @@ public class IndexBroker {
        */
       public static _Fields findByThriftId(int fieldId) {
         switch(fieldId) {
-          case 1: // PARTITION_ID
-            return PARTITION_ID;
+          case 1: // SHARD_ID
+            return SHARD_ID;
           case 2: // QUERY
             return QUERY;
           case 3: // LIMIT
@@ -467,15 +467,15 @@ public class IndexBroker {
     }
 
     // isset id assignments
-    private static final int __LIMIT_ISSET_ID = 0;
-    private static final int __OFFSET_ISSET_ID = 1;
+    private static final int __SHARDID_ISSET_ID = 0;
+    private static final int __LIMIT_ISSET_ID = 1;
+    private static final int __OFFSET_ISSET_ID = 2;
     private byte __isset_bitfield = 0;
     public static final Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> metaDataMap;
     static {
       Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift.meta_data.FieldMetaData>(_Fields.class);
-      tmpMap.put(_Fields.PARTITION_ID, new org.apache.thrift.meta_data.FieldMetaData("partitionId", org.apache.thrift.TFieldRequirementType.DEFAULT, 
-          new org.apache.thrift.meta_data.ListMetaData(org.apache.thrift.protocol.TType.LIST, 
-              new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.I32))));
+      tmpMap.put(_Fields.SHARD_ID, new org.apache.thrift.meta_data.FieldMetaData("shardId", org.apache.thrift.TFieldRequirementType.DEFAULT, 
+          new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.I32)));
       tmpMap.put(_Fields.QUERY, new org.apache.thrift.meta_data.FieldMetaData("query", org.apache.thrift.TFieldRequirementType.DEFAULT, 
           new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.STRING)));
       tmpMap.put(_Fields.LIMIT, new org.apache.thrift.meta_data.FieldMetaData("limit", org.apache.thrift.TFieldRequirementType.DEFAULT, 
@@ -490,13 +490,14 @@ public class IndexBroker {
     }
 
     public search_args(
-      List<Integer> partitionId,
+      int shardId,
       String query,
       int limit,
       int offset)
     {
       this();
-      this.partitionId = partitionId;
+      this.shardId = shardId;
+      setShardIdIsSet(true);
       this.query = query;
       this.limit = limit;
       setLimitIsSet(true);
@@ -509,13 +510,7 @@ public class IndexBroker {
      */
     public search_args(search_args other) {
       __isset_bitfield = other.__isset_bitfield;
-      if (other.isSetPartitionId()) {
-        List<Integer> __this__partitionId = new ArrayList<Integer>();
-        for (Integer other_element : other.partitionId) {
-          __this__partitionId.add(other_element);
-        }
-        this.partitionId = __this__partitionId;
-      }
+      this.shardId = other.shardId;
       if (other.isSetQuery()) {
         this.query = other.query;
       }
@@ -529,7 +524,8 @@ public class IndexBroker {
 
     @Override
     public void clear() {
-      this.partitionId = null;
+      setShardIdIsSet(false);
+      this.shardId = 0;
       this.query = null;
       setLimitIsSet(false);
       this.limit = 0;
@@ -537,43 +533,27 @@ public class IndexBroker {
       this.offset = 0;
     }
 
-    public int getPartitionIdSize() {
-      return (this.partitionId == null) ? 0 : this.partitionId.size();
+    public int getShardId() {
+      return this.shardId;
     }
 
-    public java.util.Iterator<Integer> getPartitionIdIterator() {
-      return (this.partitionId == null) ? null : this.partitionId.iterator();
-    }
-
-    public void addToPartitionId(int elem) {
-      if (this.partitionId == null) {
-        this.partitionId = new ArrayList<Integer>();
-      }
-      this.partitionId.add(elem);
-    }
-
-    public List<Integer> getPartitionId() {
-      return this.partitionId;
-    }
-
-    public search_args setPartitionId(List<Integer> partitionId) {
-      this.partitionId = partitionId;
+    public search_args setShardId(int shardId) {
+      this.shardId = shardId;
+      setShardIdIsSet(true);
       return this;
     }
 
-    public void unsetPartitionId() {
-      this.partitionId = null;
+    public void unsetShardId() {
+      __isset_bitfield = EncodingUtils.clearBit(__isset_bitfield, __SHARDID_ISSET_ID);
     }
 
-    /** Returns true if field partitionId is set (has been assigned a value) and false otherwise */
-    public boolean isSetPartitionId() {
-      return this.partitionId != null;
+    /** Returns true if field shardId is set (has been assigned a value) and false otherwise */
+    public boolean isSetShardId() {
+      return EncodingUtils.testBit(__isset_bitfield, __SHARDID_ISSET_ID);
     }
 
-    public void setPartitionIdIsSet(boolean value) {
-      if (!value) {
-        this.partitionId = null;
-      }
+    public void setShardIdIsSet(boolean value) {
+      __isset_bitfield = EncodingUtils.setBit(__isset_bitfield, __SHARDID_ISSET_ID, value);
     }
 
     public String getQuery() {
@@ -648,11 +628,11 @@ public class IndexBroker {
 
     public void setFieldValue(_Fields field, Object value) {
       switch (field) {
-      case PARTITION_ID:
+      case SHARD_ID:
         if (value == null) {
-          unsetPartitionId();
+          unsetShardId();
         } else {
-          setPartitionId((List<Integer>)value);
+          setShardId((Integer)value);
         }
         break;
 
@@ -685,8 +665,8 @@ public class IndexBroker {
 
     public Object getFieldValue(_Fields field) {
       switch (field) {
-      case PARTITION_ID:
-        return getPartitionId();
+      case SHARD_ID:
+        return Integer.valueOf(getShardId());
 
       case QUERY:
         return getQuery();
@@ -708,8 +688,8 @@ public class IndexBroker {
       }
 
       switch (field) {
-      case PARTITION_ID:
-        return isSetPartitionId();
+      case SHARD_ID:
+        return isSetShardId();
       case QUERY:
         return isSetQuery();
       case LIMIT:
@@ -733,12 +713,12 @@ public class IndexBroker {
       if (that == null)
         return false;
 
-      boolean this_present_partitionId = true && this.isSetPartitionId();
-      boolean that_present_partitionId = true && that.isSetPartitionId();
-      if (this_present_partitionId || that_present_partitionId) {
-        if (!(this_present_partitionId && that_present_partitionId))
+      boolean this_present_shardId = true;
+      boolean that_present_shardId = true;
+      if (this_present_shardId || that_present_shardId) {
+        if (!(this_present_shardId && that_present_shardId))
           return false;
-        if (!this.partitionId.equals(that.partitionId))
+        if (this.shardId != that.shardId)
           return false;
       }
 
@@ -785,12 +765,12 @@ public class IndexBroker {
       int lastComparison = 0;
       search_args typedOther = (search_args)other;
 
-      lastComparison = Boolean.valueOf(isSetPartitionId()).compareTo(typedOther.isSetPartitionId());
+      lastComparison = Boolean.valueOf(isSetShardId()).compareTo(typedOther.isSetShardId());
       if (lastComparison != 0) {
         return lastComparison;
       }
-      if (isSetPartitionId()) {
-        lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.partitionId, typedOther.partitionId);
+      if (isSetShardId()) {
+        lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.shardId, typedOther.shardId);
         if (lastComparison != 0) {
           return lastComparison;
         }
@@ -845,12 +825,8 @@ public class IndexBroker {
       StringBuilder sb = new StringBuilder("search_args(");
       boolean first = true;
 
-      sb.append("partitionId:");
-      if (this.partitionId == null) {
-        sb.append("null");
-      } else {
-        sb.append(this.partitionId);
-      }
+      sb.append("shardId:");
+      sb.append(this.shardId);
       first = false;
       if (!first) sb.append(", ");
       sb.append("query:");
@@ -913,20 +889,10 @@ public class IndexBroker {
             break;
           }
           switch (schemeField.id) {
-            case 1: // PARTITION_ID
-              if (schemeField.type == org.apache.thrift.protocol.TType.LIST) {
-                {
-                  org.apache.thrift.protocol.TList _list42 = iprot.readListBegin();
-                  struct.partitionId = new ArrayList<Integer>(_list42.size);
-                  for (int _i43 = 0; _i43 < _list42.size; ++_i43)
-                  {
-                    int _elem44; // required
-                    _elem44 = iprot.readI32();
-                    struct.partitionId.add(_elem44);
-                  }
-                  iprot.readListEnd();
-                }
-                struct.setPartitionIdIsSet(true);
+            case 1: // SHARD_ID
+              if (schemeField.type == org.apache.thrift.protocol.TType.I32) {
+                struct.shardId = iprot.readI32();
+                struct.setShardIdIsSet(true);
               } else { 
                 org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
               }
@@ -970,18 +936,9 @@ public class IndexBroker {
         struct.validate();
 
         oprot.writeStructBegin(STRUCT_DESC);
-        if (struct.partitionId != null) {
-          oprot.writeFieldBegin(PARTITION_ID_FIELD_DESC);
-          {
-            oprot.writeListBegin(new org.apache.thrift.protocol.TList(org.apache.thrift.protocol.TType.I32, struct.partitionId.size()));
-            for (int _iter45 : struct.partitionId)
-            {
-              oprot.writeI32(_iter45);
-            }
-            oprot.writeListEnd();
-          }
-          oprot.writeFieldEnd();
-        }
+        oprot.writeFieldBegin(SHARD_ID_FIELD_DESC);
+        oprot.writeI32(struct.shardId);
+        oprot.writeFieldEnd();
         if (struct.query != null) {
           oprot.writeFieldBegin(QUERY_FIELD_DESC);
           oprot.writeString(struct.query);
@@ -1011,7 +968,7 @@ public class IndexBroker {
       public void write(org.apache.thrift.protocol.TProtocol prot, search_args struct) throws org.apache.thrift.TException {
         TTupleProtocol oprot = (TTupleProtocol) prot;
         BitSet optionals = new BitSet();
-        if (struct.isSetPartitionId()) {
+        if (struct.isSetShardId()) {
           optionals.set(0);
         }
         if (struct.isSetQuery()) {
@@ -1024,14 +981,8 @@ public class IndexBroker {
           optionals.set(3);
         }
         oprot.writeBitSet(optionals, 4);
-        if (struct.isSetPartitionId()) {
-          {
-            oprot.writeI32(struct.partitionId.size());
-            for (int _iter46 : struct.partitionId)
-            {
-              oprot.writeI32(_iter46);
-            }
-          }
+        if (struct.isSetShardId()) {
+          oprot.writeI32(struct.shardId);
         }
         if (struct.isSetQuery()) {
           oprot.writeString(struct.query);
@@ -1049,17 +1000,8 @@ public class IndexBroker {
         TTupleProtocol iprot = (TTupleProtocol) prot;
         BitSet incoming = iprot.readBitSet(4);
         if (incoming.get(0)) {
-          {
-            org.apache.thrift.protocol.TList _list47 = new org.apache.thrift.protocol.TList(org.apache.thrift.protocol.TType.I32, iprot.readI32());
-            struct.partitionId = new ArrayList<Integer>(_list47.size);
-            for (int _i48 = 0; _i48 < _list47.size; ++_i48)
-            {
-              int _elem49; // required
-              _elem49 = iprot.readI32();
-              struct.partitionId.add(_elem49);
-            }
-          }
-          struct.setPartitionIdIsSet(true);
+          struct.shardId = iprot.readI32();
+          struct.setShardIdIsSet(true);
         }
         if (incoming.get(1)) {
           struct.query = iprot.readString();
@@ -1644,7 +1586,7 @@ public class IndexBroker {
   public static class deleteByQuery_args implements org.apache.thrift.TBase<deleteByQuery_args, deleteByQuery_args._Fields>, java.io.Serializable, Cloneable   {
     private static final org.apache.thrift.protocol.TStruct STRUCT_DESC = new org.apache.thrift.protocol.TStruct("deleteByQuery_args");
 
-    private static final org.apache.thrift.protocol.TField PARTITION_ID_FIELD_DESC = new org.apache.thrift.protocol.TField("partitionId", org.apache.thrift.protocol.TType.LIST, (short)1);
+    private static final org.apache.thrift.protocol.TField SHARD_ID_FIELD_DESC = new org.apache.thrift.protocol.TField("shardId", org.apache.thrift.protocol.TType.I32, (short)1);
     private static final org.apache.thrift.protocol.TField QUERY_FIELD_DESC = new org.apache.thrift.protocol.TField("query", org.apache.thrift.protocol.TType.STRING, (short)2);
 
     private static final Map<Class<? extends IScheme>, SchemeFactory> schemes = new HashMap<Class<? extends IScheme>, SchemeFactory>();
@@ -1653,12 +1595,12 @@ public class IndexBroker {
       schemes.put(TupleScheme.class, new deleteByQuery_argsTupleSchemeFactory());
     }
 
-    public List<Integer> partitionId; // required
+    public int shardId; // required
     public String query; // required
 
     /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
     public enum _Fields implements org.apache.thrift.TFieldIdEnum {
-      PARTITION_ID((short)1, "partitionId"),
+      SHARD_ID((short)1, "shardId"),
       QUERY((short)2, "query");
 
       private static final Map<String, _Fields> byName = new HashMap<String, _Fields>();
@@ -1674,8 +1616,8 @@ public class IndexBroker {
        */
       public static _Fields findByThriftId(int fieldId) {
         switch(fieldId) {
-          case 1: // PARTITION_ID
-            return PARTITION_ID;
+          case 1: // SHARD_ID
+            return SHARD_ID;
           case 2: // QUERY
             return QUERY;
           default:
@@ -1718,12 +1660,13 @@ public class IndexBroker {
     }
 
     // isset id assignments
+    private static final int __SHARDID_ISSET_ID = 0;
+    private byte __isset_bitfield = 0;
     public static final Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> metaDataMap;
     static {
       Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift.meta_data.FieldMetaData>(_Fields.class);
-      tmpMap.put(_Fields.PARTITION_ID, new org.apache.thrift.meta_data.FieldMetaData("partitionId", org.apache.thrift.TFieldRequirementType.DEFAULT, 
-          new org.apache.thrift.meta_data.ListMetaData(org.apache.thrift.protocol.TType.LIST, 
-              new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.I32))));
+      tmpMap.put(_Fields.SHARD_ID, new org.apache.thrift.meta_data.FieldMetaData("shardId", org.apache.thrift.TFieldRequirementType.DEFAULT, 
+          new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.I32)));
       tmpMap.put(_Fields.QUERY, new org.apache.thrift.meta_data.FieldMetaData("query", org.apache.thrift.TFieldRequirementType.DEFAULT, 
           new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.STRING)));
       metaDataMap = Collections.unmodifiableMap(tmpMap);
@@ -1734,11 +1677,12 @@ public class IndexBroker {
     }
 
     public deleteByQuery_args(
-      List<Integer> partitionId,
+      int shardId,
       String query)
     {
       this();
-      this.partitionId = partitionId;
+      this.shardId = shardId;
+      setShardIdIsSet(true);
       this.query = query;
     }
 
@@ -1746,13 +1690,8 @@ public class IndexBroker {
      * Performs a deep copy on <i>other</i>.
      */
     public deleteByQuery_args(deleteByQuery_args other) {
-      if (other.isSetPartitionId()) {
-        List<Integer> __this__partitionId = new ArrayList<Integer>();
-        for (Integer other_element : other.partitionId) {
-          __this__partitionId.add(other_element);
-        }
-        this.partitionId = __this__partitionId;
-      }
+      __isset_bitfield = other.__isset_bitfield;
+      this.shardId = other.shardId;
       if (other.isSetQuery()) {
         this.query = other.query;
       }
@@ -1764,47 +1703,32 @@ public class IndexBroker {
 
     @Override
     public void clear() {
-      this.partitionId = null;
+      setShardIdIsSet(false);
+      this.shardId = 0;
       this.query = null;
     }
 
-    public int getPartitionIdSize() {
-      return (this.partitionId == null) ? 0 : this.partitionId.size();
+    public int getShardId() {
+      return this.shardId;
     }
 
-    public java.util.Iterator<Integer> getPartitionIdIterator() {
-      return (this.partitionId == null) ? null : this.partitionId.iterator();
-    }
-
-    public void addToPartitionId(int elem) {
-      if (this.partitionId == null) {
-        this.partitionId = new ArrayList<Integer>();
-      }
-      this.partitionId.add(elem);
-    }
-
-    public List<Integer> getPartitionId() {
-      return this.partitionId;
-    }
-
-    public deleteByQuery_args setPartitionId(List<Integer> partitionId) {
-      this.partitionId = partitionId;
+    public deleteByQuery_args setShardId(int shardId) {
+      this.shardId = shardId;
+      setShardIdIsSet(true);
       return this;
     }
 
-    public void unsetPartitionId() {
-      this.partitionId = null;
+    public void unsetShardId() {
+      __isset_bitfield = EncodingUtils.clearBit(__isset_bitfield, __SHARDID_ISSET_ID);
     }
 
-    /** Returns true if field partitionId is set (has been assigned a value) and false otherwise */
-    public boolean isSetPartitionId() {
-      return this.partitionId != null;
+    /** Returns true if field shardId is set (has been assigned a value) and false otherwise */
+    public boolean isSetShardId() {
+      return EncodingUtils.testBit(__isset_bitfield, __SHARDID_ISSET_ID);
     }
 
-    public void setPartitionIdIsSet(boolean value) {
-      if (!value) {
-        this.partitionId = null;
-      }
+    public void setShardIdIsSet(boolean value) {
+      __isset_bitfield = EncodingUtils.setBit(__isset_bitfield, __SHARDID_ISSET_ID, value);
     }
 
     public String getQuery() {
@@ -1833,11 +1757,11 @@ public class IndexBroker {
 
     public void setFieldValue(_Fields field, Object value) {
       switch (field) {
-      case PARTITION_ID:
+      case SHARD_ID:
         if (value == null) {
-          unsetPartitionId();
+          unsetShardId();
         } else {
-          setPartitionId((List<Integer>)value);
+          setShardId((Integer)value);
         }
         break;
 
@@ -1854,8 +1778,8 @@ public class IndexBroker {
 
     public Object getFieldValue(_Fields field) {
       switch (field) {
-      case PARTITION_ID:
-        return getPartitionId();
+      case SHARD_ID:
+        return Integer.valueOf(getShardId());
 
       case QUERY:
         return getQuery();
@@ -1871,8 +1795,8 @@ public class IndexBroker {
       }
 
       switch (field) {
-      case PARTITION_ID:
-        return isSetPartitionId();
+      case SHARD_ID:
+        return isSetShardId();
       case QUERY:
         return isSetQuery();
       }
@@ -1892,12 +1816,12 @@ public class IndexBroker {
       if (that == null)
         return false;
 
-      boolean this_present_partitionId = true && this.isSetPartitionId();
-      boolean that_present_partitionId = true && that.isSetPartitionId();
-      if (this_present_partitionId || that_present_partitionId) {
-        if (!(this_present_partitionId && that_present_partitionId))
+      boolean this_present_shardId = true;
+      boolean that_present_shardId = true;
+      if (this_present_shardId || that_present_shardId) {
+        if (!(this_present_shardId && that_present_shardId))
           return false;
-        if (!this.partitionId.equals(that.partitionId))
+        if (this.shardId != that.shardId)
           return false;
       }
 
@@ -1926,12 +1850,12 @@ public class IndexBroker {
       int lastComparison = 0;
       deleteByQuery_args typedOther = (deleteByQuery_args)other;
 
-      lastComparison = Boolean.valueOf(isSetPartitionId()).compareTo(typedOther.isSetPartitionId());
+      lastComparison = Boolean.valueOf(isSetShardId()).compareTo(typedOther.isSetShardId());
       if (lastComparison != 0) {
         return lastComparison;
       }
-      if (isSetPartitionId()) {
-        lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.partitionId, typedOther.partitionId);
+      if (isSetShardId()) {
+        lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.shardId, typedOther.shardId);
         if (lastComparison != 0) {
           return lastComparison;
         }
@@ -1966,12 +1890,8 @@ public class IndexBroker {
       StringBuilder sb = new StringBuilder("deleteByQuery_args(");
       boolean first = true;
 
-      sb.append("partitionId:");
-      if (this.partitionId == null) {
-        sb.append("null");
-      } else {
-        sb.append(this.partitionId);
-      }
+      sb.append("shardId:");
+      sb.append(this.shardId);
       first = false;
       if (!first) sb.append(", ");
       sb.append("query:");
@@ -2000,6 +1920,8 @@ public class IndexBroker {
 
     private void readObject(java.io.ObjectInputStream in) throws java.io.IOException, ClassNotFoundException {
       try {
+        // it doesn't seem like you should have to do this, but java serialization is wacky, and doesn't call the default constructor.
+        __isset_bitfield = 0;
         read(new org.apache.thrift.protocol.TCompactProtocol(new org.apache.thrift.transport.TIOStreamTransport(in)));
       } catch (org.apache.thrift.TException te) {
         throw new java.io.IOException(te);
@@ -2024,20 +1946,10 @@ public class IndexBroker {
             break;
           }
           switch (schemeField.id) {
-            case 1: // PARTITION_ID
-              if (schemeField.type == org.apache.thrift.protocol.TType.LIST) {
-                {
-                  org.apache.thrift.protocol.TList _list50 = iprot.readListBegin();
-                  struct.partitionId = new ArrayList<Integer>(_list50.size);
-                  for (int _i51 = 0; _i51 < _list50.size; ++_i51)
-                  {
-                    int _elem52; // required
-                    _elem52 = iprot.readI32();
-                    struct.partitionId.add(_elem52);
-                  }
-                  iprot.readListEnd();
-                }
-                struct.setPartitionIdIsSet(true);
+            case 1: // SHARD_ID
+              if (schemeField.type == org.apache.thrift.protocol.TType.I32) {
+                struct.shardId = iprot.readI32();
+                struct.setShardIdIsSet(true);
               } else { 
                 org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
               }
@@ -2065,18 +1977,9 @@ public class IndexBroker {
         struct.validate();
 
         oprot.writeStructBegin(STRUCT_DESC);
-        if (struct.partitionId != null) {
-          oprot.writeFieldBegin(PARTITION_ID_FIELD_DESC);
-          {
-            oprot.writeListBegin(new org.apache.thrift.protocol.TList(org.apache.thrift.protocol.TType.I32, struct.partitionId.size()));
-            for (int _iter53 : struct.partitionId)
-            {
-              oprot.writeI32(_iter53);
-            }
-            oprot.writeListEnd();
-          }
-          oprot.writeFieldEnd();
-        }
+        oprot.writeFieldBegin(SHARD_ID_FIELD_DESC);
+        oprot.writeI32(struct.shardId);
+        oprot.writeFieldEnd();
         if (struct.query != null) {
           oprot.writeFieldBegin(QUERY_FIELD_DESC);
           oprot.writeString(struct.query);
@@ -2100,21 +2003,15 @@ public class IndexBroker {
       public void write(org.apache.thrift.protocol.TProtocol prot, deleteByQuery_args struct) throws org.apache.thrift.TException {
         TTupleProtocol oprot = (TTupleProtocol) prot;
         BitSet optionals = new BitSet();
-        if (struct.isSetPartitionId()) {
+        if (struct.isSetShardId()) {
           optionals.set(0);
         }
         if (struct.isSetQuery()) {
           optionals.set(1);
         }
         oprot.writeBitSet(optionals, 2);
-        if (struct.isSetPartitionId()) {
-          {
-            oprot.writeI32(struct.partitionId.size());
-            for (int _iter54 : struct.partitionId)
-            {
-              oprot.writeI32(_iter54);
-            }
-          }
+        if (struct.isSetShardId()) {
+          oprot.writeI32(struct.shardId);
         }
         if (struct.isSetQuery()) {
           oprot.writeString(struct.query);
@@ -2126,17 +2023,8 @@ public class IndexBroker {
         TTupleProtocol iprot = (TTupleProtocol) prot;
         BitSet incoming = iprot.readBitSet(2);
         if (incoming.get(0)) {
-          {
-            org.apache.thrift.protocol.TList _list55 = new org.apache.thrift.protocol.TList(org.apache.thrift.protocol.TType.I32, iprot.readI32());
-            struct.partitionId = new ArrayList<Integer>(_list55.size);
-            for (int _i56 = 0; _i56 < _list55.size; ++_i56)
-            {
-              int _elem57; // required
-              _elem57 = iprot.readI32();
-              struct.partitionId.add(_elem57);
-            }
-          }
-          struct.setPartitionIdIsSet(true);
+          struct.shardId = iprot.readI32();
+          struct.setShardIdIsSet(true);
         }
         if (incoming.get(1)) {
           struct.query = iprot.readString();
@@ -2509,7 +2397,7 @@ public class IndexBroker {
   public static class index_args implements org.apache.thrift.TBase<index_args, index_args._Fields>, java.io.Serializable, Cloneable   {
     private static final org.apache.thrift.protocol.TStruct STRUCT_DESC = new org.apache.thrift.protocol.TStruct("index_args");
 
-    private static final org.apache.thrift.protocol.TField PARTITION_IDS_FIELD_DESC = new org.apache.thrift.protocol.TField("partitionIds", org.apache.thrift.protocol.TType.LIST, (short)1);
+    private static final org.apache.thrift.protocol.TField SHARD_ID_FIELD_DESC = new org.apache.thrift.protocol.TField("shardId", org.apache.thrift.protocol.TType.I32, (short)1);
     private static final org.apache.thrift.protocol.TField DOCUMENTS_FIELD_DESC = new org.apache.thrift.protocol.TField("documents", org.apache.thrift.protocol.TType.LIST, (short)2);
 
     private static final Map<Class<? extends IScheme>, SchemeFactory> schemes = new HashMap<Class<? extends IScheme>, SchemeFactory>();
@@ -2518,12 +2406,12 @@ public class IndexBroker {
       schemes.put(TupleScheme.class, new index_argsTupleSchemeFactory());
     }
 
-    public List<Integer> partitionIds; // required
+    public int shardId; // required
     public List<Document> documents; // required
 
     /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
     public enum _Fields implements org.apache.thrift.TFieldIdEnum {
-      PARTITION_IDS((short)1, "partitionIds"),
+      SHARD_ID((short)1, "shardId"),
       DOCUMENTS((short)2, "documents");
 
       private static final Map<String, _Fields> byName = new HashMap<String, _Fields>();
@@ -2539,8 +2427,8 @@ public class IndexBroker {
        */
       public static _Fields findByThriftId(int fieldId) {
         switch(fieldId) {
-          case 1: // PARTITION_IDS
-            return PARTITION_IDS;
+          case 1: // SHARD_ID
+            return SHARD_ID;
           case 2: // DOCUMENTS
             return DOCUMENTS;
           default:
@@ -2583,12 +2471,13 @@ public class IndexBroker {
     }
 
     // isset id assignments
+    private static final int __SHARDID_ISSET_ID = 0;
+    private byte __isset_bitfield = 0;
     public static final Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> metaDataMap;
     static {
       Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift.meta_data.FieldMetaData>(_Fields.class);
-      tmpMap.put(_Fields.PARTITION_IDS, new org.apache.thrift.meta_data.FieldMetaData("partitionIds", org.apache.thrift.TFieldRequirementType.DEFAULT, 
-          new org.apache.thrift.meta_data.ListMetaData(org.apache.thrift.protocol.TType.LIST, 
-              new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.I32))));
+      tmpMap.put(_Fields.SHARD_ID, new org.apache.thrift.meta_data.FieldMetaData("shardId", org.apache.thrift.TFieldRequirementType.DEFAULT, 
+          new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.I32)));
       tmpMap.put(_Fields.DOCUMENTS, new org.apache.thrift.meta_data.FieldMetaData("documents", org.apache.thrift.TFieldRequirementType.DEFAULT, 
           new org.apache.thrift.meta_data.ListMetaData(org.apache.thrift.protocol.TType.LIST, 
               new org.apache.thrift.meta_data.StructMetaData(org.apache.thrift.protocol.TType.STRUCT, Document.class))));
@@ -2600,11 +2489,12 @@ public class IndexBroker {
     }
 
     public index_args(
-      List<Integer> partitionIds,
+      int shardId,
       List<Document> documents)
     {
       this();
-      this.partitionIds = partitionIds;
+      this.shardId = shardId;
+      setShardIdIsSet(true);
       this.documents = documents;
     }
 
@@ -2612,13 +2502,8 @@ public class IndexBroker {
      * Performs a deep copy on <i>other</i>.
      */
     public index_args(index_args other) {
-      if (other.isSetPartitionIds()) {
-        List<Integer> __this__partitionIds = new ArrayList<Integer>();
-        for (Integer other_element : other.partitionIds) {
-          __this__partitionIds.add(other_element);
-        }
-        this.partitionIds = __this__partitionIds;
-      }
+      __isset_bitfield = other.__isset_bitfield;
+      this.shardId = other.shardId;
       if (other.isSetDocuments()) {
         List<Document> __this__documents = new ArrayList<Document>();
         for (Document other_element : other.documents) {
@@ -2634,47 +2519,32 @@ public class IndexBroker {
 
     @Override
     public void clear() {
-      this.partitionIds = null;
+      setShardIdIsSet(false);
+      this.shardId = 0;
       this.documents = null;
     }
 
-    public int getPartitionIdsSize() {
-      return (this.partitionIds == null) ? 0 : this.partitionIds.size();
+    public int getShardId() {
+      return this.shardId;
     }
 
-    public java.util.Iterator<Integer> getPartitionIdsIterator() {
-      return (this.partitionIds == null) ? null : this.partitionIds.iterator();
-    }
-
-    public void addToPartitionIds(int elem) {
-      if (this.partitionIds == null) {
-        this.partitionIds = new ArrayList<Integer>();
-      }
-      this.partitionIds.add(elem);
-    }
-
-    public List<Integer> getPartitionIds() {
-      return this.partitionIds;
-    }
-
-    public index_args setPartitionIds(List<Integer> partitionIds) {
-      this.partitionIds = partitionIds;
+    public index_args setShardId(int shardId) {
+      this.shardId = shardId;
+      setShardIdIsSet(true);
       return this;
     }
 
-    public void unsetPartitionIds() {
-      this.partitionIds = null;
+    public void unsetShardId() {
+      __isset_bitfield = EncodingUtils.clearBit(__isset_bitfield, __SHARDID_ISSET_ID);
     }
 
-    /** Returns true if field partitionIds is set (has been assigned a value) and false otherwise */
-    public boolean isSetPartitionIds() {
-      return this.partitionIds != null;
+    /** Returns true if field shardId is set (has been assigned a value) and false otherwise */
+    public boolean isSetShardId() {
+      return EncodingUtils.testBit(__isset_bitfield, __SHARDID_ISSET_ID);
     }
 
-    public void setPartitionIdsIsSet(boolean value) {
-      if (!value) {
-        this.partitionIds = null;
-      }
+    public void setShardIdIsSet(boolean value) {
+      __isset_bitfield = EncodingUtils.setBit(__isset_bitfield, __SHARDID_ISSET_ID, value);
     }
 
     public int getDocumentsSize() {
@@ -2718,11 +2588,11 @@ public class IndexBroker {
 
     public void setFieldValue(_Fields field, Object value) {
       switch (field) {
-      case PARTITION_IDS:
+      case SHARD_ID:
         if (value == null) {
-          unsetPartitionIds();
+          unsetShardId();
         } else {
-          setPartitionIds((List<Integer>)value);
+          setShardId((Integer)value);
         }
         break;
 
@@ -2739,8 +2609,8 @@ public class IndexBroker {
 
     public Object getFieldValue(_Fields field) {
       switch (field) {
-      case PARTITION_IDS:
-        return getPartitionIds();
+      case SHARD_ID:
+        return Integer.valueOf(getShardId());
 
       case DOCUMENTS:
         return getDocuments();
@@ -2756,8 +2626,8 @@ public class IndexBroker {
       }
 
       switch (field) {
-      case PARTITION_IDS:
-        return isSetPartitionIds();
+      case SHARD_ID:
+        return isSetShardId();
       case DOCUMENTS:
         return isSetDocuments();
       }
@@ -2777,12 +2647,12 @@ public class IndexBroker {
       if (that == null)
         return false;
 
-      boolean this_present_partitionIds = true && this.isSetPartitionIds();
-      boolean that_present_partitionIds = true && that.isSetPartitionIds();
-      if (this_present_partitionIds || that_present_partitionIds) {
-        if (!(this_present_partitionIds && that_present_partitionIds))
+      boolean this_present_shardId = true;
+      boolean that_present_shardId = true;
+      if (this_present_shardId || that_present_shardId) {
+        if (!(this_present_shardId && that_present_shardId))
           return false;
-        if (!this.partitionIds.equals(that.partitionIds))
+        if (this.shardId != that.shardId)
           return false;
       }
 
@@ -2811,12 +2681,12 @@ public class IndexBroker {
       int lastComparison = 0;
       index_args typedOther = (index_args)other;
 
-      lastComparison = Boolean.valueOf(isSetPartitionIds()).compareTo(typedOther.isSetPartitionIds());
+      lastComparison = Boolean.valueOf(isSetShardId()).compareTo(typedOther.isSetShardId());
       if (lastComparison != 0) {
         return lastComparison;
       }
-      if (isSetPartitionIds()) {
-        lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.partitionIds, typedOther.partitionIds);
+      if (isSetShardId()) {
+        lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.shardId, typedOther.shardId);
         if (lastComparison != 0) {
           return lastComparison;
         }
@@ -2851,12 +2721,8 @@ public class IndexBroker {
       StringBuilder sb = new StringBuilder("index_args(");
       boolean first = true;
 
-      sb.append("partitionIds:");
-      if (this.partitionIds == null) {
-        sb.append("null");
-      } else {
-        sb.append(this.partitionIds);
-      }
+      sb.append("shardId:");
+      sb.append(this.shardId);
       first = false;
       if (!first) sb.append(", ");
       sb.append("documents:");
@@ -2885,6 +2751,8 @@ public class IndexBroker {
 
     private void readObject(java.io.ObjectInputStream in) throws java.io.IOException, ClassNotFoundException {
       try {
+        // it doesn't seem like you should have to do this, but java serialization is wacky, and doesn't call the default constructor.
+        __isset_bitfield = 0;
         read(new org.apache.thrift.protocol.TCompactProtocol(new org.apache.thrift.transport.TIOStreamTransport(in)));
       } catch (org.apache.thrift.TException te) {
         throw new java.io.IOException(te);
@@ -2909,20 +2777,10 @@ public class IndexBroker {
             break;
           }
           switch (schemeField.id) {
-            case 1: // PARTITION_IDS
-              if (schemeField.type == org.apache.thrift.protocol.TType.LIST) {
-                {
-                  org.apache.thrift.protocol.TList _list58 = iprot.readListBegin();
-                  struct.partitionIds = new ArrayList<Integer>(_list58.size);
-                  for (int _i59 = 0; _i59 < _list58.size; ++_i59)
-                  {
-                    int _elem60; // required
-                    _elem60 = iprot.readI32();
-                    struct.partitionIds.add(_elem60);
-                  }
-                  iprot.readListEnd();
-                }
-                struct.setPartitionIdsIsSet(true);
+            case 1: // SHARD_ID
+              if (schemeField.type == org.apache.thrift.protocol.TType.I32) {
+                struct.shardId = iprot.readI32();
+                struct.setShardIdIsSet(true);
               } else { 
                 org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
               }
@@ -2930,14 +2788,14 @@ public class IndexBroker {
             case 2: // DOCUMENTS
               if (schemeField.type == org.apache.thrift.protocol.TType.LIST) {
                 {
-                  org.apache.thrift.protocol.TList _list61 = iprot.readListBegin();
-                  struct.documents = new ArrayList<Document>(_list61.size);
-                  for (int _i62 = 0; _i62 < _list61.size; ++_i62)
+                  org.apache.thrift.protocol.TList _list42 = iprot.readListBegin();
+                  struct.documents = new ArrayList<Document>(_list42.size);
+                  for (int _i43 = 0; _i43 < _list42.size; ++_i43)
                   {
-                    Document _elem63; // required
-                    _elem63 = new Document();
-                    _elem63.read(iprot);
-                    struct.documents.add(_elem63);
+                    Document _elem44; // required
+                    _elem44 = new Document();
+                    _elem44.read(iprot);
+                    struct.documents.add(_elem44);
                   }
                   iprot.readListEnd();
                 }
@@ -2961,25 +2819,16 @@ public class IndexBroker {
         struct.validate();
 
         oprot.writeStructBegin(STRUCT_DESC);
-        if (struct.partitionIds != null) {
-          oprot.writeFieldBegin(PARTITION_IDS_FIELD_DESC);
-          {
-            oprot.writeListBegin(new org.apache.thrift.protocol.TList(org.apache.thrift.protocol.TType.I32, struct.partitionIds.size()));
-            for (int _iter64 : struct.partitionIds)
-            {
-              oprot.writeI32(_iter64);
-            }
-            oprot.writeListEnd();
-          }
-          oprot.writeFieldEnd();
-        }
+        oprot.writeFieldBegin(SHARD_ID_FIELD_DESC);
+        oprot.writeI32(struct.shardId);
+        oprot.writeFieldEnd();
         if (struct.documents != null) {
           oprot.writeFieldBegin(DOCUMENTS_FIELD_DESC);
           {
             oprot.writeListBegin(new org.apache.thrift.protocol.TList(org.apache.thrift.protocol.TType.STRUCT, struct.documents.size()));
-            for (Document _iter65 : struct.documents)
+            for (Document _iter45 : struct.documents)
             {
-              _iter65.write(oprot);
+              _iter45.write(oprot);
             }
             oprot.writeListEnd();
           }
@@ -3003,28 +2852,22 @@ public class IndexBroker {
       public void write(org.apache.thrift.protocol.TProtocol prot, index_args struct) throws org.apache.thrift.TException {
         TTupleProtocol oprot = (TTupleProtocol) prot;
         BitSet optionals = new BitSet();
-        if (struct.isSetPartitionIds()) {
+        if (struct.isSetShardId()) {
           optionals.set(0);
         }
         if (struct.isSetDocuments()) {
           optionals.set(1);
         }
         oprot.writeBitSet(optionals, 2);
-        if (struct.isSetPartitionIds()) {
-          {
-            oprot.writeI32(struct.partitionIds.size());
-            for (int _iter66 : struct.partitionIds)
-            {
-              oprot.writeI32(_iter66);
-            }
-          }
+        if (struct.isSetShardId()) {
+          oprot.writeI32(struct.shardId);
         }
         if (struct.isSetDocuments()) {
           {
             oprot.writeI32(struct.documents.size());
-            for (Document _iter67 : struct.documents)
+            for (Document _iter46 : struct.documents)
             {
-              _iter67.write(oprot);
+              _iter46.write(oprot);
             }
           }
         }
@@ -3035,28 +2878,19 @@ public class IndexBroker {
         TTupleProtocol iprot = (TTupleProtocol) prot;
         BitSet incoming = iprot.readBitSet(2);
         if (incoming.get(0)) {
-          {
-            org.apache.thrift.protocol.TList _list68 = new org.apache.thrift.protocol.TList(org.apache.thrift.protocol.TType.I32, iprot.readI32());
-            struct.partitionIds = new ArrayList<Integer>(_list68.size);
-            for (int _i69 = 0; _i69 < _list68.size; ++_i69)
-            {
-              int _elem70; // required
-              _elem70 = iprot.readI32();
-              struct.partitionIds.add(_elem70);
-            }
-          }
-          struct.setPartitionIdsIsSet(true);
+          struct.shardId = iprot.readI32();
+          struct.setShardIdIsSet(true);
         }
         if (incoming.get(1)) {
           {
-            org.apache.thrift.protocol.TList _list71 = new org.apache.thrift.protocol.TList(org.apache.thrift.protocol.TType.STRUCT, iprot.readI32());
-            struct.documents = new ArrayList<Document>(_list71.size);
-            for (int _i72 = 0; _i72 < _list71.size; ++_i72)
+            org.apache.thrift.protocol.TList _list47 = new org.apache.thrift.protocol.TList(org.apache.thrift.protocol.TType.STRUCT, iprot.readI32());
+            struct.documents = new ArrayList<Document>(_list47.size);
+            for (int _i48 = 0; _i48 < _list47.size; ++_i48)
             {
-              Document _elem73; // required
-              _elem73 = new Document();
-              _elem73.read(iprot);
-              struct.documents.add(_elem73);
+              Document _elem49; // required
+              _elem49 = new Document();
+              _elem49.read(iprot);
+              struct.documents.add(_elem49);
             }
           }
           struct.setDocumentsIsSet(true);

@@ -24,7 +24,6 @@ import ar.uba.fi.tppro.core.index.httpClient.PartitionHttpClientException;
 import ar.uba.fi.tppro.core.index.lock.IndexLock;
 import ar.uba.fi.tppro.core.index.lock.LockAquireTimeoutException;
 import ar.uba.fi.tppro.core.index.lock.LockManager;
-import ar.uba.fi.tppro.core.index.lock.LockManager.LockType;
 import ar.uba.fi.tppro.core.service.thrift.IndexNode;
 import ar.uba.fi.tppro.core.service.thrift.NonExistentPartitionException;
 import ar.uba.fi.tppro.partition.PartitionResolver;
@@ -48,11 +47,10 @@ public class PartitionReplicator extends Thread {
 		IndexLock lock = null;
 
 		try {
-			lock = lockManager.aquire(LockType.ADD, LOCK_TIMEOUT);
-			Multimap<Integer, IndexNodeDescriptor> partitions = partitionResolver
-					.resolve(Lists.newArrayList(indexPartition.getPartitionId()));
-			Collection<IndexNodeDescriptor> nodeDescriptors = partitions
-					.get(indexPartition.getPartitionId());
+			lock = lockManager.aquire(indexPartition.getShardId(), LOCK_TIMEOUT);
+			
+			Multimap<Integer, IndexNodeDescriptor> partitions = partitionResolver.resolve(indexPartition.getShardId());
+			Collection<IndexNodeDescriptor> nodeDescriptors = partitions.get(indexPartition.getPartitionId());
 
 			for (int i = 0; i < nodeDescriptors.size(); i++) {
 				IndexNodeDescriptor nodeDescriptor = Iterables.get(
@@ -63,7 +61,7 @@ public class PartitionReplicator extends Thread {
 
 				try {
 					nodeClient = nodeDescriptor.getClient();
-					files = nodeClient.listPartitionFiles(indexPartition.getPartitionId());
+					files = nodeClient.listPartitionFiles(indexPartition.getShardId(), indexPartition.getPartitionId());
 
 				} catch (IndexNodeDescriptorException e) {
 					logger.error("Could not get node descriptor client", e);
@@ -76,7 +74,7 @@ public class PartitionReplicator extends Thread {
 					continue;
 				}
 
-				PartitionHttpClient httpClient = nodeDescriptor.getHttpClient(indexPartition.getPartitionId());
+				PartitionHttpClient httpClient = nodeDescriptor.getHttpClient(indexPartition.getShardId(), indexPartition.getPartitionId());
 
 				File tempDir = Files.createTempDir();
 

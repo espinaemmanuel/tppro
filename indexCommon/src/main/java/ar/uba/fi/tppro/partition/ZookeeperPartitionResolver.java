@@ -1,77 +1,105 @@
 package ar.uba.fi.tppro.partition;
 
-import java.util.Collection;
 import java.util.List;
+
+import org.apache.zookeeper.CreateMode;
+import org.apache.zookeeper.KeeperException;
 
 import ar.uba.fi.tppro.core.index.IndexNodeDescriptor;
 import ar.uba.fi.tppro.core.index.IndexPartitionStatus;
 import ar.uba.fi.tppro.core.index.RemoteIndexNodeDescriptor;
 
-import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.LinkedListMultimap;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 import com.netflix.curator.framework.CuratorFramework;
-import com.netflix.curator.x.discovery.ServiceDiscovery;
-import com.netflix.curator.x.discovery.ServiceDiscoveryBuilder;
-import com.netflix.curator.x.discovery.ServiceInstance;
-import com.netflix.curator.x.discovery.ServiceInstanceBuilder;
 
 public class ZookeeperPartitionResolver implements PartitionResolver {
 
-	private ServiceDiscovery<IndexPartitionStatus> serviceDiscovery;
+	private CuratorFramework client;
+	private String BASE_PATH = "/replicas";
 
 	public ZookeeperPartitionResolver(CuratorFramework curatorClient) {
-		serviceDiscovery = ServiceDiscoveryBuilder
-				.builder(IndexPartitionStatus.class)
-				.client(curatorClient)
-				.basePath("partitions")
-				.build();
+		this.client = curatorClient;
 	}
 
 	@Override
-	public void registerPartition(int partitionId,
-			IndexNodeDescriptor descriptor, IndexPartitionStatus status) throws PartitionResolverException {
-		
-		ServiceInstanceBuilder<IndexPartitionStatus> builder;
-		try {
-			builder = ServiceInstance.builder();
-		} catch (Exception e) {
-			throw new PartitionResolverException("Could not get local ip", e);
-		}
-		ServiceInstance<IndexPartitionStatus> si = builder
-		.address(descriptor.getHost())
-		.port(descriptor.getPort())
-		.name("partition_" + partitionId)
-		.id("replica_" + Integer.toString(partitionId) + "_" + descriptor.toString())
-		.payload(status)
-		.build();
-		
-		try {
-			serviceDiscovery.registerService(si);
-		} catch (Exception e) {
-			throw new PartitionResolverException("Could not register the partition", e);
-		}
+	public void registerPartition(int shardId, int partitionId,
+			IndexNodeDescriptor descriptor, IndexPartitionStatus status)
+			throws PartitionResolverException {
 
-	}
+		String path = pathForReplica(shardId, partitionId,
+				descriptor.getHost(), descriptor.getPort());
+		byte[] statusBytes = status.toString().getBytes();
 
-	@Override
-	public Multimap<Integer, IndexNodeDescriptor> resolve(
-			List<Integer> partitionIds) throws PartitionResolverException {
-		
-		Multimap<Integer, IndexNodeDescriptor> returnMultimap = ArrayListMultimap.create();
-		
-		for(Integer partitionId : partitionIds){
-			try {
-				Collection<ServiceInstance<IndexPartitionStatus>> partitions = serviceDiscovery.queryForInstances("partition_" + partitionId);
-				for(ServiceInstance<IndexPartitionStatus> si : partitions){
-					IndexNodeDescriptor nodeDescriptor = new RemoteIndexNodeDescriptor(si.getAddress(), si.getPort());
-					returnMultimap.put(partitionId, nodeDescriptor);					
+		final int MAX_TRIES = 2;
+		boolean isDone = false;
+
+		try {
+			for (int i = 0; !isDone && (i < MAX_TRIES); ++i) {
+				try {
+					client.create().creatingParentsIfNeeded()
+							.withMode(CreateMode.EPHEMERAL)
+							.forPath(path, statusBytes);
+					isDone = true;
+				} catch (KeeperException.NodeExistsException e) {
+					client.delete().forPath(path);
 				}
-			} catch (Exception e) {
-				throw new PartitionResolverException("Could not retrieve replica list of partition " + partitionId, e);
 			}
+		} catch (Exception e) {
+			throw new PartitionResolverException("curator exception:", e);
 		}
-		
-		return returnMultimap;
+	}
+
+	@Override
+	public Multimap<Integer, IndexNodeDescriptor> resolve(int shardId)
+			throws PartitionResolverException {
+
+		Multimap<Integer, IndexNodeDescriptor> partitionMap = LinkedListMultimap
+				.create();
+
+		String path = pathForShard(shardId);
+		List<String> replicas;
+
+		try {
+
+			try {
+				replicas = client.getChildren().forPath(path);
+			} catch (KeeperException.NoNodeException e) {
+				replicas = Lists.newArrayList();
+			}
+
+			for (String replica : replicas) {
+				String[] replicaParts = replica.split("_");
+				int partitionId = Integer.parseInt(replicaParts[0]);
+				String host = replicaParts[1];
+				int port = Integer.parseInt(replicaParts[2]);
+
+				byte[] bytes = client.getData().forPath(path + "/" + replica);
+				IndexPartitionStatus status = IndexPartitionStatus
+						.valueOf(new String(bytes));
+
+				if (status == IndexPartitionStatus.READY) {
+					IndexNodeDescriptor descriptor = new RemoteIndexNodeDescriptor(
+							host, port);
+					partitionMap.put(partitionId, descriptor);
+				}
+			}
+		} catch (Exception e) {
+			throw new PartitionResolverException("curator exception", e);
+		}
+
+		return partitionMap;
+	}
+
+	private String pathForShard(int shardId) {
+		return String.format("%s/%d", BASE_PATH, shardId);
+	}
+
+	protected String pathForReplica(int shardId, int partitionId, String host,
+			int port) {
+		return String.format("%s/%d/%d_%s_%d", BASE_PATH, shardId, partitionId,
+				host, port);
 	}
 
 }

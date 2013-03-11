@@ -7,12 +7,11 @@ public interface IndexNodeDescriptor {
 	
 	public IndexNode.Iface getClient() throws IndexNodeDescriptorException;
 	
-	public PartitionHttpClient getHttpClient(int partition);
+	public PartitionHttpClient getHttpClient(int groupId, int pId);
 	
 	public String getHost();
 	
 	public int getPort();
-
-	public void close();
 	
+	public void close();
 }

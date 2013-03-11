@@ -19,7 +19,9 @@ import ar.uba.fi.tppro.core.index.IndexNodeDescriptorException;
 import ar.uba.fi.tppro.core.index.lock.IndexLock;
 import ar.uba.fi.tppro.core.index.lock.LockAquireTimeoutException;
 import ar.uba.fi.tppro.core.index.lock.LockManager;
-import ar.uba.fi.tppro.core.index.lock.LockManager.LockType;
+import ar.uba.fi.tppro.core.index.versionTracker.ShardVersionTracker;
+import ar.uba.fi.tppro.core.index.versionTracker.StaleVersionException;
+import ar.uba.fi.tppro.core.index.versionTracker.VersionTrackerServerException;
 import ar.uba.fi.tppro.core.service.thrift.Document;
 import ar.uba.fi.tppro.core.service.thrift.IndexNode;
 import ar.uba.fi.tppro.core.service.thrift.IndexResult;
@@ -38,29 +40,38 @@ public class ParalellIndexer {
 			"parallel-searcher");
 	private final ExecutorService executorService = Executors
 			.newCachedThreadPool(threadFactory);
-	
+
 	private LockManager lockManager;
+	private ShardVersionTracker versionTracker;
 
 	protected long lockTimeout = 8000;
 	protected long indexTimeout = 1000000;
-	
-	public ParalellIndexer(LockManager lockManager){
+
+	public ParalellIndexer(LockManager lockManager,
+			ShardVersionTracker versionTracker) {
 		this.lockManager = lockManager;
+		this.versionTracker = versionTracker;
 	}
 
 	private class PartialList {
 		int partitionId;
 		IndexNodeDescriptor replica;
 		List<Document> docs;
-		
+
 		@Override
-		public String toString(){
-			return String.format("Replica:%s , Docs:%s", replica.toString(), docs.toString());
+		public String toString() {
+			return String.format("Replica:%s , Docs:%s", replica.toString(),
+					docs.toString());
 		}
 	}
 
-	public IndexResult distributeAndIndex(Multimap<Integer, IndexNodeDescriptor> partitions, List<Document> documents)
-			throws LockAquireTimeoutException {
+	public IndexResult distributeAndIndex(final int shardId,
+			Multimap<Integer, IndexNodeDescriptor> partitions,
+			List<Document> documents) throws LockAquireTimeoutException,
+			VersionTrackerServerException, StaleVersionException {
+
+		IndexResult result = new IndexResult();
+		boolean hasFailures = false;
 
 		Multimap<Integer, PartialList> partitionReplicas = LinkedListMultimap
 				.create();
@@ -95,63 +106,92 @@ public class ParalellIndexer {
 
 			counter++;
 		}
-		
+
 		logger.debug("Docs assigned to nodes: " + partitionReplicas);
-		
-		IndexLock addLock = lockManager.aquire(LockType.ADD, 1000);
-		
-		Map<Future<?>, PartialList> futures = Maps.newHashMap();
 
-		for (final PartialList pl : partitionReplicas.values()) {
 
-			Future<?> future = executorService.submit(new Runnable() {
+		// Aquire lock
+		IndexLock addLock = lockManager.aquire(shardId, 1000);
+		try {
+			// Get the current version
+			final int newVersion = versionTracker.getCurrentVersion(shardId) + 1;
 
-				@Override
-				public void run() {
-					try {
-						IndexNode.Iface client = pl.replica.getClient();
-						client.index(pl.partitionId, pl.docs);
-					} catch (NonExistentPartitionException e) {
-						throw new RuntimeException(e);
-					} catch (TException e) {
-						throw new RuntimeException(e);
-					} catch (IndexNodeDescriptorException e1) {
-						notifyNodeException(pl.replica, e1);
+			Map<Future<?>, PartialList> futures = Maps.newHashMap();
+
+			for (final PartialList pl : partitionReplicas.values()) {
+
+				Future<?> future = executorService.submit(new Runnable() {
+
+					@Override
+					public void run() {
+						try {
+							IndexNode.Iface client = pl.replica.getClient();
+							client.prepareCommit(shardId, pl.partitionId,
+									newVersion, pl.docs);
+						} catch (NonExistentPartitionException e) {
+							throw new RuntimeException(e);
+						} catch (TException e) {
+							throw new RuntimeException(e);
+						} catch (IndexNodeDescriptorException e1) {
+							notifyNodeException(pl.replica, e1);
+						}
+
 					}
-					
-				}
-			});
+				});
 
-			futures.put(future, pl);
-		}
-		
-		for(Future<?> future : futures.keySet()){
-			try {
-				future.get(indexTimeout, TimeUnit.MILLISECONDS);
-			} catch (InterruptedException e) {
-				notifyError(futures.get(future), e.getCause().getCause());
-			} catch (ExecutionException e) {
-				notifyError(futures.get(future), e.getCause().getCause());
-			} catch (TimeoutException e) {
-				notifyError(futures.get(future), e.getCause().getCause());
+				futures.put(future, pl);
 			}
+
+			for (Future<?> future : futures.keySet()) {
+				try {
+					future.get(indexTimeout, TimeUnit.MILLISECONDS);
+				} catch (InterruptedException e) {
+					notifyError(futures.get(future), e.getCause().getCause());
+					hasFailures = true;
+					result.errors
+							.add(new ar.uba.fi.tppro.core.service.thrift.Error(
+									0, e.getCause().getCause().getMessage()));
+
+				} catch (ExecutionException e) {
+					notifyError(futures.get(future), e.getCause().getCause());
+					hasFailures = true;
+					result.errors
+							.add(new ar.uba.fi.tppro.core.service.thrift.Error(
+									0, e.getCause().getCause().getMessage()));
+
+				} catch (TimeoutException e) {
+					notifyError(futures.get(future), e.getCause().getCause());
+					hasFailures = true;
+					result.errors
+							.add(new ar.uba.fi.tppro.core.service.thrift.Error(
+									0, e.getCause().getCause().getMessage()));
+				}
+			}
+
+			//Ready to commit
+			if (hasFailures == false) {
+				versionTracker.setShardVersion(shardId, newVersion);
+			}
+
+		} finally {
+			addLock.release();
 		}
-		
-		addLock.release();
-		
-		IndexResult result = new IndexResult();
+
 		return result;
 	}
-	
-	protected void notifyError(PartialList pl, Throwable e){
-		logger.error(String.format("Indexing error: partitionId: %d, node: %s - %s", pl.partitionId, pl.replica, e));
-		//TODO
+
+	protected void notifyError(PartialList pl, Throwable e) {
+		logger.error(String.format(
+				"Indexing error: partitionId: %d, node: %s - %s",
+				pl.partitionId, pl.replica, e));
 	}
-	
+
 	private void notifyNodeException(IndexNodeDescriptor replica,
 			IndexNodeDescriptorException e) {
-		logger.error(String.format("Exception getting client for node: %d, node: %s - %s", replica, e.getMessage()));
-		
+		logger.error(String.format(
+				"Exception getting client for node: %d, node: %s - %s",
+				replica, e.getMessage()));
+
 	}
 
 }

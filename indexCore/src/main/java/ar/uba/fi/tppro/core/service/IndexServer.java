@@ -2,11 +2,8 @@ package ar.uba.fi.tppro.core.service;
 
 import java.io.File;
 import java.net.InetAddress;
-import java.net.SocketException;
 import java.util.Collection;
-import java.util.List;
 
-import org.apache.commons.lang.StringUtils;
 import org.apache.thrift.server.TServer;
 import org.apache.thrift.server.TThreadPoolServer;
 import org.apache.thrift.transport.TServerSocket;
@@ -19,13 +16,19 @@ import org.eclipse.jetty.server.handler.ResourceHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.collect.Lists;
-import com.netflix.curator.x.discovery.ServiceInstanceBuilder;
+import com.netflix.curator.framework.CuratorFramework;
+import com.netflix.curator.framework.CuratorFrameworkFactory;
+import com.netflix.curator.retry.RetryOneTime;
 
 import ar.uba.fi.tppro.core.index.IndexNodeDescriptor;
 import ar.uba.fi.tppro.core.index.IndexPartitionsGroup;
 import ar.uba.fi.tppro.core.index.RemoteIndexNodeDescriptor;
+import ar.uba.fi.tppro.core.index.lock.LockManager;
+import ar.uba.fi.tppro.core.index.versionTracker.ShardVersionTracker;
+import ar.uba.fi.tppro.core.index.versionTracker.ZkShardVersionTracker;
 import ar.uba.fi.tppro.core.service.thrift.IndexNode;
+import ar.uba.fi.tppro.partition.PartitionResolver;
+import ar.uba.fi.tppro.partition.ZookeeperPartitionResolver;
 import ar.uba.fi.tppro.util.NetworkUtils;
 
 public class IndexServer implements Runnable {
@@ -46,13 +49,30 @@ public class IndexServer implements Runnable {
 
 		String port = System.getProperty("port", "9090");
 		String dataDir = System.getProperty("dataDir", "data");
-
-		new Thread(new IndexServer(Integer.parseInt(port), new File(dataDir)))
+		String zookeeperHost = System.getProperty("zookeeper");
+		
+		if(zookeeperHost == null){
+			System.out.println("Zookeeper server not specified. Specify one with -Dzookeeper");
+			return;
+		}
+		
+		CuratorFramework curatorClient = createZookeeperClient(zookeeperHost);
+		curatorClient.start();
+		
+		PartitionResolver partitionResolver = new ZookeeperPartitionResolver(curatorClient);
+		ShardVersionTracker versionTracker = new ZkShardVersionTracker(curatorClient);
+		LockManager lockManager = null;
+		
+		new Thread(new IndexServer(Integer.parseInt(port), new File(dataDir), partitionResolver, versionTracker, lockManager))
 				.start();
 
 	}
 
-	public IndexServer(int port, File dataDir) throws Exception {
+	private static CuratorFramework createZookeeperClient(String zookeeperHost) {
+		return CuratorFrameworkFactory.newClient(zookeeperHost, new RetryOneTime(1));
+	}
+
+	public IndexServer(int port, File dataDir, PartitionResolver partitionResolver, ShardVersionTracker versionTracker, LockManager lockManager) throws Exception {
 		this.port = port;
 		this.dataDir = dataDir;
 
@@ -65,7 +85,7 @@ public class IndexServer implements Runnable {
 				address, port);
 		
 		
-		this.handler = new IndexPartitionsGroup(localNodeDescriptor, null, null);
+		this.handler = new IndexPartitionsGroup(localNodeDescriptor, partitionResolver, versionTracker, lockManager);
 		this.handler.open(this.dataDir);
 	}
 
@@ -80,29 +100,11 @@ public class IndexServer implements Runnable {
 	public void run() {
 		try {
 
-			String initialPartitions = System.getProperty("initialPartitions");
-
-			List<Integer> partitions = Lists.newArrayList();
-
-			if (initialPartitions != null && !initialPartitions.isEmpty()) {
-				for (String partitionStr : StringUtils.split(initialPartitions,
-						',')) {
-					int partId = Integer.parseInt(partitionStr);
-					partitions.add(partId);
-				}
-			}
-
 			if (!this.dataDir.exists()) {
 				this.dataDir.mkdir();
 			}
 
 			processor = new IndexNode.Processor<IndexNode.Iface>(handler);
-
-			for (Integer partId : partitions) {
-				if (!handler.containsPartition(partId)) {
-					handler.createPartition(partId);
-				}
-			}
 
 			Server webServer = new Server(this.port + 1);
 			ResourceHandler resource_handler = new ResourceHandler();

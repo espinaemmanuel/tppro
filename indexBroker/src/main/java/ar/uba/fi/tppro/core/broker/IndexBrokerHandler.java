@@ -13,6 +13,9 @@ import ar.uba.fi.tppro.core.index.BrokerIterface;
 import ar.uba.fi.tppro.core.index.IndexNodeDescriptor;
 import ar.uba.fi.tppro.core.index.lock.LockAquireTimeoutException;
 import ar.uba.fi.tppro.core.index.lock.LockManager;
+import ar.uba.fi.tppro.core.index.versionTracker.ShardVersionTracker;
+import ar.uba.fi.tppro.core.index.versionTracker.StaleVersionException;
+import ar.uba.fi.tppro.core.index.versionTracker.VersionTrackerServerException;
 import ar.uba.fi.tppro.core.service.thrift.Document;
 import ar.uba.fi.tppro.core.service.thrift.IndexResult;
 import ar.uba.fi.tppro.core.service.thrift.NonExistentPartitionException;
@@ -22,33 +25,36 @@ import ar.uba.fi.tppro.core.service.thrift.ParalellSearchResult;
 import ar.uba.fi.tppro.partition.PartitionResolver;
 import ar.uba.fi.tppro.partition.PartitionResolverException;
 
-
 public class IndexBrokerHandler implements BrokerIterface {
 
 	final Logger logger = LoggerFactory.getLogger(IndexBrokerHandler.class);
-	
+
 	private ParalellSearcher searcher;
 	private ParalellIndexer indexer;
 	private LockManager lockManager;
-	private PartitionResolver resolver;
-	
+	private ShardVersionTracker versionTracker;
 
-	public IndexBrokerHandler(PartitionResolver resolver, LockManager lockManager) {
+	private PartitionResolver resolver;
+
+	public IndexBrokerHandler(PartitionResolver resolver,
+			LockManager lockManager, ShardVersionTracker versionTracker) {
 		super();
 		this.resolver = resolver;
 		this.lockManager = lockManager;
+		this.versionTracker = versionTracker;
 		this.searcher = new ParalellSearcher();
-		this.indexer = new ParalellIndexer(this.lockManager);
+		this.indexer = new ParalellIndexer(this.lockManager,
+				this.versionTracker);
 	}
 
 	@Override
-	public ParalellSearchResult search(List<Integer> partitionIds, String query,
-			int limit, int offset) throws ParalellSearchException, NonExistentPartitionException, TException {
-		
+	public ParalellSearchResult search(int shardId, String query, int limit,
+			int offset) throws ParalellSearchException,
+			NonExistentPartitionException, TException {
+
 		Multimap<Integer, IndexNodeDescriptor> partitionsMap;
 		try {
-			partitionsMap = resolver
-					.resolve(partitionIds);
+			partitionsMap = resolver.resolve(shardId);
 		} catch (PartitionResolverException e) {
 			logger.error("Could not resolve partitions", e);
 			throw new ParalellSearchException("Could not resolve partitions");
@@ -67,7 +73,7 @@ public class IndexBrokerHandler implements BrokerIterface {
 			}
 
 			try {
-				return searcher.parallelSearch(partitionsMap, query, limit,
+				return searcher.parallelSearch(shardId, partitionsMap, query, limit,
 						offset);
 			} catch (SearcherException e) {
 				throw new ParalellSearchException("SearcherException: "
@@ -81,20 +87,19 @@ public class IndexBrokerHandler implements BrokerIterface {
 	}
 
 	@Override
-	public IndexResult deleteByQuery(List<Integer> partitionId, String query)
+	public IndexResult deleteByQuery(int shardId, String query)
 			throws TException {
-		return null;		
+		return null;
 	}
 
 	@Override
-	public IndexResult index(List<Integer> partitionIds,
+	public IndexResult index(int shardId,
 			List<Document> documents) throws ParalellIndexException,
 			NonExistentPartitionException, TException {
 
 		Multimap<Integer, IndexNodeDescriptor> partitionsMap;
 		try {
-			partitionsMap = resolver
-					.resolve(partitionIds);
+			partitionsMap = resolver.resolve(shardId);
 		} catch (PartitionResolverException e) {
 			logger.error("Could not resolve partitions", e);
 			throw new ParalellSearchException("Could not resolve partitions");
@@ -114,9 +119,15 @@ public class IndexBrokerHandler implements BrokerIterface {
 
 			try {
 				return this.indexer
-						.distributeAndIndex(partitionsMap, documents);
+						.distributeAndIndex(shardId, partitionsMap, documents);
 			} catch (LockAquireTimeoutException e) {
 				throw new ParalellIndexException("LockAquireTimeoutException: "
+						+ e.getMessage());
+			} catch (VersionTrackerServerException e) {
+				throw new ParalellIndexException("VersionTrackerServerException: "
+						+ e.getMessage());
+			} catch (StaleVersionException e) {
+				throw new ParalellIndexException("StaleVersionException: "
 						+ e.getMessage());
 			}
 		} finally {
