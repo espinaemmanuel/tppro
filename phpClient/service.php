@@ -24,7 +24,7 @@ use Thrift\Exception\TException;
 //Service call
 $data = RestUtils::processRequest();
 
-$data->response=  search($data->request_vars['query'], $data->request_vars['parts']);
+$data->response=  search($data->request_vars['query'], $data->request_vars['shard_id']);
 $data->response= json_encode($data->response);
 RestUtils::sendResponse(200, $data->response, 'application/json');
 
@@ -35,7 +35,7 @@ function search($query='world', $parts='0'){
       $transport = new TBufferedTransport ( $socket, 1024, 1024 );
       $protocol = new TBinaryProtocol ( $transport );
     
-      $client = new IndexNodeClient($protocol);
+      $client = new IndexBrokerClient($protocol);
 
       $transport->open ();
       

@@ -26,12 +26,12 @@ $data = RestUtils::processRequest();
 
 //print_r($data->request_vars);
 
-$data->response=  index($data->request_vars['documents'], $data->request_vars['partitions']);
+$data->response=  index($data->request_vars['documents'], $data->request_vars['shard_id']);
 $data->response= json_encode($data->response);
 RestUtils::sendResponse(200, $data->response, 'application/json');
 
 //TODO el segundo parametro deberian ser varias particiones pertenecientes al usuario.
-function index($doc_array=null, $partitions=0){
+function index($doc_array=null, $shard_id=0){
   try{
 	  //echo '<pre>'; //print_r($documents); echo '</pre>';
       $documents=array();
@@ -45,15 +45,15 @@ function index($doc_array=null, $partitions=0){
       $transport = new TBufferedTransport ( $socket, 1024, 1024 );
       $protocol = new TBinaryProtocol ( $transport );
 	 
-      $client = new IndexNodeClient($protocol);
+      $client = new IndexBrokerClient($protocol);
 
       $transport->open ();
       
-	  if(!$client->containsPartition($partitions)){
-		$client->createPartition($partitions);
+	  if(!$client->containsPartition($shard_id)){
+		$client->createPartition($shard_id);
 	  }
 	
-      $client->index($partitions, $documents);
+      $client->index($shard_id, $documents);
       
 	  return 1;
     } 

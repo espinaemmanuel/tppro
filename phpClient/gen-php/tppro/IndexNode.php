@@ -16,12 +16,15 @@ use Thrift\Exception\TApplicationException;
 
 
 interface IndexNodeIf {
-  public function search($partitionId, $query, $limit, $offset);
-  public function deleteByQuery($partitionId, $query);
-  public function index($partitionId, $documents);
-  public function createPartition($partitionId);
-  public function removePartition($partitionId);
-  public function containsPartition($partitionId);
+  public function search($shardId, $partitionId, $query, $limit, $offset);
+  public function deleteByQuery($shardId, $partitionId, $query);
+  public function prepareCommit($shardId, $partitionId, $messageId, $documents);
+  public function commit($shardId, $partitionId);
+  public function createPartition($shardId, $partitionId);
+  public function removePartition($shardId, $partitionId);
+  public function containsPartition($shardId, $partitionId);
+  public function partitionStatus($shardId, $partitionId);
+  public function listPartitionFiles($shardId, $partitionId);
 }
 
 class IndexNodeClient implements \tppro\IndexNodeIf {
@@ -35,15 +38,16 @@ class IndexNodeClient implements \tppro\IndexNodeIf {
     $this->output_ = $output ? $output : $input;
   }
 
-  public function search($partitionId, $query, $limit, $offset)
+  public function search($shardId, $partitionId, $query, $limit, $offset)
   {
-    $this->send_search($partitionId, $query, $limit, $offset);
+    $this->send_search($shardId, $partitionId, $query, $limit, $offset);
     return $this->recv_search();
   }
 
-  public function send_search($partitionId, $query, $limit, $offset)
+  public function send_search($shardId, $partitionId, $query, $limit, $offset)
   {
     $args = new \tppro\IndexNode_search_args();
+    $args->shardId = $shardId;
     $args->partitionId = $partitionId;
     $args->query = $query;
     $args->limit = $limit;
@@ -95,15 +99,16 @@ class IndexNodeClient implements \tppro\IndexNodeIf {
     throw new \Exception("search failed: unknown result");
   }
 
-  public function deleteByQuery($partitionId, $query)
+  public function deleteByQuery($shardId, $partitionId, $query)
   {
-    $this->send_deleteByQuery($partitionId, $query);
+    $this->send_deleteByQuery($shardId, $partitionId, $query);
     $this->recv_deleteByQuery();
   }
 
-  public function send_deleteByQuery($partitionId, $query)
+  public function send_deleteByQuery($shardId, $partitionId, $query)
   {
     $args = new \tppro\IndexNode_deleteByQuery_args();
+    $args->shardId = $shardId;
     $args->partitionId = $partitionId;
     $args->query = $query;
     $bin_accel = ($this->output_ instanceof TProtocol::$TBINARYPROTOCOLACCELERATED) && function_exists('thrift_protocol_write_binary');
@@ -144,35 +149,37 @@ class IndexNodeClient implements \tppro\IndexNodeIf {
     return;
   }
 
-  public function index($partitionId, $documents)
+  public function prepareCommit($shardId, $partitionId, $messageId, $documents)
   {
-    $this->send_index($partitionId, $documents);
-    $this->recv_index();
+    $this->send_prepareCommit($shardId, $partitionId, $messageId, $documents);
+    $this->recv_prepareCommit();
   }
 
-  public function send_index($partitionId, $documents)
+  public function send_prepareCommit($shardId, $partitionId, $messageId, $documents)
   {
-    $args = new \tppro\IndexNode_index_args();
+    $args = new \tppro\IndexNode_prepareCommit_args();
+    $args->shardId = $shardId;
     $args->partitionId = $partitionId;
+    $args->messageId = $messageId;
     $args->documents = $documents;
     $bin_accel = ($this->output_ instanceof TProtocol::$TBINARYPROTOCOLACCELERATED) && function_exists('thrift_protocol_write_binary');
     if ($bin_accel)
     {
-      thrift_protocol_write_binary($this->output_, 'index', TMessageType::CALL, $args, $this->seqid_, $this->output_->isStrictWrite());
+      thrift_protocol_write_binary($this->output_, 'prepareCommit', TMessageType::CALL, $args, $this->seqid_, $this->output_->isStrictWrite());
     }
     else
     {
-      $this->output_->writeMessageBegin('index', TMessageType::CALL, $this->seqid_);
+      $this->output_->writeMessageBegin('prepareCommit', TMessageType::CALL, $this->seqid_);
       $args->write($this->output_);
       $this->output_->writeMessageEnd();
       $this->output_->getTransport()->flush();
     }
   }
 
-  public function recv_index()
+  public function recv_prepareCommit()
   {
     $bin_accel = ($this->input_ instanceof TProtocol::$TBINARYPROTOCOLACCELERATED) && function_exists('thrift_protocol_read_binary');
-    if ($bin_accel) $result = thrift_protocol_read_binary($this->input_, '\tppro\IndexNode_index_result', $this->input_->isStrictRead());
+    if ($bin_accel) $result = thrift_protocol_read_binary($this->input_, '\tppro\IndexNode_prepareCommit_result', $this->input_->isStrictRead());
     else
     {
       $rseqid = 0;
@@ -186,25 +193,84 @@ class IndexNodeClient implements \tppro\IndexNodeIf {
         $this->input_->readMessageEnd();
         throw $x;
       }
-      $result = new \tppro\IndexNode_index_result();
+      $result = new \tppro\IndexNode_prepareCommit_result();
       $result->read($this->input_);
       $this->input_->readMessageEnd();
     }
-    if ($result->e !== null) {
-      throw $result->e;
+    if ($result->nonEx !== null) {
+      throw $result->nonEx;
+    }
+    if ($result->indexEx !== null) {
+      throw $result->indexEx;
     }
     return;
   }
 
-  public function createPartition($partitionId)
+  public function commit($shardId, $partitionId)
   {
-    $this->send_createPartition($partitionId);
+    $this->send_commit($shardId, $partitionId);
+    $this->recv_commit();
+  }
+
+  public function send_commit($shardId, $partitionId)
+  {
+    $args = new \tppro\IndexNode_commit_args();
+    $args->shardId = $shardId;
+    $args->partitionId = $partitionId;
+    $bin_accel = ($this->output_ instanceof TProtocol::$TBINARYPROTOCOLACCELERATED) && function_exists('thrift_protocol_write_binary');
+    if ($bin_accel)
+    {
+      thrift_protocol_write_binary($this->output_, 'commit', TMessageType::CALL, $args, $this->seqid_, $this->output_->isStrictWrite());
+    }
+    else
+    {
+      $this->output_->writeMessageBegin('commit', TMessageType::CALL, $this->seqid_);
+      $args->write($this->output_);
+      $this->output_->writeMessageEnd();
+      $this->output_->getTransport()->flush();
+    }
+  }
+
+  public function recv_commit()
+  {
+    $bin_accel = ($this->input_ instanceof TProtocol::$TBINARYPROTOCOLACCELERATED) && function_exists('thrift_protocol_read_binary');
+    if ($bin_accel) $result = thrift_protocol_read_binary($this->input_, '\tppro\IndexNode_commit_result', $this->input_->isStrictRead());
+    else
+    {
+      $rseqid = 0;
+      $fname = null;
+      $mtype = 0;
+
+      $this->input_->readMessageBegin($fname, $mtype, $rseqid);
+      if ($mtype == TMessageType::EXCEPTION) {
+        $x = new TApplicationException();
+        $x->read($this->input_);
+        $this->input_->readMessageEnd();
+        throw $x;
+      }
+      $result = new \tppro\IndexNode_commit_result();
+      $result->read($this->input_);
+      $this->input_->readMessageEnd();
+    }
+    if ($result->nonEx !== null) {
+      throw $result->nonEx;
+    }
+    if ($result->indexEx !== null) {
+      throw $result->indexEx;
+    }
+    return;
+  }
+
+  public function createPartition($shardId, $partitionId)
+  {
+    $this->send_createPartition($shardId, $partitionId);
     $this->recv_createPartition();
   }
 
-  public function send_createPartition($partitionId)
+  public function send_createPartition($shardId, $partitionId)
   {
     $args = new \tppro\IndexNode_createPartition_args();
+    $args->shardId = $shardId;
     $args->partitionId = $partitionId;
     $bin_accel = ($this->output_ instanceof TProtocol::$TBINARYPROTOCOLACCELERATED) && function_exists('thrift_protocol_write_binary');
     if ($bin_accel)
@@ -247,15 +313,16 @@ class IndexNodeClient implements \tppro\IndexNodeIf {
     return;
   }
 
-  public function removePartition($partitionId)
+  public function removePartition($shardId, $partitionId)
   {
-    $this->send_removePartition($partitionId);
+    $this->send_removePartition($shardId, $partitionId);
     $this->recv_removePartition();
   }
 
-  public function send_removePartition($partitionId)
+  public function send_removePartition($shardId, $partitionId)
   {
     $args = new \tppro\IndexNode_removePartition_args();
+    $args->shardId = $shardId;
     $args->partitionId = $partitionId;
     $bin_accel = ($this->output_ instanceof TProtocol::$TBINARYPROTOCOLACCELERATED) && function_exists('thrift_protocol_write_binary');
     if ($bin_accel)
@@ -298,15 +365,16 @@ class IndexNodeClient implements \tppro\IndexNodeIf {
     return;
   }
 
-  public function containsPartition($partitionId)
+  public function containsPartition($shardId, $partitionId)
   {
-    $this->send_containsPartition($partitionId);
+    $this->send_containsPartition($shardId, $partitionId);
     return $this->recv_containsPartition();
   }
 
-  public function send_containsPartition($partitionId)
+  public function send_containsPartition($shardId, $partitionId)
   {
     $args = new \tppro\IndexNode_containsPartition_args();
+    $args->shardId = $shardId;
     $args->partitionId = $partitionId;
     $bin_accel = ($this->output_ instanceof TProtocol::$TBINARYPROTOCOLACCELERATED) && function_exists('thrift_protocol_write_binary');
     if ($bin_accel)
@@ -349,6 +417,116 @@ class IndexNodeClient implements \tppro\IndexNodeIf {
     throw new \Exception("containsPartition failed: unknown result");
   }
 
+  public function partitionStatus($shardId, $partitionId)
+  {
+    $this->send_partitionStatus($shardId, $partitionId);
+    return $this->recv_partitionStatus();
+  }
+
+  public function send_partitionStatus($shardId, $partitionId)
+  {
+    $args = new \tppro\IndexNode_partitionStatus_args();
+    $args->shardId = $shardId;
+    $args->partitionId = $partitionId;
+    $bin_accel = ($this->output_ instanceof TProtocol::$TBINARYPROTOCOLACCELERATED) && function_exists('thrift_protocol_write_binary');
+    if ($bin_accel)
+    {
+      thrift_protocol_write_binary($this->output_, 'partitionStatus', TMessageType::CALL, $args, $this->seqid_, $this->output_->isStrictWrite());
+    }
+    else
+    {
+      $this->output_->writeMessageBegin('partitionStatus', TMessageType::CALL, $this->seqid_);
+      $args->write($this->output_);
+      $this->output_->writeMessageEnd();
+      $this->output_->getTransport()->flush();
+    }
+  }
+
+  public function recv_partitionStatus()
+  {
+    $bin_accel = ($this->input_ instanceof TProtocol::$TBINARYPROTOCOLACCELERATED) && function_exists('thrift_protocol_read_binary');
+    if ($bin_accel) $result = thrift_protocol_read_binary($this->input_, '\tppro\IndexNode_partitionStatus_result', $this->input_->isStrictRead());
+    else
+    {
+      $rseqid = 0;
+      $fname = null;
+      $mtype = 0;
+
+      $this->input_->readMessageBegin($fname, $mtype, $rseqid);
+      if ($mtype == TMessageType::EXCEPTION) {
+        $x = new TApplicationException();
+        $x->read($this->input_);
+        $this->input_->readMessageEnd();
+        throw $x;
+      }
+      $result = new \tppro\IndexNode_partitionStatus_result();
+      $result->read($this->input_);
+      $this->input_->readMessageEnd();
+    }
+    if ($result->success !== null) {
+      return $result->success;
+    }
+    if ($result->e !== null) {
+      throw $result->e;
+    }
+    throw new \Exception("partitionStatus failed: unknown result");
+  }
+
+  public function listPartitionFiles($shardId, $partitionId)
+  {
+    $this->send_listPartitionFiles($shardId, $partitionId);
+    return $this->recv_listPartitionFiles();
+  }
+
+  public function send_listPartitionFiles($shardId, $partitionId)
+  {
+    $args = new \tppro\IndexNode_listPartitionFiles_args();
+    $args->shardId = $shardId;
+    $args->partitionId = $partitionId;
+    $bin_accel = ($this->output_ instanceof TProtocol::$TBINARYPROTOCOLACCELERATED) && function_exists('thrift_protocol_write_binary');
+    if ($bin_accel)
+    {
+      thrift_protocol_write_binary($this->output_, 'listPartitionFiles', TMessageType::CALL, $args, $this->seqid_, $this->output_->isStrictWrite());
+    }
+    else
+    {
+      $this->output_->writeMessageBegin('listPartitionFiles', TMessageType::CALL, $this->seqid_);
+      $args->write($this->output_);
+      $this->output_->writeMessageEnd();
+      $this->output_->getTransport()->flush();
+    }
+  }
+
+  public function recv_listPartitionFiles()
+  {
+    $bin_accel = ($this->input_ instanceof TProtocol::$TBINARYPROTOCOLACCELERATED) && function_exists('thrift_protocol_read_binary');
+    if ($bin_accel) $result = thrift_protocol_read_binary($this->input_, '\tppro\IndexNode_listPartitionFiles_result', $this->input_->isStrictRead());
+    else
+    {
+      $rseqid = 0;
+      $fname = null;
+      $mtype = 0;
+
+      $this->input_->readMessageBegin($fname, $mtype, $rseqid);
+      if ($mtype == TMessageType::EXCEPTION) {
+        $x = new TApplicationException();
+        $x->read($this->input_);
+        $this->input_->readMessageEnd();
+        throw $x;
+      }
+      $result = new \tppro\IndexNode_listPartitionFiles_result();
+      $result->read($this->input_);
+      $this->input_->readMessageEnd();
+    }
+    if ($result->success !== null) {
+      return $result->success;
+    }
+    if ($result->e !== null) {
+      throw $result->e;
+    }
+    throw new \Exception("listPartitionFiles failed: unknown result");
+  }
+
 }
 
 // HELPER FUNCTIONS AND STRUCTURES
@@ -356,6 +534,7 @@ class IndexNodeClient implements \tppro\IndexNodeIf {
 class IndexNode_search_args {
   static $_TSPEC;
 
+  public $shardId = null;
   public $partitionId = null;
   public $query = null;
   public $limit = null;
@@ -365,24 +544,31 @@ class IndexNode_search_args {
     if (!isset(self::$_TSPEC)) {
       self::$_TSPEC = array(
         1 => array(
-          'var' => 'partitionId',
+          'var' => 'shardId',
           'type' => TType::I32,
           ),
         2 => array(
+          'var' => 'partitionId',
+          'type' => TType::I32,
+          ),
+        3 => array(
           'var' => 'query',
           'type' => TType::STRING,
           ),
-        3 => array(
+        4 => array(
           'var' => 'limit',
           'type' => TType::I32,
           ),
-        4 => array(
+        5 => array(
           'var' => 'offset',
           'type' => TType::I32,
           ),
         );
     }
     if (is_array($vals)) {
+      if (isset($vals['shardId'])) {
+        $this->shardId = $vals['shardId'];
+      }
       if (isset($vals['partitionId'])) {
         $this->partitionId = $vals['partitionId'];
       }
@@ -419,26 +605,33 @@ class IndexNode_search_args {
       {
         case 1:
           if ($ftype == TType::I32) {
-            $xfer += $input->readI32($this->partitionId);
+            $xfer += $input->readI32($this->shardId);
           } else {
             $xfer += $input->skip($ftype);
           }
           break;
         case 2:
+          if ($ftype == TType::I32) {
+            $xfer += $input->readI32($this->partitionId);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 3:
           if ($ftype == TType::STRING) {
             $xfer += $input->readString($this->query);
           } else {
             $xfer += $input->skip($ftype);
           }
           break;
-        case 3:
+        case 4:
           if ($ftype == TType::I32) {
             $xfer += $input->readI32($this->limit);
           } else {
             $xfer += $input->skip($ftype);
           }
           break;
-        case 4:
+        case 5:
           if ($ftype == TType::I32) {
             $xfer += $input->readI32($this->offset);
           } else {
@@ -458,23 +651,28 @@ class IndexNode_search_args {
   public function write($output) {
     $xfer = 0;
     $xfer += $output->writeStructBegin('IndexNode_search_args');
+    if ($this->shardId !== null) {
+      $xfer += $output->writeFieldBegin('shardId', TType::I32, 1);
+      $xfer += $output->writeI32($this->shardId);
+      $xfer += $output->writeFieldEnd();
+    }
     if ($this->partitionId !== null) {
-      $xfer += $output->writeFieldBegin('partitionId', TType::I32, 1);
+      $xfer += $output->writeFieldBegin('partitionId', TType::I32, 2);
       $xfer += $output->writeI32($this->partitionId);
       $xfer += $output->writeFieldEnd();
     }
     if ($this->query !== null) {
-      $xfer += $output->writeFieldBegin('query', TType::STRING, 2);
+      $xfer += $output->writeFieldBegin('query', TType::STRING, 3);
       $xfer += $output->writeString($this->query);
       $xfer += $output->writeFieldEnd();
     }
     if ($this->limit !== null) {
-      $xfer += $output->writeFieldBegin('limit', TType::I32, 3);
+      $xfer += $output->writeFieldBegin('limit', TType::I32, 4);
       $xfer += $output->writeI32($this->limit);
       $xfer += $output->writeFieldEnd();
     }
     if ($this->offset !== null) {
-      $xfer += $output->writeFieldBegin('offset', TType::I32, 4);
+      $xfer += $output->writeFieldBegin('offset', TType::I32, 5);
       $xfer += $output->writeI32($this->offset);
       $xfer += $output->writeFieldEnd();
     }
@@ -609,6 +807,7 @@ class IndexNode_search_result {
 class IndexNode_deleteByQuery_args {
   static $_TSPEC;
 
+  public $shardId = null;
   public $partitionId = null;
   public $query = null;
 
@@ -616,16 +815,23 @@ class IndexNode_deleteByQuery_args {
     if (!isset(self::$_TSPEC)) {
       self::$_TSPEC = array(
         1 => array(
-          'var' => 'partitionId',
+          'var' => 'shardId',
           'type' => TType::I32,
           ),
         2 => array(
+          'var' => 'partitionId',
+          'type' => TType::I32,
+          ),
+        3 => array(
           'var' => 'query',
           'type' => TType::STRING,
           ),
         );
     }
     if (is_array($vals)) {
+      if (isset($vals['shardId'])) {
+        $this->shardId = $vals['shardId'];
+      }
       if (isset($vals['partitionId'])) {
         $this->partitionId = $vals['partitionId'];
       }
@@ -656,12 +862,19 @@ class IndexNode_deleteByQuery_args {
       {
         case 1:
           if ($ftype == TType::I32) {
-            $xfer += $input->readI32($this->partitionId);
+            $xfer += $input->readI32($this->shardId);
           } else {
             $xfer += $input->skip($ftype);
           }
           break;
         case 2:
+          if ($ftype == TType::I32) {
+            $xfer += $input->readI32($this->partitionId);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 3:
           if ($ftype == TType::STRING) {
             $xfer += $input->readString($this->query);
           } else {
@@ -681,13 +894,18 @@ class IndexNode_deleteByQuery_args {
   public function write($output) {
     $xfer = 0;
     $xfer += $output->writeStructBegin('IndexNode_deleteByQuery_args');
+    if ($this->shardId !== null) {
+      $xfer += $output->writeFieldBegin('shardId', TType::I32, 1);
+      $xfer += $output->writeI32($this->shardId);
+      $xfer += $output->writeFieldEnd();
+    }
     if ($this->partitionId !== null) {
-      $xfer += $output->writeFieldBegin('partitionId', TType::I32, 1);
+      $xfer += $output->writeFieldBegin('partitionId', TType::I32, 2);
       $xfer += $output->writeI32($this->partitionId);
       $xfer += $output->writeFieldEnd();
     }
     if ($this->query !== null) {
-      $xfer += $output->writeFieldBegin('query', TType::STRING, 2);
+      $xfer += $output->writeFieldBegin('query', TType::STRING, 3);
       $xfer += $output->writeString($this->query);
       $xfer += $output->writeFieldEnd();
     }
@@ -748,20 +966,30 @@ class IndexNode_deleteByQuery_result {
 
 }
 
-class IndexNode_index_args {
+class IndexNode_prepareCommit_args {
   static $_TSPEC;
 
+  public $shardId = null;
   public $partitionId = null;
+  public $messageId = null;
   public $documents = null;
 
   public function __construct($vals=null) {
     if (!isset(self::$_TSPEC)) {
       self::$_TSPEC = array(
         1 => array(
-          'var' => 'partitionId',
+          'var' => 'shardId',
           'type' => TType::I32,
           ),
         2 => array(
+          'var' => 'partitionId',
+          'type' => TType::I32,
+          ),
+        3 => array(
+          'var' => 'messageId',
+          'type' => TType::I32,
+          ),
+        4 => array(
           'var' => 'documents',
           'type' => TType::LST,
           'etype' => TType::STRUCT,
@@ -773,8 +1001,14 @@ class IndexNode_index_args {
         );
     }
     if (is_array($vals)) {
+      if (isset($vals['shardId'])) {
+        $this->shardId = $vals['shardId'];
+      }
       if (isset($vals['partitionId'])) {
         $this->partitionId = $vals['partitionId'];
+      }
+      if (isset($vals['messageId'])) {
+        $this->messageId = $vals['messageId'];
       }
       if (isset($vals['documents'])) {
         $this->documents = $vals['documents'];
@@ -783,7 +1017,7 @@ class IndexNode_index_args {
   }
 
   public function getName() {
-    return 'IndexNode_index_args';
+    return 'IndexNode_prepareCommit_args';
   }
 
   public function read($input)
@@ -803,23 +1037,37 @@ class IndexNode_index_args {
       {
         case 1:
           if ($ftype == TType::I32) {
-            $xfer += $input->readI32($this->partitionId);
+            $xfer += $input->readI32($this->shardId);
           } else {
             $xfer += $input->skip($ftype);
           }
           break;
         case 2:
+          if ($ftype == TType::I32) {
+            $xfer += $input->readI32($this->partitionId);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 3:
+          if ($ftype == TType::I32) {
+            $xfer += $input->readI32($this->messageId);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 4:
           if ($ftype == TType::LST) {
             $this->documents = array();
-            $_size16 = 0;
-            $_etype19 = 0;
-            $xfer += $input->readListBegin($_etype19, $_size16);
-            for ($_i20 = 0; $_i20 < $_size16; ++$_i20)
+            $_size44 = 0;
+            $_etype47 = 0;
+            $xfer += $input->readListBegin($_etype47, $_size44);
+            for ($_i48 = 0; $_i48 < $_size44; ++$_i48)
             {
-              $elem21 = null;
-              $elem21 = new \tppro\Document();
-              $xfer += $elem21->read($input);
-              $this->documents []= $elem21;
+              $elem49 = null;
+              $elem49 = new \tppro\Document();
+              $xfer += $elem49->read($input);
+              $this->documents []= $elem49;
             }
             $xfer += $input->readListEnd();
           } else {
@@ -838,23 +1086,33 @@ class IndexNode_index_args {
 
   public function write($output) {
     $xfer = 0;
-    $xfer += $output->writeStructBegin('IndexNode_index_args');
+    $xfer += $output->writeStructBegin('IndexNode_prepareCommit_args');
+    if ($this->shardId !== null) {
+      $xfer += $output->writeFieldBegin('shardId', TType::I32, 1);
+      $xfer += $output->writeI32($this->shardId);
+      $xfer += $output->writeFieldEnd();
+    }
     if ($this->partitionId !== null) {
-      $xfer += $output->writeFieldBegin('partitionId', TType::I32, 1);
+      $xfer += $output->writeFieldBegin('partitionId', TType::I32, 2);
       $xfer += $output->writeI32($this->partitionId);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->messageId !== null) {
+      $xfer += $output->writeFieldBegin('messageId', TType::I32, 3);
+      $xfer += $output->writeI32($this->messageId);
       $xfer += $output->writeFieldEnd();
     }
     if ($this->documents !== null) {
       if (!is_array($this->documents)) {
         throw new TProtocolException('Bad type in structure.', TProtocolException::INVALID_DATA);
       }
-      $xfer += $output->writeFieldBegin('documents', TType::LST, 2);
+      $xfer += $output->writeFieldBegin('documents', TType::LST, 4);
       {
         $output->writeListBegin(TType::STRUCT, count($this->documents));
         {
-          foreach ($this->documents as $iter22)
+          foreach ($this->documents as $iter50)
           {
-            $xfer += $iter22->write($output);
+            $xfer += $iter50->write($output);
           }
         }
         $output->writeListEnd();
@@ -868,30 +1126,39 @@ class IndexNode_index_args {
 
 }
 
-class IndexNode_index_result {
+class IndexNode_prepareCommit_result {
   static $_TSPEC;
 
-  public $e = null;
+  public $nonEx = null;
+  public $indexEx = null;
 
   public function __construct($vals=null) {
     if (!isset(self::$_TSPEC)) {
       self::$_TSPEC = array(
         1 => array(
-          'var' => 'e',
+          'var' => 'nonEx',
           'type' => TType::STRUCT,
           'class' => '\tppro\NonExistentPartitionException',
+          ),
+        2 => array(
+          'var' => 'indexEx',
+          'type' => TType::STRUCT,
+          'class' => '\tppro\IndexException',
           ),
         );
     }
     if (is_array($vals)) {
-      if (isset($vals['e'])) {
-        $this->e = $vals['e'];
+      if (isset($vals['nonEx'])) {
+        $this->nonEx = $vals['nonEx'];
+      }
+      if (isset($vals['indexEx'])) {
+        $this->indexEx = $vals['indexEx'];
       }
     }
   }
 
   public function getName() {
-    return 'IndexNode_index_result';
+    return 'IndexNode_prepareCommit_result';
   }
 
   public function read($input)
@@ -911,8 +1178,16 @@ class IndexNode_index_result {
       {
         case 1:
           if ($ftype == TType::STRUCT) {
-            $this->e = new \tppro\NonExistentPartitionException();
-            $xfer += $this->e->read($input);
+            $this->nonEx = new \tppro\NonExistentPartitionException();
+            $xfer += $this->nonEx->read($input);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 2:
+          if ($ftype == TType::STRUCT) {
+            $this->indexEx = new \tppro\IndexException();
+            $xfer += $this->indexEx->read($input);
           } else {
             $xfer += $input->skip($ftype);
           }
@@ -929,10 +1204,203 @@ class IndexNode_index_result {
 
   public function write($output) {
     $xfer = 0;
-    $xfer += $output->writeStructBegin('IndexNode_index_result');
-    if ($this->e !== null) {
-      $xfer += $output->writeFieldBegin('e', TType::STRUCT, 1);
-      $xfer += $this->e->write($output);
+    $xfer += $output->writeStructBegin('IndexNode_prepareCommit_result');
+    if ($this->nonEx !== null) {
+      $xfer += $output->writeFieldBegin('nonEx', TType::STRUCT, 1);
+      $xfer += $this->nonEx->write($output);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->indexEx !== null) {
+      $xfer += $output->writeFieldBegin('indexEx', TType::STRUCT, 2);
+      $xfer += $this->indexEx->write($output);
+      $xfer += $output->writeFieldEnd();
+    }
+    $xfer += $output->writeFieldStop();
+    $xfer += $output->writeStructEnd();
+    return $xfer;
+  }
+
+}
+
+class IndexNode_commit_args {
+  static $_TSPEC;
+
+  public $shardId = null;
+  public $partitionId = null;
+
+  public function __construct($vals=null) {
+    if (!isset(self::$_TSPEC)) {
+      self::$_TSPEC = array(
+        1 => array(
+          'var' => 'shardId',
+          'type' => TType::I32,
+          ),
+        2 => array(
+          'var' => 'partitionId',
+          'type' => TType::I32,
+          ),
+        );
+    }
+    if (is_array($vals)) {
+      if (isset($vals['shardId'])) {
+        $this->shardId = $vals['shardId'];
+      }
+      if (isset($vals['partitionId'])) {
+        $this->partitionId = $vals['partitionId'];
+      }
+    }
+  }
+
+  public function getName() {
+    return 'IndexNode_commit_args';
+  }
+
+  public function read($input)
+  {
+    $xfer = 0;
+    $fname = null;
+    $ftype = 0;
+    $fid = 0;
+    $xfer += $input->readStructBegin($fname);
+    while (true)
+    {
+      $xfer += $input->readFieldBegin($fname, $ftype, $fid);
+      if ($ftype == TType::STOP) {
+        break;
+      }
+      switch ($fid)
+      {
+        case 1:
+          if ($ftype == TType::I32) {
+            $xfer += $input->readI32($this->shardId);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 2:
+          if ($ftype == TType::I32) {
+            $xfer += $input->readI32($this->partitionId);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        default:
+          $xfer += $input->skip($ftype);
+          break;
+      }
+      $xfer += $input->readFieldEnd();
+    }
+    $xfer += $input->readStructEnd();
+    return $xfer;
+  }
+
+  public function write($output) {
+    $xfer = 0;
+    $xfer += $output->writeStructBegin('IndexNode_commit_args');
+    if ($this->shardId !== null) {
+      $xfer += $output->writeFieldBegin('shardId', TType::I32, 1);
+      $xfer += $output->writeI32($this->shardId);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->partitionId !== null) {
+      $xfer += $output->writeFieldBegin('partitionId', TType::I32, 2);
+      $xfer += $output->writeI32($this->partitionId);
+      $xfer += $output->writeFieldEnd();
+    }
+    $xfer += $output->writeFieldStop();
+    $xfer += $output->writeStructEnd();
+    return $xfer;
+  }
+
+}
+
+class IndexNode_commit_result {
+  static $_TSPEC;
+
+  public $nonEx = null;
+  public $indexEx = null;
+
+  public function __construct($vals=null) {
+    if (!isset(self::$_TSPEC)) {
+      self::$_TSPEC = array(
+        1 => array(
+          'var' => 'nonEx',
+          'type' => TType::STRUCT,
+          'class' => '\tppro\NonExistentPartitionException',
+          ),
+        2 => array(
+          'var' => 'indexEx',
+          'type' => TType::STRUCT,
+          'class' => '\tppro\IndexException',
+          ),
+        );
+    }
+    if (is_array($vals)) {
+      if (isset($vals['nonEx'])) {
+        $this->nonEx = $vals['nonEx'];
+      }
+      if (isset($vals['indexEx'])) {
+        $this->indexEx = $vals['indexEx'];
+      }
+    }
+  }
+
+  public function getName() {
+    return 'IndexNode_commit_result';
+  }
+
+  public function read($input)
+  {
+    $xfer = 0;
+    $fname = null;
+    $ftype = 0;
+    $fid = 0;
+    $xfer += $input->readStructBegin($fname);
+    while (true)
+    {
+      $xfer += $input->readFieldBegin($fname, $ftype, $fid);
+      if ($ftype == TType::STOP) {
+        break;
+      }
+      switch ($fid)
+      {
+        case 1:
+          if ($ftype == TType::STRUCT) {
+            $this->nonEx = new \tppro\NonExistentPartitionException();
+            $xfer += $this->nonEx->read($input);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 2:
+          if ($ftype == TType::STRUCT) {
+            $this->indexEx = new \tppro\IndexException();
+            $xfer += $this->indexEx->read($input);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        default:
+          $xfer += $input->skip($ftype);
+          break;
+      }
+      $xfer += $input->readFieldEnd();
+    }
+    $xfer += $input->readStructEnd();
+    return $xfer;
+  }
+
+  public function write($output) {
+    $xfer = 0;
+    $xfer += $output->writeStructBegin('IndexNode_commit_result');
+    if ($this->nonEx !== null) {
+      $xfer += $output->writeFieldBegin('nonEx', TType::STRUCT, 1);
+      $xfer += $this->nonEx->write($output);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->indexEx !== null) {
+      $xfer += $output->writeFieldBegin('indexEx', TType::STRUCT, 2);
+      $xfer += $this->indexEx->write($output);
       $xfer += $output->writeFieldEnd();
     }
     $xfer += $output->writeFieldStop();
@@ -945,18 +1413,26 @@ class IndexNode_index_result {
 class IndexNode_createPartition_args {
   static $_TSPEC;
 
+  public $shardId = null;
   public $partitionId = null;
 
   public function __construct($vals=null) {
     if (!isset(self::$_TSPEC)) {
       self::$_TSPEC = array(
         1 => array(
+          'var' => 'shardId',
+          'type' => TType::I32,
+          ),
+        2 => array(
           'var' => 'partitionId',
           'type' => TType::I32,
           ),
         );
     }
     if (is_array($vals)) {
+      if (isset($vals['shardId'])) {
+        $this->shardId = $vals['shardId'];
+      }
       if (isset($vals['partitionId'])) {
         $this->partitionId = $vals['partitionId'];
       }
@@ -984,6 +1460,13 @@ class IndexNode_createPartition_args {
       {
         case 1:
           if ($ftype == TType::I32) {
+            $xfer += $input->readI32($this->shardId);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 2:
+          if ($ftype == TType::I32) {
             $xfer += $input->readI32($this->partitionId);
           } else {
             $xfer += $input->skip($ftype);
@@ -1002,8 +1485,13 @@ class IndexNode_createPartition_args {
   public function write($output) {
     $xfer = 0;
     $xfer += $output->writeStructBegin('IndexNode_createPartition_args');
+    if ($this->shardId !== null) {
+      $xfer += $output->writeFieldBegin('shardId', TType::I32, 1);
+      $xfer += $output->writeI32($this->shardId);
+      $xfer += $output->writeFieldEnd();
+    }
     if ($this->partitionId !== null) {
-      $xfer += $output->writeFieldBegin('partitionId', TType::I32, 1);
+      $xfer += $output->writeFieldBegin('partitionId', TType::I32, 2);
       $xfer += $output->writeI32($this->partitionId);
       $xfer += $output->writeFieldEnd();
     }
@@ -1091,18 +1579,26 @@ class IndexNode_createPartition_result {
 class IndexNode_removePartition_args {
   static $_TSPEC;
 
+  public $shardId = null;
   public $partitionId = null;
 
   public function __construct($vals=null) {
     if (!isset(self::$_TSPEC)) {
       self::$_TSPEC = array(
         1 => array(
+          'var' => 'shardId',
+          'type' => TType::I32,
+          ),
+        2 => array(
           'var' => 'partitionId',
           'type' => TType::I32,
           ),
         );
     }
     if (is_array($vals)) {
+      if (isset($vals['shardId'])) {
+        $this->shardId = $vals['shardId'];
+      }
       if (isset($vals['partitionId'])) {
         $this->partitionId = $vals['partitionId'];
       }
@@ -1130,6 +1626,13 @@ class IndexNode_removePartition_args {
       {
         case 1:
           if ($ftype == TType::I32) {
+            $xfer += $input->readI32($this->shardId);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 2:
+          if ($ftype == TType::I32) {
             $xfer += $input->readI32($this->partitionId);
           } else {
             $xfer += $input->skip($ftype);
@@ -1148,8 +1651,13 @@ class IndexNode_removePartition_args {
   public function write($output) {
     $xfer = 0;
     $xfer += $output->writeStructBegin('IndexNode_removePartition_args');
+    if ($this->shardId !== null) {
+      $xfer += $output->writeFieldBegin('shardId', TType::I32, 1);
+      $xfer += $output->writeI32($this->shardId);
+      $xfer += $output->writeFieldEnd();
+    }
     if ($this->partitionId !== null) {
-      $xfer += $output->writeFieldBegin('partitionId', TType::I32, 1);
+      $xfer += $output->writeFieldBegin('partitionId', TType::I32, 2);
       $xfer += $output->writeI32($this->partitionId);
       $xfer += $output->writeFieldEnd();
     }
@@ -1237,18 +1745,26 @@ class IndexNode_removePartition_result {
 class IndexNode_containsPartition_args {
   static $_TSPEC;
 
+  public $shardId = null;
   public $partitionId = null;
 
   public function __construct($vals=null) {
     if (!isset(self::$_TSPEC)) {
       self::$_TSPEC = array(
         1 => array(
+          'var' => 'shardId',
+          'type' => TType::I32,
+          ),
+        2 => array(
           'var' => 'partitionId',
           'type' => TType::I32,
           ),
         );
     }
     if (is_array($vals)) {
+      if (isset($vals['shardId'])) {
+        $this->shardId = $vals['shardId'];
+      }
       if (isset($vals['partitionId'])) {
         $this->partitionId = $vals['partitionId'];
       }
@@ -1276,6 +1792,13 @@ class IndexNode_containsPartition_args {
       {
         case 1:
           if ($ftype == TType::I32) {
+            $xfer += $input->readI32($this->shardId);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 2:
+          if ($ftype == TType::I32) {
             $xfer += $input->readI32($this->partitionId);
           } else {
             $xfer += $input->skip($ftype);
@@ -1294,8 +1817,13 @@ class IndexNode_containsPartition_args {
   public function write($output) {
     $xfer = 0;
     $xfer += $output->writeStructBegin('IndexNode_containsPartition_args');
+    if ($this->shardId !== null) {
+      $xfer += $output->writeFieldBegin('shardId', TType::I32, 1);
+      $xfer += $output->writeI32($this->shardId);
+      $xfer += $output->writeFieldEnd();
+    }
     if ($this->partitionId !== null) {
-      $xfer += $output->writeFieldBegin('partitionId', TType::I32, 1);
+      $xfer += $output->writeFieldBegin('partitionId', TType::I32, 2);
       $xfer += $output->writeI32($this->partitionId);
       $xfer += $output->writeFieldEnd();
     }
@@ -1369,6 +1897,409 @@ class IndexNode_containsPartition_result {
     if ($this->success !== null) {
       $xfer += $output->writeFieldBegin('success', TType::BOOL, 0);
       $xfer += $output->writeBool($this->success);
+      $xfer += $output->writeFieldEnd();
+    }
+    $xfer += $output->writeFieldStop();
+    $xfer += $output->writeStructEnd();
+    return $xfer;
+  }
+
+}
+
+class IndexNode_partitionStatus_args {
+  static $_TSPEC;
+
+  public $shardId = null;
+  public $partitionId = null;
+
+  public function __construct($vals=null) {
+    if (!isset(self::$_TSPEC)) {
+      self::$_TSPEC = array(
+        1 => array(
+          'var' => 'shardId',
+          'type' => TType::I32,
+          ),
+        2 => array(
+          'var' => 'partitionId',
+          'type' => TType::I32,
+          ),
+        );
+    }
+    if (is_array($vals)) {
+      if (isset($vals['shardId'])) {
+        $this->shardId = $vals['shardId'];
+      }
+      if (isset($vals['partitionId'])) {
+        $this->partitionId = $vals['partitionId'];
+      }
+    }
+  }
+
+  public function getName() {
+    return 'IndexNode_partitionStatus_args';
+  }
+
+  public function read($input)
+  {
+    $xfer = 0;
+    $fname = null;
+    $ftype = 0;
+    $fid = 0;
+    $xfer += $input->readStructBegin($fname);
+    while (true)
+    {
+      $xfer += $input->readFieldBegin($fname, $ftype, $fid);
+      if ($ftype == TType::STOP) {
+        break;
+      }
+      switch ($fid)
+      {
+        case 1:
+          if ($ftype == TType::I32) {
+            $xfer += $input->readI32($this->shardId);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 2:
+          if ($ftype == TType::I32) {
+            $xfer += $input->readI32($this->partitionId);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        default:
+          $xfer += $input->skip($ftype);
+          break;
+      }
+      $xfer += $input->readFieldEnd();
+    }
+    $xfer += $input->readStructEnd();
+    return $xfer;
+  }
+
+  public function write($output) {
+    $xfer = 0;
+    $xfer += $output->writeStructBegin('IndexNode_partitionStatus_args');
+    if ($this->shardId !== null) {
+      $xfer += $output->writeFieldBegin('shardId', TType::I32, 1);
+      $xfer += $output->writeI32($this->shardId);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->partitionId !== null) {
+      $xfer += $output->writeFieldBegin('partitionId', TType::I32, 2);
+      $xfer += $output->writeI32($this->partitionId);
+      $xfer += $output->writeFieldEnd();
+    }
+    $xfer += $output->writeFieldStop();
+    $xfer += $output->writeStructEnd();
+    return $xfer;
+  }
+
+}
+
+class IndexNode_partitionStatus_result {
+  static $_TSPEC;
+
+  public $success = null;
+  public $e = null;
+
+  public function __construct($vals=null) {
+    if (!isset(self::$_TSPEC)) {
+      self::$_TSPEC = array(
+        0 => array(
+          'var' => 'success',
+          'type' => TType::STRUCT,
+          'class' => '\tppro\PartitionStatus',
+          ),
+        1 => array(
+          'var' => 'e',
+          'type' => TType::STRUCT,
+          'class' => '\tppro\NonExistentPartitionException',
+          ),
+        );
+    }
+    if (is_array($vals)) {
+      if (isset($vals['success'])) {
+        $this->success = $vals['success'];
+      }
+      if (isset($vals['e'])) {
+        $this->e = $vals['e'];
+      }
+    }
+  }
+
+  public function getName() {
+    return 'IndexNode_partitionStatus_result';
+  }
+
+  public function read($input)
+  {
+    $xfer = 0;
+    $fname = null;
+    $ftype = 0;
+    $fid = 0;
+    $xfer += $input->readStructBegin($fname);
+    while (true)
+    {
+      $xfer += $input->readFieldBegin($fname, $ftype, $fid);
+      if ($ftype == TType::STOP) {
+        break;
+      }
+      switch ($fid)
+      {
+        case 0:
+          if ($ftype == TType::STRUCT) {
+            $this->success = new \tppro\PartitionStatus();
+            $xfer += $this->success->read($input);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 1:
+          if ($ftype == TType::STRUCT) {
+            $this->e = new \tppro\NonExistentPartitionException();
+            $xfer += $this->e->read($input);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        default:
+          $xfer += $input->skip($ftype);
+          break;
+      }
+      $xfer += $input->readFieldEnd();
+    }
+    $xfer += $input->readStructEnd();
+    return $xfer;
+  }
+
+  public function write($output) {
+    $xfer = 0;
+    $xfer += $output->writeStructBegin('IndexNode_partitionStatus_result');
+    if ($this->success !== null) {
+      if (!is_object($this->success)) {
+        throw new TProtocolException('Bad type in structure.', TProtocolException::INVALID_DATA);
+      }
+      $xfer += $output->writeFieldBegin('success', TType::STRUCT, 0);
+      $xfer += $this->success->write($output);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->e !== null) {
+      $xfer += $output->writeFieldBegin('e', TType::STRUCT, 1);
+      $xfer += $this->e->write($output);
+      $xfer += $output->writeFieldEnd();
+    }
+    $xfer += $output->writeFieldStop();
+    $xfer += $output->writeStructEnd();
+    return $xfer;
+  }
+
+}
+
+class IndexNode_listPartitionFiles_args {
+  static $_TSPEC;
+
+  public $shardId = null;
+  public $partitionId = null;
+
+  public function __construct($vals=null) {
+    if (!isset(self::$_TSPEC)) {
+      self::$_TSPEC = array(
+        1 => array(
+          'var' => 'shardId',
+          'type' => TType::I32,
+          ),
+        2 => array(
+          'var' => 'partitionId',
+          'type' => TType::I32,
+          ),
+        );
+    }
+    if (is_array($vals)) {
+      if (isset($vals['shardId'])) {
+        $this->shardId = $vals['shardId'];
+      }
+      if (isset($vals['partitionId'])) {
+        $this->partitionId = $vals['partitionId'];
+      }
+    }
+  }
+
+  public function getName() {
+    return 'IndexNode_listPartitionFiles_args';
+  }
+
+  public function read($input)
+  {
+    $xfer = 0;
+    $fname = null;
+    $ftype = 0;
+    $fid = 0;
+    $xfer += $input->readStructBegin($fname);
+    while (true)
+    {
+      $xfer += $input->readFieldBegin($fname, $ftype, $fid);
+      if ($ftype == TType::STOP) {
+        break;
+      }
+      switch ($fid)
+      {
+        case 1:
+          if ($ftype == TType::I32) {
+            $xfer += $input->readI32($this->shardId);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 2:
+          if ($ftype == TType::I32) {
+            $xfer += $input->readI32($this->partitionId);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        default:
+          $xfer += $input->skip($ftype);
+          break;
+      }
+      $xfer += $input->readFieldEnd();
+    }
+    $xfer += $input->readStructEnd();
+    return $xfer;
+  }
+
+  public function write($output) {
+    $xfer = 0;
+    $xfer += $output->writeStructBegin('IndexNode_listPartitionFiles_args');
+    if ($this->shardId !== null) {
+      $xfer += $output->writeFieldBegin('shardId', TType::I32, 1);
+      $xfer += $output->writeI32($this->shardId);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->partitionId !== null) {
+      $xfer += $output->writeFieldBegin('partitionId', TType::I32, 2);
+      $xfer += $output->writeI32($this->partitionId);
+      $xfer += $output->writeFieldEnd();
+    }
+    $xfer += $output->writeFieldStop();
+    $xfer += $output->writeStructEnd();
+    return $xfer;
+  }
+
+}
+
+class IndexNode_listPartitionFiles_result {
+  static $_TSPEC;
+
+  public $success = null;
+  public $e = null;
+
+  public function __construct($vals=null) {
+    if (!isset(self::$_TSPEC)) {
+      self::$_TSPEC = array(
+        0 => array(
+          'var' => 'success',
+          'type' => TType::LST,
+          'etype' => TType::STRING,
+          'elem' => array(
+            'type' => TType::STRING,
+            ),
+          ),
+        1 => array(
+          'var' => 'e',
+          'type' => TType::STRUCT,
+          'class' => '\tppro\NonExistentPartitionException',
+          ),
+        );
+    }
+    if (is_array($vals)) {
+      if (isset($vals['success'])) {
+        $this->success = $vals['success'];
+      }
+      if (isset($vals['e'])) {
+        $this->e = $vals['e'];
+      }
+    }
+  }
+
+  public function getName() {
+    return 'IndexNode_listPartitionFiles_result';
+  }
+
+  public function read($input)
+  {
+    $xfer = 0;
+    $fname = null;
+    $ftype = 0;
+    $fid = 0;
+    $xfer += $input->readStructBegin($fname);
+    while (true)
+    {
+      $xfer += $input->readFieldBegin($fname, $ftype, $fid);
+      if ($ftype == TType::STOP) {
+        break;
+      }
+      switch ($fid)
+      {
+        case 0:
+          if ($ftype == TType::LST) {
+            $this->success = array();
+            $_size51 = 0;
+            $_etype54 = 0;
+            $xfer += $input->readListBegin($_etype54, $_size51);
+            for ($_i55 = 0; $_i55 < $_size51; ++$_i55)
+            {
+              $elem56 = null;
+              $xfer += $input->readString($elem56);
+              $this->success []= $elem56;
+            }
+            $xfer += $input->readListEnd();
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 1:
+          if ($ftype == TType::STRUCT) {
+            $this->e = new \tppro\NonExistentPartitionException();
+            $xfer += $this->e->read($input);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        default:
+          $xfer += $input->skip($ftype);
+          break;
+      }
+      $xfer += $input->readFieldEnd();
+    }
+    $xfer += $input->readStructEnd();
+    return $xfer;
+  }
+
+  public function write($output) {
+    $xfer = 0;
+    $xfer += $output->writeStructBegin('IndexNode_listPartitionFiles_result');
+    if ($this->success !== null) {
+      if (!is_array($this->success)) {
+        throw new TProtocolException('Bad type in structure.', TProtocolException::INVALID_DATA);
+      }
+      $xfer += $output->writeFieldBegin('success', TType::LST, 0);
+      {
+        $output->writeListBegin(TType::STRING, count($this->success));
+        {
+          foreach ($this->success as $iter57)
+          {
+            $xfer += $output->writeString($iter57);
+          }
+        }
+        $output->writeListEnd();
+      }
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->e !== null) {
+      $xfer += $output->writeFieldBegin('e', TType::STRUCT, 1);
+      $xfer += $this->e->write($output);
       $xfer += $output->writeFieldEnd();
     }
     $xfer += $output->writeFieldStop();
