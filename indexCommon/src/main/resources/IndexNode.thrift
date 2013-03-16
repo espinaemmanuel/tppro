@@ -61,8 +61,9 @@ struct IndexResult {
 }
 
 struct PartitionStatus {
-	1: i32 partitionId,
-	2: string status,
+	1: i32 groupId,
+	2: i32 partitionId,
+	3: string status,
 }
 
 service IndexBroker{
@@ -79,6 +80,8 @@ service IndexNode{
 	void createPartition(1: i32 shardId, 2: i32 partitionId) throws (1: PartitionAlreadyExistsException partex),
 	void removePartition(1: i32 shardId, 2: i32 partitionId) throws (1: NonExistentPartitionException partex),
 	bool containsPartition(1: i32 shardId, 2: i32 partitionId),
+	list<PartitionStatus> listPartitions();
+	i32 totalDocuments(1: i32 shardId, 2: i32 partitionId) throws (1: NonExistentPartitionException e),
 	PartitionStatus partitionStatus(1: i32 shardId, 2: i32 partitionId) throws (1: NonExistentPartitionException e),
 	list<string> listPartitionFiles(1: i32 shardId, 2: i32 partitionId) throws (1: NonExistentPartitionException e),
 }

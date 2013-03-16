@@ -6,6 +6,7 @@ import org.apache.thrift.server.TServer;
 import org.apache.thrift.server.TThreadPoolServer;
 import org.apache.thrift.transport.TServerSocket;
 import org.apache.thrift.transport.TServerTransport;
+import org.apache.zookeeper.CreateMode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,6 +37,9 @@ public class Broker implements Runnable {
 	protected IndexBrokerHandler handler;
 	protected IndexBroker.Processor<IndexBroker.Iface> processor;
 	private boolean localMode;
+	
+	protected static CuratorFramework curator;
+
 	
 	private IndexPartitionsGroup localIndexServer;
 
@@ -81,20 +85,27 @@ public class Broker implements Runnable {
 
 			} else {
 				//Distributed mode
-				String zookeeperHost = System.getProperty("zookeeper");
+				String zookeeperHost = System.getProperty("zookeeper", "localhost:2181");
 				if(zookeeperHost == null){
 					System.out.println("Zookeeper server not specified");
 					return;
 				}
 				
-				CuratorFramework curatorClient = createZookeeperClient(zookeeperHost);
-				curatorClient.start();
+				curator = createZookeeperClient(zookeeperHost);
+				curator.start();
 				
-				PartitionResolver partitionResolver = new ZookeeperPartitionResolver(curatorClient);
-				ShardVersionTracker versionTracker = new ZkShardVersionTracker(curatorClient);
+				PartitionResolver partitionResolver = new ZookeeperPartitionResolver(curator);
+				ShardVersionTracker versionTracker = new ZkShardVersionTracker(curator);
 				LockManager lockManager = null;
 				
 				handler = new IndexBrokerHandler(partitionResolver, lockManager, versionTracker);
+				
+				logger.info("Registering node in zookeeper");
+				String localhostname = java.net.InetAddress.getLocalHost().getHostAddress();
+				
+				curator.create().creatingParentsIfNeeded()
+				.withMode(CreateMode.EPHEMERAL)
+				.forPath("/brokers/" + localhostname + "_" + port, null);
 			}
 			
 			

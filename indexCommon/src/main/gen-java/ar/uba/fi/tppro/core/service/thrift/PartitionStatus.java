@@ -33,8 +33,9 @@ import org.slf4j.LoggerFactory;
 public class PartitionStatus implements org.apache.thrift.TBase<PartitionStatus, PartitionStatus._Fields>, java.io.Serializable, Cloneable {
   private static final org.apache.thrift.protocol.TStruct STRUCT_DESC = new org.apache.thrift.protocol.TStruct("PartitionStatus");
 
-  private static final org.apache.thrift.protocol.TField PARTITION_ID_FIELD_DESC = new org.apache.thrift.protocol.TField("partitionId", org.apache.thrift.protocol.TType.I32, (short)1);
-  private static final org.apache.thrift.protocol.TField STATUS_FIELD_DESC = new org.apache.thrift.protocol.TField("status", org.apache.thrift.protocol.TType.STRING, (short)2);
+  private static final org.apache.thrift.protocol.TField GROUP_ID_FIELD_DESC = new org.apache.thrift.protocol.TField("groupId", org.apache.thrift.protocol.TType.I32, (short)1);
+  private static final org.apache.thrift.protocol.TField PARTITION_ID_FIELD_DESC = new org.apache.thrift.protocol.TField("partitionId", org.apache.thrift.protocol.TType.I32, (short)2);
+  private static final org.apache.thrift.protocol.TField STATUS_FIELD_DESC = new org.apache.thrift.protocol.TField("status", org.apache.thrift.protocol.TType.STRING, (short)3);
 
   private static final Map<Class<? extends IScheme>, SchemeFactory> schemes = new HashMap<Class<? extends IScheme>, SchemeFactory>();
   static {
@@ -42,13 +43,15 @@ public class PartitionStatus implements org.apache.thrift.TBase<PartitionStatus,
     schemes.put(TupleScheme.class, new PartitionStatusTupleSchemeFactory());
   }
 
+  public int groupId; // required
   public int partitionId; // required
   public String status; // required
 
   /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
   public enum _Fields implements org.apache.thrift.TFieldIdEnum {
-    PARTITION_ID((short)1, "partitionId"),
-    STATUS((short)2, "status");
+    GROUP_ID((short)1, "groupId"),
+    PARTITION_ID((short)2, "partitionId"),
+    STATUS((short)3, "status");
 
     private static final Map<String, _Fields> byName = new HashMap<String, _Fields>();
 
@@ -63,9 +66,11 @@ public class PartitionStatus implements org.apache.thrift.TBase<PartitionStatus,
      */
     public static _Fields findByThriftId(int fieldId) {
       switch(fieldId) {
-        case 1: // PARTITION_ID
+        case 1: // GROUP_ID
+          return GROUP_ID;
+        case 2: // PARTITION_ID
           return PARTITION_ID;
-        case 2: // STATUS
+        case 3: // STATUS
           return STATUS;
         default:
           return null;
@@ -107,11 +112,14 @@ public class PartitionStatus implements org.apache.thrift.TBase<PartitionStatus,
   }
 
   // isset id assignments
-  private static final int __PARTITIONID_ISSET_ID = 0;
+  private static final int __GROUPID_ISSET_ID = 0;
+  private static final int __PARTITIONID_ISSET_ID = 1;
   private byte __isset_bitfield = 0;
   public static final Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> metaDataMap;
   static {
     Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift.meta_data.FieldMetaData>(_Fields.class);
+    tmpMap.put(_Fields.GROUP_ID, new org.apache.thrift.meta_data.FieldMetaData("groupId", org.apache.thrift.TFieldRequirementType.DEFAULT, 
+        new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.I32)));
     tmpMap.put(_Fields.PARTITION_ID, new org.apache.thrift.meta_data.FieldMetaData("partitionId", org.apache.thrift.TFieldRequirementType.DEFAULT, 
         new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.I32)));
     tmpMap.put(_Fields.STATUS, new org.apache.thrift.meta_data.FieldMetaData("status", org.apache.thrift.TFieldRequirementType.DEFAULT, 
@@ -124,10 +132,13 @@ public class PartitionStatus implements org.apache.thrift.TBase<PartitionStatus,
   }
 
   public PartitionStatus(
+    int groupId,
     int partitionId,
     String status)
   {
     this();
+    this.groupId = groupId;
+    setGroupIdIsSet(true);
     this.partitionId = partitionId;
     setPartitionIdIsSet(true);
     this.status = status;
@@ -138,6 +149,7 @@ public class PartitionStatus implements org.apache.thrift.TBase<PartitionStatus,
    */
   public PartitionStatus(PartitionStatus other) {
     __isset_bitfield = other.__isset_bitfield;
+    this.groupId = other.groupId;
     this.partitionId = other.partitionId;
     if (other.isSetStatus()) {
       this.status = other.status;
@@ -150,9 +162,34 @@ public class PartitionStatus implements org.apache.thrift.TBase<PartitionStatus,
 
   @Override
   public void clear() {
+    setGroupIdIsSet(false);
+    this.groupId = 0;
     setPartitionIdIsSet(false);
     this.partitionId = 0;
     this.status = null;
+  }
+
+  public int getGroupId() {
+    return this.groupId;
+  }
+
+  public PartitionStatus setGroupId(int groupId) {
+    this.groupId = groupId;
+    setGroupIdIsSet(true);
+    return this;
+  }
+
+  public void unsetGroupId() {
+    __isset_bitfield = EncodingUtils.clearBit(__isset_bitfield, __GROUPID_ISSET_ID);
+  }
+
+  /** Returns true if field groupId is set (has been assigned a value) and false otherwise */
+  public boolean isSetGroupId() {
+    return EncodingUtils.testBit(__isset_bitfield, __GROUPID_ISSET_ID);
+  }
+
+  public void setGroupIdIsSet(boolean value) {
+    __isset_bitfield = EncodingUtils.setBit(__isset_bitfield, __GROUPID_ISSET_ID, value);
   }
 
   public int getPartitionId() {
@@ -204,6 +241,14 @@ public class PartitionStatus implements org.apache.thrift.TBase<PartitionStatus,
 
   public void setFieldValue(_Fields field, Object value) {
     switch (field) {
+    case GROUP_ID:
+      if (value == null) {
+        unsetGroupId();
+      } else {
+        setGroupId((Integer)value);
+      }
+      break;
+
     case PARTITION_ID:
       if (value == null) {
         unsetPartitionId();
@@ -225,6 +270,9 @@ public class PartitionStatus implements org.apache.thrift.TBase<PartitionStatus,
 
   public Object getFieldValue(_Fields field) {
     switch (field) {
+    case GROUP_ID:
+      return Integer.valueOf(getGroupId());
+
     case PARTITION_ID:
       return Integer.valueOf(getPartitionId());
 
@@ -242,6 +290,8 @@ public class PartitionStatus implements org.apache.thrift.TBase<PartitionStatus,
     }
 
     switch (field) {
+    case GROUP_ID:
+      return isSetGroupId();
     case PARTITION_ID:
       return isSetPartitionId();
     case STATUS:
@@ -262,6 +312,15 @@ public class PartitionStatus implements org.apache.thrift.TBase<PartitionStatus,
   public boolean equals(PartitionStatus that) {
     if (that == null)
       return false;
+
+    boolean this_present_groupId = true;
+    boolean that_present_groupId = true;
+    if (this_present_groupId || that_present_groupId) {
+      if (!(this_present_groupId && that_present_groupId))
+        return false;
+      if (this.groupId != that.groupId)
+        return false;
+    }
 
     boolean this_present_partitionId = true;
     boolean that_present_partitionId = true;
@@ -297,6 +356,16 @@ public class PartitionStatus implements org.apache.thrift.TBase<PartitionStatus,
     int lastComparison = 0;
     PartitionStatus typedOther = (PartitionStatus)other;
 
+    lastComparison = Boolean.valueOf(isSetGroupId()).compareTo(typedOther.isSetGroupId());
+    if (lastComparison != 0) {
+      return lastComparison;
+    }
+    if (isSetGroupId()) {
+      lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.groupId, typedOther.groupId);
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+    }
     lastComparison = Boolean.valueOf(isSetPartitionId()).compareTo(typedOther.isSetPartitionId());
     if (lastComparison != 0) {
       return lastComparison;
@@ -337,6 +406,10 @@ public class PartitionStatus implements org.apache.thrift.TBase<PartitionStatus,
     StringBuilder sb = new StringBuilder("PartitionStatus(");
     boolean first = true;
 
+    sb.append("groupId:");
+    sb.append(this.groupId);
+    first = false;
+    if (!first) sb.append(", ");
     sb.append("partitionId:");
     sb.append(this.partitionId);
     first = false;
@@ -393,7 +466,15 @@ public class PartitionStatus implements org.apache.thrift.TBase<PartitionStatus,
           break;
         }
         switch (schemeField.id) {
-          case 1: // PARTITION_ID
+          case 1: // GROUP_ID
+            if (schemeField.type == org.apache.thrift.protocol.TType.I32) {
+              struct.groupId = iprot.readI32();
+              struct.setGroupIdIsSet(true);
+            } else { 
+              org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
+            }
+            break;
+          case 2: // PARTITION_ID
             if (schemeField.type == org.apache.thrift.protocol.TType.I32) {
               struct.partitionId = iprot.readI32();
               struct.setPartitionIdIsSet(true);
@@ -401,7 +482,7 @@ public class PartitionStatus implements org.apache.thrift.TBase<PartitionStatus,
               org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
             }
             break;
-          case 2: // STATUS
+          case 3: // STATUS
             if (schemeField.type == org.apache.thrift.protocol.TType.STRING) {
               struct.status = iprot.readString();
               struct.setStatusIsSet(true);
@@ -424,6 +505,9 @@ public class PartitionStatus implements org.apache.thrift.TBase<PartitionStatus,
       struct.validate();
 
       oprot.writeStructBegin(STRUCT_DESC);
+      oprot.writeFieldBegin(GROUP_ID_FIELD_DESC);
+      oprot.writeI32(struct.groupId);
+      oprot.writeFieldEnd();
       oprot.writeFieldBegin(PARTITION_ID_FIELD_DESC);
       oprot.writeI32(struct.partitionId);
       oprot.writeFieldEnd();
@@ -450,13 +534,19 @@ public class PartitionStatus implements org.apache.thrift.TBase<PartitionStatus,
     public void write(org.apache.thrift.protocol.TProtocol prot, PartitionStatus struct) throws org.apache.thrift.TException {
       TTupleProtocol oprot = (TTupleProtocol) prot;
       BitSet optionals = new BitSet();
-      if (struct.isSetPartitionId()) {
+      if (struct.isSetGroupId()) {
         optionals.set(0);
       }
-      if (struct.isSetStatus()) {
+      if (struct.isSetPartitionId()) {
         optionals.set(1);
       }
-      oprot.writeBitSet(optionals, 2);
+      if (struct.isSetStatus()) {
+        optionals.set(2);
+      }
+      oprot.writeBitSet(optionals, 3);
+      if (struct.isSetGroupId()) {
+        oprot.writeI32(struct.groupId);
+      }
       if (struct.isSetPartitionId()) {
         oprot.writeI32(struct.partitionId);
       }
@@ -468,12 +558,16 @@ public class PartitionStatus implements org.apache.thrift.TBase<PartitionStatus,
     @Override
     public void read(org.apache.thrift.protocol.TProtocol prot, PartitionStatus struct) throws org.apache.thrift.TException {
       TTupleProtocol iprot = (TTupleProtocol) prot;
-      BitSet incoming = iprot.readBitSet(2);
+      BitSet incoming = iprot.readBitSet(3);
       if (incoming.get(0)) {
+        struct.groupId = iprot.readI32();
+        struct.setGroupIdIsSet(true);
+      }
+      if (incoming.get(1)) {
         struct.partitionId = iprot.readI32();
         struct.setPartitionIdIsSet(true);
       }
-      if (incoming.get(1)) {
+      if (incoming.get(2)) {
         struct.status = iprot.readString();
         struct.setStatusIsSet(true);
       }

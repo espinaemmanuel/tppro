@@ -6,10 +6,9 @@
 	<version>0.0.1-SNAPSHOT</version>
 	<packaging>pom</packaging>
 	<modules>
-		<module>sampleClient</module>
 		<module>indexCore</module>
 		<module>indexBroker</module>
-		<module>sampleIndexer</module>
 		<module>indexCommon</module>
+		<module>console</module>
 	</modules>
 </project>

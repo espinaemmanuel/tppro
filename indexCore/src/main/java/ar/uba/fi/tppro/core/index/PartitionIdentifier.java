@@ -2,8 +2,8 @@ package ar.uba.fi.tppro.core.index;
 
 public class PartitionIdentifier {
 
-	private int shardId;
-	private int partitionId;
+	public int shardId;
+	public int partitionId;
 
 	public PartitionIdentifier(int shardId, int partitionId) {
 		this.shardId = shardId;

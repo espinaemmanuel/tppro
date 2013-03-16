@@ -400,4 +400,24 @@ public class IndexPartitionsGroup implements IndexInterface,
 		}
 	}
 
+	@Override
+	public List<PartitionStatus> listPartitions() throws TException {
+		
+		List<PartitionStatus> result = Lists.newArrayList();
+		
+		for(PartitionIdentifier partition : this.partitionMap.keySet()){
+			PartitionStatus ps = new PartitionStatus(partition.shardId, partition.partitionId, this.partitionMap.get(partition).getStatus().toString());
+			result.add(ps);
+		}
+		
+		return result;
+	}
+
+	@Override
+	public int totalDocuments(int shardId, int partitionId)
+			throws NonExistentPartitionException, TException {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
 }

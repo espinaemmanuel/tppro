@@ -8,6 +8,7 @@ import org.apache.thrift.server.TServer;
 import org.apache.thrift.server.TThreadPoolServer;
 import org.apache.thrift.transport.TServerSocket;
 import org.apache.thrift.transport.TServerTransport;
+import org.apache.zookeeper.CreateMode;
 import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.handler.DefaultHandler;
@@ -33,34 +34,40 @@ import ar.uba.fi.tppro.util.NetworkUtils;
 
 public class IndexServer implements Runnable {
 
-	final Logger logger = LoggerFactory.getLogger(IndexPartitionsGroup.class);
+	final static Logger logger = LoggerFactory.getLogger(IndexPartitionsGroup.class);
 
 	protected int port;
 	protected File dataDir;
-
 	protected IndexPartitionsGroup handler;
-
 	protected IndexNode.Processor<IndexNode.Iface> processor;
-
 	protected TServer server;
+	
+	protected static CuratorFramework curator;
 
 	public static void main(String[] args) throws NumberFormatException,
 			Exception {
 
 		String port = System.getProperty("port", "9090");
 		String dataDir = System.getProperty("dataDir", "data");
-		String zookeeperHost = System.getProperty("zookeeper");
+		String zookeeperHost = System.getProperty("zookeeper", "localhost:2181");
 		
 		if(zookeeperHost == null){
 			System.out.println("Zookeeper server not specified. Specify one with -Dzookeeper");
 			return;
 		}
 		
-		CuratorFramework curatorClient = createZookeeperClient(zookeeperHost);
-		curatorClient.start();
+		curator = createZookeeperClient(zookeeperHost);
+		curator.start();
 		
-		PartitionResolver partitionResolver = new ZookeeperPartitionResolver(curatorClient);
-		ShardVersionTracker versionTracker = new ZkShardVersionTracker(curatorClient);
+		logger.info("Registering node in zookeeper");
+		String localhostname = java.net.InetAddress.getLocalHost().getHostAddress();
+	
+		curator.create().creatingParentsIfNeeded()
+		.withMode(CreateMode.EPHEMERAL)
+		.forPath("/cluster/" + localhostname + "_" + port, null);
+		
+		PartitionResolver partitionResolver = new ZookeeperPartitionResolver(curator);
+		ShardVersionTracker versionTracker = new ZkShardVersionTracker(curator);
 		LockManager lockManager = null;
 		
 		new Thread(new IndexServer(Integer.parseInt(port), new File(dataDir), partitionResolver, versionTracker, lockManager))
@@ -124,6 +131,7 @@ public class IndexServer implements Runnable {
 			TServerTransport serverTransport = new TServerSocket(this.port);
 			server = new TThreadPoolServer(new TThreadPoolServer.Args(
 					serverTransport).processor(processor));
+		
 
 			logger.info("Starting the Index server on port " + this.port
 					+ "...");
