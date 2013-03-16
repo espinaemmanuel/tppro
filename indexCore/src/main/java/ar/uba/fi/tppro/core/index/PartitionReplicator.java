@@ -44,7 +44,13 @@ public class PartitionReplicator extends Thread {
 	@Override
 	public void run() {
 
-		IndexLock lock = null;
+		IndexLock lock;
+		try {
+			lock = this.lockManager.aquire(indexPartition.getShardId(), 2000);
+		} catch (LockAquireTimeoutException e1) {
+			logger.error("Could not aquire lock");
+			return;
+		}
 
 		try {
 			lock = lockManager.aquire(indexPartition.getShardId(), LOCK_TIMEOUT);

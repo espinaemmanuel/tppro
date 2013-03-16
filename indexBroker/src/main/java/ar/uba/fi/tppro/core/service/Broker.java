@@ -96,7 +96,7 @@ public class Broker implements Runnable {
 				
 				PartitionResolver partitionResolver = new ZookeeperPartitionResolver(curator);
 				ShardVersionTracker versionTracker = new ZkShardVersionTracker(curator);
-				LockManager lockManager = null;
+				LockManager lockManager = new NullLockManager();
 				
 				handler = new IndexBrokerHandler(partitionResolver, lockManager, versionTracker);
 				

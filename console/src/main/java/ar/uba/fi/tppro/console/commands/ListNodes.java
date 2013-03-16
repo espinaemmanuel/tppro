@@ -3,7 +3,6 @@ package ar.uba.fi.tppro.console.commands;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.google.common.collect.Lists;
 import com.netflix.curator.framework.imps.CuratorFrameworkState;
 
 import ar.uba.fi.tppro.console.Command;

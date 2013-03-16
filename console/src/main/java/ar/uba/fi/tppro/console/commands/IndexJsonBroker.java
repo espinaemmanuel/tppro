@@ -19,10 +19,8 @@ import ar.uba.fi.tppro.console.Command;
 import ar.uba.fi.tppro.console.Context;
 import ar.uba.fi.tppro.console.Context.NodeType;
 import ar.uba.fi.tppro.core.index.RemoteBrokerNodeDescriptor;
-import ar.uba.fi.tppro.core.index.RemoteIndexNodeDescriptor;
 import ar.uba.fi.tppro.core.service.thrift.Document;
 import ar.uba.fi.tppro.core.service.thrift.IndexBroker;
-import ar.uba.fi.tppro.core.service.thrift.IndexNode;
 
 public class IndexJsonBroker implements Command {
 
@@ -47,9 +45,8 @@ public class IndexJsonBroker implements Command {
 				nodeParts[0], Integer.parseInt(nodeParts[1]));
 		IndexBroker.Iface broker = remoteNode.getClient();
 		
-		int groupId = Integer.parseInt(argv[1]);
-		
-		File jsonFile = new File(argv[4]);
+		int groupId = Integer.parseInt(argv[1]);		
+		File jsonFile = new File(argv[2]);
 		
 		if(!jsonFile.exists()){
 			throw new FileNotFoundException("file not found");

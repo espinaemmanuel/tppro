@@ -39,12 +39,6 @@ public class SearchBroker implements Command {
 		int groupId = Integer.parseInt(argv[1]);
 		String query = argv[2];
 		
-		File jsonFile = new File(argv[4]);
-		
-		if(!jsonFile.exists()){
-			throw new FileNotFoundException("file not found");
-		}
-		
 		ParalellSearchResult result = broker.search(groupId, query, 1000, 0);
 		
 		System.out.println("Errors:");

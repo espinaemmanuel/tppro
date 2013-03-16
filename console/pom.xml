@@ -58,7 +58,7 @@
 					</descriptorRefs>
 					<archive>
 						<manifest>
-							<mainClass>ar.uba.fi.tppro.core.service.IndexCore</mainClass>
+							<mainClass>ar.uba.fi.tppro.console.Console</mainClass>
 						</manifest>
 					</archive>
 				</configuration>
