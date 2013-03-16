@@ -39,21 +39,17 @@ class main extends CI_Controller {
     function make_index($user_id) {
 
       $directory = "../frontend/uploads/";
-    
-      $parts=$this->User_partitions->get($user_id);
       $files = glob($directory . $user_id."*.txt");
       $documents = array();
 	  
 	  foreach($files as $file){
 		$documents[]=$this->parse($file);
-		//unlink($file);
+		unlink($file);
   	  }
       
-      //TODO harcodeado para q agarre solo una particion
-      $part=$parts[0]->partition_id;
+      $shard_id=$this->session->userdata('shardId');
       
-      //1: partition id
-      $get=array('documents'=>$documents, 'partitions'=>$part);
+      $get=array('documents'=>$documents, 'shard_id'=>$shard_id);
 	  $res=$this->curl->simple_get(URL_MAKE_INDEX,$get);
       
       //echo '<pre>'; print_r($res); echo '</pre>';
@@ -83,7 +79,8 @@ class main extends CI_Controller {
 					$this->session->set_userdata('logged_in',TRUE);
 					$this->session->set_userdata('user_id',$user->id);
                     $this->session->set_userdata('is_admin',$user->is_admin);
-					
+                    $this->session->set_userdata('shard_id',$user->shard_id);
+                    
 					redirect(base_url().'/index.php/main');
 				}
 			}
@@ -98,16 +95,11 @@ class main extends CI_Controller {
     function search(){
     
         if($_POST){
-          $parts=$this->User_partitions->get($_POST['user_id']);
           $query=$_POST['query'];
-          
-          //TODO harcodeado para q agarre solo una particion
-          $part=$parts[0]->partition_id;
-          
-          $get=array('query'=>'text:'.$query, 'parts'=>$part);
+          $shard_id=$this->session->userdata('shard_id');
+          $get=array('query'=>'text:'.$query, 'shard_id'=>$shard_id);
           
  		  $res=$this->curl->simple_get(URLGET,$get);
-          
           $result=json_decode($res);
           
           $this->load->view("main", array('user_id'=> $this->session->userdata('user_id'),'query'=>$query, 'result'=>$result));
