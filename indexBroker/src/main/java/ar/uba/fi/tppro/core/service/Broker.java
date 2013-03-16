@@ -75,11 +75,26 @@ public class Broker implements Runnable {
 				this.localIndexServer = new IndexPartitionsGroup(descriptor, partitionResolver, versionTracker, lockManager);
 				descriptor.setlocalIndex(this.localIndexServer);
 				
-				this.localIndexServer.open(this.dataDir, false);
+				this.localIndexServer.open(this.dataDir, true);
 				
 				if(!this.localIndexServer.containsPartition(1, 1)){
 					this.localIndexServer.createPartition(1, 1);
 				}
+				
+				String zookeeperHost = System.getProperty("zookeeper");
+				
+				if(zookeeperHost != null){
+					curator = createZookeeperClient(zookeeperHost);
+					curator.start();
+					
+					logger.info("Registering node in zookeeper");
+					String localhostname = java.net.InetAddress.getLocalHost().getHostAddress();
+					
+					curator.create().creatingParentsIfNeeded()
+					.withMode(CreateMode.EPHEMERAL)
+					.forPath("/brokers/" + localhostname + "_" + port, null);
+				}
+
 						
 				handler = new IndexBrokerHandler(partitionResolver, lockManager, versionTracker);
 

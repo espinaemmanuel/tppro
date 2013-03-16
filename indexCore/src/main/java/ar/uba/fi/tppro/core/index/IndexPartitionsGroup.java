@@ -77,6 +77,14 @@ public class IndexPartitionsGroup implements IndexInterface,
 			
 			IndexPartition partition = new IndexPartition(shardId, partitionId,
 					partitionDir, this.versionTracker);
+			
+			try {
+				this.partitionResolver.registerPartition(partition.getShardId(), partition.getPartitionId(),
+						this.getThisNodeDescriptor(), partition.getStatus());
+			} catch (PartitionResolverException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}
 
 			try {
 
