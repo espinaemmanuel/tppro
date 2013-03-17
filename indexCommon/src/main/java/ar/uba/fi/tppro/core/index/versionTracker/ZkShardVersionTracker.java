@@ -1,5 +1,6 @@
 package ar.uba.fi.tppro.core.index.versionTracker;
 
+import java.nio.ByteBuffer;
 import java.util.concurrent.ConcurrentMap;
 
 import org.slf4j.Logger;
@@ -8,10 +9,14 @@ import org.slf4j.LoggerFactory;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
+import com.google.common.util.concurrent.MoreExecutors;
 import com.netflix.curator.framework.CuratorFramework;
 import com.netflix.curator.framework.recipes.shared.SharedCount;
 import com.netflix.curator.framework.recipes.shared.SharedCountListener;
 import com.netflix.curator.framework.recipes.shared.SharedCountReader;
+import com.netflix.curator.framework.recipes.shared.SharedValue;
+import com.netflix.curator.framework.recipes.shared.SharedValueListener;
+import com.netflix.curator.framework.recipes.shared.SharedValueReader;
 import com.netflix.curator.framework.state.ConnectionState;
 
 public class ZkShardVersionTracker implements ShardVersionTracker {
@@ -20,7 +25,8 @@ public class ZkShardVersionTracker implements ShardVersionTracker {
 
 	private static final String SHARD_VERSIONS = "/shardVersions/";
 	private CuratorFramework client;
-	private ConcurrentMap<Integer, SharedCount> versionCounters = Maps
+	
+	private ConcurrentMap<Integer, SharedValue> versionCounters = Maps
 			.newConcurrentMap();
 	
 	private Multimap<Integer, ShardVersionObserver> shardObservers = HashMultimap.create();
@@ -53,47 +59,46 @@ public class ZkShardVersionTracker implements ShardVersionTracker {
 		
 	}
 
-	protected SharedCount initializeCounter(final int shardId) throws Exception {
-		SharedCount newCounter = new SharedCount(this.client,
-				SHARD_VERSIONS + shardId, 0);
+	protected SharedValue initializeCounter(final int shardId) throws Exception {
+		SharedValue newCounter = new SharedValue(this.client,
+				SHARD_VERSIONS + shardId, toBytes(0l));
 		
-		newCounter.addListener(new SharedCountListener() {
-
-			@Override
-			public void stateChanged(CuratorFramework client,
-					ConnectionState newState) {
-				notifyStateChange(shardId, newState);
-			}
-
-			@Override
-			public void countHasChanged(SharedCountReader sharedCount,
-					int newCount) throws Exception {
-				
+		SharedValueListener valueListener = new SharedValueListener()
+        {
+            @Override
+            public void valueHasChanged(SharedValueReader sharedValue, byte[] newValue) throws Exception
+            {
 				for(ShardVersionObserver observer : shardObservers.get(shardId)){
-					observer.onVersionChanged(shardId, newCount);
+					observer.onVersionChanged(shardId, fromBytes(newValue));
 				}
+            }
 
-			}
-		});
-
+            @Override
+            public void stateChanged(CuratorFramework client, ConnectionState newState)
+            {
+            	notifyStateChange(shardId, newState);
+            }
+        };
+        
+        newCounter.getListenable().addListener(valueListener, MoreExecutors.sameThreadExecutor());
 		newCounter.start();
 
 		return newCounter;
 	}
 
 	@Override
-	public int getCurrentVersion(int shardId)
+	public long getCurrentVersion(int shardId)
 			throws VersionTrackerServerException {
 		try {
 
-			SharedCount counter = versionCounters.get(shardId);
+			SharedValue counter = versionCounters.get(shardId);
 
 			if (counter == null) {
 				counter = this.initializeCounter(shardId);
 				versionCounters.put(shardId, counter);
 			}
 
-			return counter.getCount();
+			return fromBytes(counter.getValue());
 
 		} catch (Exception e) {
 			throw new VersionTrackerServerException(
@@ -103,9 +108,9 @@ public class ZkShardVersionTracker implements ShardVersionTracker {
 	}
 
 	@Override
-	public void setShardVersion(int shardId, int newVersion)
+	public void setShardVersion(int shardId, long newVersion)
 			throws StaleVersionException, VersionTrackerServerException {
-		SharedCount counter = versionCounters.get(shardId);
+		SharedValue counter = versionCounters.get(shardId);
 
 		try {
 			if (counter == null) {
@@ -119,9 +124,9 @@ public class ZkShardVersionTracker implements ShardVersionTracker {
 		}
 
 		try {
-			boolean changedVersion = counter.trySetCount(newVersion);
+			boolean changedVersion = counter.trySetValue(toBytes(newVersion));
 			if (changedVersion == false) {
-				throw new StaleVersionException(counter.getCount());
+				throw new StaleVersionException(fromBytes(counter.getValue()));
 			}
 		} catch (Exception e) {
 			throw new VersionTrackerServerException(
@@ -134,5 +139,17 @@ public class ZkShardVersionTracker implements ShardVersionTracker {
 			ShardVersionObserver observer) {
 		this.shardObservers.put(shardId, observer);
 	}
+	
+    private byte[] toBytes(long value)
+    {
+        byte[] bytes = new byte[8];
+        ByteBuffer.wrap(bytes).putLong(value);
+        return bytes;
+    }
+    
+    private long fromBytes(byte[] bytes)
+    {
+        return ByteBuffer.wrap(bytes).getLong();
+    }
 
 }

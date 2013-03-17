@@ -63,8 +63,8 @@ public class IndexPartition implements Closeable, ShardVersionObserver {
 	/*
 	 * Two phase commit implementation
 	 */
-	private Integer lastCommittedMessageId;
-	private Integer lastPreparedMessageId;
+	private Long lastCommittedMessageId;
+	private Long lastPreparedMessageId;
 
 	
 	private IndexWriter currentWriter;
@@ -98,7 +98,7 @@ public class IndexPartition implements Closeable, ShardVersionObserver {
 		this.lastCommittedMessageId = this.readCurrentVersion();
 
 		if(checkVersion){
-			int clusterVersion;
+			long clusterVersion;
 			try {
 				
 				clusterVersion = this.versionTracker.getCurrentVersion(this.shardId);
@@ -124,7 +124,7 @@ public class IndexPartition implements Closeable, ShardVersionObserver {
 		isOpen = true;
 	}
 	
-	private int readCurrentVersion() throws IOException {
+	private long readCurrentVersion() throws IOException {
 		
 		//Get a list of commits of the directory
 		SegmentInfos segmentInfos = new SegmentInfos();
@@ -150,7 +150,7 @@ public class IndexPartition implements Closeable, ShardVersionObserver {
 		if(currentCommit == null)
 			throw new IOException("Could not get current commit");
 		
-		return Integer.parseInt(currentCommit.getUserData().get(INDEX_VERSION));
+		return Long.parseLong(currentCommit.getUserData().get(INDEX_VERSION));
 	}
 
 	protected void ensureOpen() throws IOException{
@@ -167,7 +167,7 @@ public class IndexPartition implements Closeable, ShardVersionObserver {
 	 * @throws PartitionNotReadyException
 	 */
 	public void index(List<Document> documents) throws IOException, PartitionNotReadyException {
-		int messageId = this.lastPreparedMessageId != null ? this.lastPreparedMessageId + 1 : this.lastCommittedMessageId + 1;
+		long messageId = this.lastPreparedMessageId != null ? this.lastPreparedMessageId + 1 : this.lastCommittedMessageId + 1;
 			
 		this.prepare(messageId, documents);
 		this.commit();	
@@ -180,7 +180,7 @@ public class IndexPartition implements Closeable, ShardVersionObserver {
 	 * @throws IOException
 	 * @throws PartitionNotReadyException
 	 */
-	public void prepare(int messageId, List<Document> documents) throws IOException, PartitionNotReadyException {
+	public void prepare(long messageId, List<Document> documents) throws IOException, PartitionNotReadyException {
 		
 		if(this.status != IndexPartitionStatus.READY){
 			throw new PartitionNotReadyException("partition not ready: " + this.status);
@@ -226,7 +226,7 @@ public class IndexPartition implements Closeable, ShardVersionObserver {
 		assert this.lastCommittedMessageId == null : "last committed message Id should be null";
 		
 		Map<String, String> userDataMap = Maps.newConcurrentMap();
-		userDataMap.put(INDEX_VERSION, Integer.toString(messageId));
+		userDataMap.put(INDEX_VERSION, Long.toString(messageId));
 		this.lastPreparedMessageId = messageId;
 		
 		this.currentWriter.prepareCommit(userDataMap);
@@ -412,7 +412,7 @@ public class IndexPartition implements Closeable, ShardVersionObserver {
 	}
 
 	@Override
-	public void onVersionChanged(int groupId, int newVersion) {
+	public void onVersionChanged(int groupId, long newVersion) {
 		logger.info("Group " + groupId + " version changed. New version: " + newVersion);
 		logger.debug(String.format("lastPreparedMessageId = %d, newVersion = %d", this.lastPreparedMessageId, newVersion));
 		
@@ -425,11 +425,11 @@ public class IndexPartition implements Closeable, ShardVersionObserver {
 		}
 	}
 
-	public Integer getLastCommittedMessageId() {
+	public Long getLastCommittedMessageId() {
 		return lastCommittedMessageId;
 	}
 
-	public Integer getLastPreparedMessageId() {
+	public Long getLastPreparedMessageId() {
 		return lastPreparedMessageId;
 	}
 

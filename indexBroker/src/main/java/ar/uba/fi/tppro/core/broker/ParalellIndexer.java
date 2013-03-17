@@ -114,7 +114,7 @@ public class ParalellIndexer {
 		IndexLock addLock = lockManager.aquire(shardId, 1000);
 		try {
 			// Get the current version
-			final int newVersion = versionTracker.getCurrentVersion(shardId) + 1;
+			final long newVersion = versionTracker.getCurrentVersion(shardId) + 1;
 
 			Map<Future<?>, PartialList> futures = Maps.newHashMap();
 

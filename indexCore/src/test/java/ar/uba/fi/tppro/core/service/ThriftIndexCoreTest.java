@@ -46,7 +46,7 @@ public class ThriftIndexCoreTest {
 			fail("temp directory not empty");
 		
 		ShardVersionTracker versionTracker = mock(ShardVersionTracker.class);
-		when(versionTracker.getCurrentVersion(123)).thenReturn(0);
+		when(versionTracker.getCurrentVersion(123)).thenReturn(0l);
 		
 		PartitionResolver partitionResolver = mock(PartitionResolver.class);
 		

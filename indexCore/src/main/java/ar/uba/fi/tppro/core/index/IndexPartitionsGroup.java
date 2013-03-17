@@ -348,7 +348,7 @@ public class IndexPartitionsGroup implements IndexInterface,
 	}
 
 	@Override
-	public void prepareCommit(int shardId, int partitionId, int messageId,
+	public void prepareCommit(int shardId, int partitionId, long messageId,
 			List<Document> documents) throws NonExistentPartitionException,
 			IndexException, TException {
 		logger.debug("prepareCommit request");

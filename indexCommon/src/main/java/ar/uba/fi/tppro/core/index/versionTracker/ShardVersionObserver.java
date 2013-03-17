@@ -4,6 +4,6 @@ public interface ShardVersionObserver {
 
 	void onConectionLoss(int shardId);
 
-	void onVersionChanged(int shardId, int newVersion);
+	void onVersionChanged(int shardId, long newVersion);
 
 }

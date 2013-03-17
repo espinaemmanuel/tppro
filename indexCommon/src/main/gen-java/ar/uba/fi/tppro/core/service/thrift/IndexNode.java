@@ -38,7 +38,7 @@ public class IndexNode {
 
     public void deleteByQuery(int shardId, int partitionId, String query) throws org.apache.thrift.TException;
 
-    public void prepareCommit(int shardId, int partitionId, int messageId, List<Document> documents) throws NonExistentPartitionException, IndexException, org.apache.thrift.TException;
+    public void prepareCommit(int shardId, int partitionId, long messageId, List<Document> documents) throws NonExistentPartitionException, IndexException, org.apache.thrift.TException;
 
     public void commit(int shardId, int partitionId) throws NonExistentPartitionException, IndexException, org.apache.thrift.TException;
 
@@ -64,7 +64,7 @@ public class IndexNode {
 
     public void deleteByQuery(int shardId, int partitionId, String query, org.apache.thrift.async.AsyncMethodCallback<AsyncClient.deleteByQuery_call> resultHandler) throws org.apache.thrift.TException;
 
-    public void prepareCommit(int shardId, int partitionId, int messageId, List<Document> documents, org.apache.thrift.async.AsyncMethodCallback<AsyncClient.prepareCommit_call> resultHandler) throws org.apache.thrift.TException;
+    public void prepareCommit(int shardId, int partitionId, long messageId, List<Document> documents, org.apache.thrift.async.AsyncMethodCallback<AsyncClient.prepareCommit_call> resultHandler) throws org.apache.thrift.TException;
 
     public void commit(int shardId, int partitionId, org.apache.thrift.async.AsyncMethodCallback<AsyncClient.commit_call> resultHandler) throws org.apache.thrift.TException;
 
@@ -159,13 +159,13 @@ public class IndexNode {
       return;
     }
 
-    public void prepareCommit(int shardId, int partitionId, int messageId, List<Document> documents) throws NonExistentPartitionException, IndexException, org.apache.thrift.TException
+    public void prepareCommit(int shardId, int partitionId, long messageId, List<Document> documents) throws NonExistentPartitionException, IndexException, org.apache.thrift.TException
     {
       send_prepareCommit(shardId, partitionId, messageId, documents);
       recv_prepareCommit();
     }
 
-    public void send_prepareCommit(int shardId, int partitionId, int messageId, List<Document> documents) throws org.apache.thrift.TException
+    public void send_prepareCommit(int shardId, int partitionId, long messageId, List<Document> documents) throws org.apache.thrift.TException
     {
       prepareCommit_args args = new prepareCommit_args();
       args.setShardId(shardId);
@@ -490,7 +490,7 @@ public class IndexNode {
       }
     }
 
-    public void prepareCommit(int shardId, int partitionId, int messageId, List<Document> documents, org.apache.thrift.async.AsyncMethodCallback<prepareCommit_call> resultHandler) throws org.apache.thrift.TException {
+    public void prepareCommit(int shardId, int partitionId, long messageId, List<Document> documents, org.apache.thrift.async.AsyncMethodCallback<prepareCommit_call> resultHandler) throws org.apache.thrift.TException {
       checkReady();
       prepareCommit_call method_call = new prepareCommit_call(shardId, partitionId, messageId, documents, resultHandler, this, ___protocolFactory, ___transport);
       this.___currentMethod = method_call;
@@ -500,9 +500,9 @@ public class IndexNode {
     public static class prepareCommit_call extends org.apache.thrift.async.TAsyncMethodCall {
       private int shardId;
       private int partitionId;
-      private int messageId;
+      private long messageId;
       private List<Document> documents;
-      public prepareCommit_call(int shardId, int partitionId, int messageId, List<Document> documents, org.apache.thrift.async.AsyncMethodCallback<prepareCommit_call> resultHandler, org.apache.thrift.async.TAsyncClient client, org.apache.thrift.protocol.TProtocolFactory protocolFactory, org.apache.thrift.transport.TNonblockingTransport transport) throws org.apache.thrift.TException {
+      public prepareCommit_call(int shardId, int partitionId, long messageId, List<Document> documents, org.apache.thrift.async.AsyncMethodCallback<prepareCommit_call> resultHandler, org.apache.thrift.async.TAsyncClient client, org.apache.thrift.protocol.TProtocolFactory protocolFactory, org.apache.thrift.transport.TNonblockingTransport transport) throws org.apache.thrift.TException {
         super(client, protocolFactory, transport, resultHandler, false);
         this.shardId = shardId;
         this.partitionId = partitionId;
@@ -3188,7 +3188,7 @@ public class IndexNode {
 
     private static final org.apache.thrift.protocol.TField SHARD_ID_FIELD_DESC = new org.apache.thrift.protocol.TField("shardId", org.apache.thrift.protocol.TType.I32, (short)1);
     private static final org.apache.thrift.protocol.TField PARTITION_ID_FIELD_DESC = new org.apache.thrift.protocol.TField("partitionId", org.apache.thrift.protocol.TType.I32, (short)2);
-    private static final org.apache.thrift.protocol.TField MESSAGE_ID_FIELD_DESC = new org.apache.thrift.protocol.TField("messageId", org.apache.thrift.protocol.TType.I32, (short)3);
+    private static final org.apache.thrift.protocol.TField MESSAGE_ID_FIELD_DESC = new org.apache.thrift.protocol.TField("messageId", org.apache.thrift.protocol.TType.I64, (short)3);
     private static final org.apache.thrift.protocol.TField DOCUMENTS_FIELD_DESC = new org.apache.thrift.protocol.TField("documents", org.apache.thrift.protocol.TType.LIST, (short)4);
 
     private static final Map<Class<? extends IScheme>, SchemeFactory> schemes = new HashMap<Class<? extends IScheme>, SchemeFactory>();
@@ -3199,7 +3199,7 @@ public class IndexNode {
 
     public int shardId; // required
     public int partitionId; // required
-    public int messageId; // required
+    public long messageId; // required
     public List<Document> documents; // required
 
     /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
@@ -3282,7 +3282,7 @@ public class IndexNode {
       tmpMap.put(_Fields.PARTITION_ID, new org.apache.thrift.meta_data.FieldMetaData("partitionId", org.apache.thrift.TFieldRequirementType.DEFAULT, 
           new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.I32)));
       tmpMap.put(_Fields.MESSAGE_ID, new org.apache.thrift.meta_data.FieldMetaData("messageId", org.apache.thrift.TFieldRequirementType.DEFAULT, 
-          new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.I32)));
+          new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.I64)));
       tmpMap.put(_Fields.DOCUMENTS, new org.apache.thrift.meta_data.FieldMetaData("documents", org.apache.thrift.TFieldRequirementType.DEFAULT, 
           new org.apache.thrift.meta_data.ListMetaData(org.apache.thrift.protocol.TType.LIST, 
               new org.apache.thrift.meta_data.StructMetaData(org.apache.thrift.protocol.TType.STRUCT, Document.class))));
@@ -3296,7 +3296,7 @@ public class IndexNode {
     public prepareCommit_args(
       int shardId,
       int partitionId,
-      int messageId,
+      long messageId,
       List<Document> documents)
     {
       this();
@@ -3387,11 +3387,11 @@ public class IndexNode {
       __isset_bitfield = EncodingUtils.setBit(__isset_bitfield, __PARTITIONID_ISSET_ID, value);
     }
 
-    public int getMessageId() {
+    public long getMessageId() {
       return this.messageId;
     }
 
-    public prepareCommit_args setMessageId(int messageId) {
+    public prepareCommit_args setMessageId(long messageId) {
       this.messageId = messageId;
       setMessageIdIsSet(true);
       return this;
@@ -3471,7 +3471,7 @@ public class IndexNode {
         if (value == null) {
           unsetMessageId();
         } else {
-          setMessageId((Integer)value);
+          setMessageId((Long)value);
         }
         break;
 
@@ -3495,7 +3495,7 @@ public class IndexNode {
         return Integer.valueOf(getPartitionId());
 
       case MESSAGE_ID:
-        return Integer.valueOf(getMessageId());
+        return Long.valueOf(getMessageId());
 
       case DOCUMENTS:
         return getDocuments();
@@ -3729,8 +3729,8 @@ public class IndexNode {
               }
               break;
             case 3: // MESSAGE_ID
-              if (schemeField.type == org.apache.thrift.protocol.TType.I32) {
-                struct.messageId = iprot.readI32();
+              if (schemeField.type == org.apache.thrift.protocol.TType.I64) {
+                struct.messageId = iprot.readI64();
                 struct.setMessageIdIsSet(true);
               } else { 
                 org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
@@ -3777,7 +3777,7 @@ public class IndexNode {
         oprot.writeI32(struct.partitionId);
         oprot.writeFieldEnd();
         oprot.writeFieldBegin(MESSAGE_ID_FIELD_DESC);
-        oprot.writeI32(struct.messageId);
+        oprot.writeI64(struct.messageId);
         oprot.writeFieldEnd();
         if (struct.documents != null) {
           oprot.writeFieldBegin(DOCUMENTS_FIELD_DESC);
@@ -3829,7 +3829,7 @@ public class IndexNode {
           oprot.writeI32(struct.partitionId);
         }
         if (struct.isSetMessageId()) {
-          oprot.writeI32(struct.messageId);
+          oprot.writeI64(struct.messageId);
         }
         if (struct.isSetDocuments()) {
           {
@@ -3855,7 +3855,7 @@ public class IndexNode {
           struct.setPartitionIdIsSet(true);
         }
         if (incoming.get(2)) {
-          struct.messageId = iprot.readI32();
+          struct.messageId = iprot.readI64();
           struct.setMessageIdIsSet(true);
         }
         if (incoming.get(3)) {

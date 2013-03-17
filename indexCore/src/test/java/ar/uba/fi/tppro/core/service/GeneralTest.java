@@ -40,7 +40,7 @@ public class GeneralTest {
     	IndexNodeDescriptor localNodeDescriptor = new RemoteIndexNodeDescriptor("localhost", 1234);
 		PartitionResolver partitionResolver = mock(PartitionResolver.class);
 		ShardVersionTracker versionTracker = mock(ShardVersionTracker.class);
-		when(versionTracker.getCurrentVersion(1)).thenReturn(1);
+		when(versionTracker.getCurrentVersion(1)).thenReturn(1l);
 		LockManager lockManager = new NullLockManager();
 		
 		IndexPartitionsGroup partitionsGroup = new IndexPartitionsGroup(localNodeDescriptor, partitionResolver, versionTracker, lockManager);
@@ -64,7 +64,7 @@ public class GeneralTest {
 		IndexNodeDescriptor localNodeDescriptor = new RemoteIndexNodeDescriptor("localhost", 1234);
 		PartitionResolver partitionResolver = mock(PartitionResolver.class);
 		ShardVersionTracker versionTracker = mock(ShardVersionTracker.class);
-		when(versionTracker.getCurrentVersion(1)).thenReturn(0);
+		when(versionTracker.getCurrentVersion(1)).thenReturn(0l);
 		LockManager lockManager = new NullLockManager();
 		
 		IndexPartitionsGroup partitionsGroup = new IndexPartitionsGroup(localNodeDescriptor, partitionResolver, versionTracker, lockManager);
