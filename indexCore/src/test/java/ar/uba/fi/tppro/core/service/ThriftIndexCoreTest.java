@@ -2,9 +2,6 @@ package ar.uba.fi.tppro.core.service;
 import static org.junit.Assert.*;
 
 import java.io.File;
-import java.io.IOException;
-import java.net.URISyntaxException;
-
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -27,6 +24,7 @@ import ar.uba.fi.tppro.core.index.versionTracker.ShardVersionTracker;
 import ar.uba.fi.tppro.core.service.IndexServer;
 import ar.uba.fi.tppro.core.service.thrift.Document;
 import ar.uba.fi.tppro.core.service.thrift.IndexNode;
+import ar.uba.fi.tppro.core.service.thrift.MessageId;
 import ar.uba.fi.tppro.core.service.thrift.QueryResult;
 import ar.uba.fi.tppro.partition.PartitionResolver;
 
@@ -100,7 +98,7 @@ public class ThriftIndexCoreTest {
 			client.createPartition(1, 123);
 		}
 		
-		client.prepareCommit(1, 123, 1, Lists.newArrayList(doc));
+		client.prepareCommit(1, 123, new MessageId(0, 1), Lists.newArrayList(doc));
 		client.commit(1, 123);
 		QueryResult queryResult = client.search(1, 123, "information", 10, 0);
 		

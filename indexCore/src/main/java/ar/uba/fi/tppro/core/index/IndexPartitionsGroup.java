@@ -20,6 +20,7 @@ import ar.uba.fi.tppro.core.index.lock.LockManager;
 import ar.uba.fi.tppro.core.index.versionTracker.ShardVersionTracker;
 import ar.uba.fi.tppro.core.service.thrift.Document;
 import ar.uba.fi.tppro.core.service.thrift.IndexException;
+import ar.uba.fi.tppro.core.service.thrift.MessageId;
 import ar.uba.fi.tppro.core.service.thrift.NonExistentPartitionException;
 import ar.uba.fi.tppro.core.service.thrift.ParseException;
 import ar.uba.fi.tppro.core.service.thrift.PartitionAlreadyExistsException;
@@ -348,7 +349,7 @@ public class IndexPartitionsGroup implements IndexInterface,
 	}
 
 	@Override
-	public void prepareCommit(int shardId, int partitionId, long messageId,
+	public void prepareCommit(int shardId, int partitionId, MessageId messageId,
 			List<Document> documents) throws NonExistentPartitionException,
 			IndexException, TException {
 		logger.debug("prepareCommit request");

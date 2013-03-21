@@ -66,6 +66,11 @@ struct PartitionStatus {
 	3: string status,
 }
 
+struct MessageId {
+	1: i64 previousState,
+	2: i64 nextState
+}
+
 service IndexBroker{
 	ParalellSearchResult search(1: i32 shardId, 2: string query, 3: i32 limit, 4: i32 offset) throws (1:ParalellSearchException searex, 2:NonExistentPartitionException partex),
 	IndexResult deleteByQuery(1: i32 shardId, 2: string query),
@@ -75,7 +80,7 @@ service IndexBroker{
 service IndexNode{
 	QueryResult search(1: i32 shardId, 2: i32 partitionId, 3: string query, 4: i32 limit, 5: i32 offset) throws (1:ParseException parsex, 2:NonExistentPartitionException partex),
 	void deleteByQuery(1: i32 shardId, 2: i32 partitionId, 3: string query),
-	void prepareCommit(1: i32 shardId, 2: i32 partitionId, 3: i64 messageId, 4: list<Document> documents) throws (1: NonExistentPartitionException nonEx, 2: IndexException indexEx),
+	void prepareCommit(1: i32 shardId, 2: i32 partitionId, 3: MessageId messageId, 4: list<Document> documents) throws (1: NonExistentPartitionException nonEx, 2: IndexException indexEx),
 	void commit(1: i32 shardId, 2: i32 partitionId) throws (1: NonExistentPartitionException nonEx, 2: IndexException indexEx),
 	void createPartition(1: i32 shardId, 2: i32 partitionId) throws (1: PartitionAlreadyExistsException partex),
 	void removePartition(1: i32 shardId, 2: i32 partitionId) throws (1: NonExistentPartitionException partex),

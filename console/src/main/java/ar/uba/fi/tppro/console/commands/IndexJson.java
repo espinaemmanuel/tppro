@@ -20,6 +20,7 @@ import ar.uba.fi.tppro.console.Context;
 import ar.uba.fi.tppro.core.index.RemoteIndexNodeDescriptor;
 import ar.uba.fi.tppro.core.service.thrift.Document;
 import ar.uba.fi.tppro.core.service.thrift.IndexNode;
+import ar.uba.fi.tppro.core.service.thrift.MessageId;
 
 public class IndexJson implements Command {
 
@@ -40,7 +41,9 @@ public class IndexJson implements Command {
 		
 		int groupId = Integer.parseInt(argv[1]);
 		int partitionId = Integer.parseInt(argv[2]);
-		int messageId = Integer.parseInt(argv[3]);
+		int previousState = Integer.parseInt(argv[3]);
+		int nextState = Integer.parseInt(argv[4]);
+
 		
 		File jsonFile = new File(argv[4]);
 		
@@ -48,7 +51,7 @@ public class IndexJson implements Command {
 			throw new FileNotFoundException("file not found");
 		}
 		
-		indexNode.prepareCommit(groupId, partitionId, messageId, createDocuments(jsonFile));
+		indexNode.prepareCommit(groupId, partitionId, new MessageId(previousState, nextState), createDocuments(jsonFile));
 		indexNode.commit(groupId, partitionId);
 
 	}

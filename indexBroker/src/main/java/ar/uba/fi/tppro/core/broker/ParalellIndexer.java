@@ -25,6 +25,7 @@ import ar.uba.fi.tppro.core.index.versionTracker.VersionTrackerServerException;
 import ar.uba.fi.tppro.core.service.thrift.Document;
 import ar.uba.fi.tppro.core.service.thrift.IndexNode;
 import ar.uba.fi.tppro.core.service.thrift.IndexResult;
+import ar.uba.fi.tppro.core.service.thrift.MessageId;
 import ar.uba.fi.tppro.core.service.thrift.NonExistentPartitionException;
 
 import com.google.common.collect.LinkedListMultimap;
@@ -43,14 +44,16 @@ public class ParalellIndexer {
 
 	private LockManager lockManager;
 	private ShardVersionTracker versionTracker;
+	private VersionGenerator versionGenerator;
 
 	protected long lockTimeout = 8000;
 	protected long indexTimeout = 1000000;
 
 	public ParalellIndexer(LockManager lockManager,
-			ShardVersionTracker versionTracker) {
+			ShardVersionTracker versionTracker, VersionGenerator versionGenerator) {
 		this.lockManager = lockManager;
 		this.versionTracker = versionTracker;
+		this.versionGenerator = versionGenerator;
 	}
 
 	private class PartialList {
@@ -114,7 +117,8 @@ public class ParalellIndexer {
 		IndexLock addLock = lockManager.aquire(shardId, 1000);
 		try {
 			// Get the current version
-			final long newVersion = versionTracker.getCurrentVersion(shardId) + 1;
+			final long previousVersion = versionTracker.getCurrentVersion(shardId);
+			final long nextVersion = this.versionGenerator.getNextVersion();
 
 			Map<Future<?>, PartialList> futures = Maps.newHashMap();
 
@@ -127,7 +131,7 @@ public class ParalellIndexer {
 						try {
 							IndexNode.Iface client = pl.replica.getClient();
 							client.prepareCommit(shardId, pl.partitionId,
-									newVersion, pl.docs);
+									new MessageId(previousVersion, nextVersion), pl.docs);
 						} catch (NonExistentPartitionException e) {
 							throw new RuntimeException(e);
 						} catch (TException e) {
@@ -170,7 +174,7 @@ public class ParalellIndexer {
 
 			//Ready to commit
 			if (hasFailures == false) {
-				versionTracker.setShardVersion(shardId, newVersion);
+				versionTracker.setShardVersion(shardId, nextVersion);
 			}
 
 		} finally {

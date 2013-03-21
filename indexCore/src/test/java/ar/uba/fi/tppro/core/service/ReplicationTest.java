@@ -28,6 +28,7 @@ import ar.uba.fi.tppro.core.index.versionTracker.ShardVersionTracker;
 import ar.uba.fi.tppro.core.index.versionTracker.ZkShardVersionTracker;
 import ar.uba.fi.tppro.core.service.thrift.Document;
 import ar.uba.fi.tppro.core.service.thrift.IndexNode;
+import ar.uba.fi.tppro.core.service.thrift.MessageId;
 import ar.uba.fi.tppro.core.service.thrift.QueryResult;
 import ar.uba.fi.tppro.partition.StaticSocketPartitionResolver;
 
@@ -88,7 +89,7 @@ public class ReplicationTest {
 			int numDocs = documents.size();
 
 			node1.createPartition(1, 1);
-			node1.prepareCommit(1, 1, 1, documents);
+			node1.prepareCommit(1, 1, new MessageId(0,  1), documents);
 			node1.commit(1, 1);
 			
 			versionTracker.setShardVersion(1, 1);

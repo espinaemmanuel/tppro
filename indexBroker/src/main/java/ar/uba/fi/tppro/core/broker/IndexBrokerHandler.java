@@ -37,14 +37,14 @@ public class IndexBrokerHandler implements BrokerIterface {
 	private PartitionResolver resolver;
 
 	public IndexBrokerHandler(PartitionResolver resolver,
-			LockManager lockManager, ShardVersionTracker versionTracker) {
+			LockManager lockManager, ShardVersionTracker versionTracker, VersionGenerator versionGenerator) {
 		super();
 		this.resolver = resolver;
 		this.lockManager = lockManager;
 		this.versionTracker = versionTracker;
 		this.searcher = new ParalellSearcher();
 		this.indexer = new ParalellIndexer(this.lockManager,
-				this.versionTracker);
+				this.versionTracker, versionGenerator);
 	}
 
 	@Override

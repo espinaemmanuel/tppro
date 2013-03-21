@@ -21,6 +21,7 @@ import ar.uba.fi.tppro.core.index.versionTracker.StaleVersionException;
 import ar.uba.fi.tppro.core.index.versionTracker.VersionTrackerServerException;
 import ar.uba.fi.tppro.core.service.thrift.Document;
 import ar.uba.fi.tppro.core.service.thrift.IndexNode;
+import ar.uba.fi.tppro.core.service.thrift.MessageId;
 import ar.uba.fi.tppro.core.service.thrift.NonExistentPartitionException;
 
 public class ParalellIndexerTest {
@@ -71,18 +72,21 @@ public class ParalellIndexerTest {
 		when(lockManager.aquire(eq(1), anyInt())).thenReturn(indexLock);
 		
 		ShardVersionTracker versionTracker = mock(ShardVersionTracker.class);
+		
+		VersionGenerator mockVersionGenerator = mock(VersionGenerator.class);
+		when(mockVersionGenerator.getNextVersion()).thenReturn(1234l);
 
-		ParalellIndexer indexer = new ParalellIndexer(lockManager, versionTracker);
+		ParalellIndexer indexer = new ParalellIndexer(lockManager, versionTracker, mockVersionGenerator);
 		
 		List<Document> documents = sampleDocs();
 		indexer.distributeAndIndex(1, partitions, documents);
 		
-		verify(p1_r1).prepareCommit(1, 1, 1, Lists.newArrayList(documents.get(0), documents.get(2), documents.get(4), documents.get(6), documents.get(8)));
-		verify(p1_r2).prepareCommit(1, 1, 1, Lists.newArrayList(documents.get(0), documents.get(2), documents.get(4), documents.get(6), documents.get(8)));
-		verify(p1_r3).prepareCommit(1, 1, 1, Lists.newArrayList(documents.get(0), documents.get(2), documents.get(4), documents.get(6), documents.get(8)));
-		verify(p2_r1).prepareCommit(1, 2, 1, Lists.newArrayList(documents.get(1), documents.get(3), documents.get(5), documents.get(7), documents.get(9)));
-		verify(p2_r2).prepareCommit(1, 2, 1, Lists.newArrayList(documents.get(1), documents.get(3), documents.get(5), documents.get(7), documents.get(9)));
-		verify(p2_r3).prepareCommit(1, 2, 1, Lists.newArrayList(documents.get(1), documents.get(3), documents.get(5), documents.get(7), documents.get(9)));
+		verify(p1_r1).prepareCommit(1, 1, new MessageId(0, 1234l), Lists.newArrayList(documents.get(0), documents.get(2), documents.get(4), documents.get(6), documents.get(8)));
+		verify(p1_r2).prepareCommit(1, 1, new MessageId(0, 1234l), Lists.newArrayList(documents.get(0), documents.get(2), documents.get(4), documents.get(6), documents.get(8)));
+		verify(p1_r3).prepareCommit(1, 1, new MessageId(0, 1234l), Lists.newArrayList(documents.get(0), documents.get(2), documents.get(4), documents.get(6), documents.get(8)));
+		verify(p2_r1).prepareCommit(1, 2, new MessageId(0, 1234l), Lists.newArrayList(documents.get(1), documents.get(3), documents.get(5), documents.get(7), documents.get(9)));
+		verify(p2_r2).prepareCommit(1, 2, new MessageId(0, 1234l), Lists.newArrayList(documents.get(1), documents.get(3), documents.get(5), documents.get(7), documents.get(9)));
+		verify(p2_r3).prepareCommit(1, 2, new MessageId(0, 1234l), Lists.newArrayList(documents.get(1), documents.get(3), documents.get(5), documents.get(7), documents.get(9)));
 		
 		verifyNoMoreInteractions(p1_r1);
 		verifyNoMoreInteractions(p1_r2);

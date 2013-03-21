@@ -217,15 +217,15 @@ public class IndexBrokerHandlerTest {
 					server.getConnectString(), new RetryOneTime(1));
 			client3.start();
 
-			indexServer1 = initServer(9000, client1);
+			indexServer1 = initServer(9030, client1);
 			indexServer2 = initServer(9010, client2);
 			indexServer3 = initServer(9020, client3);
 			Thread.sleep(5000);
 
 			Multimap<Integer, Integer> parts = LinkedListMultimap.create();
 
-			parts.put(9000, 2);
-			parts.put(9000, 3);
+			parts.put(9030, 2);
+			parts.put(9030, 3);
 			parts.put(9010, 1);
 			parts.put(9010, 3);
 			parts.put(9020, 1);
@@ -243,8 +243,10 @@ public class IndexBrokerHandlerTest {
 			ShardVersionTracker versionTracker = new ZkShardVersionTracker(brokerClient);
 			PartitionResolver resolver = new ZookeeperPartitionResolver(brokerClient);
 			
+			VersionGenerator mockVersionGenerator = mock(VersionGenerator.class);
+			when(mockVersionGenerator.getNextVersion()).thenReturn(1234l);
 			
-			IndexBrokerHandler broker = new IndexBrokerHandler(resolver, lockManager, versionTracker);
+			IndexBrokerHandler broker = new IndexBrokerHandler(resolver, lockManager, versionTracker, mockVersionGenerator);
 			
 			//Run the test
 

@@ -15,6 +15,7 @@ import com.netflix.curator.framework.CuratorFrameworkFactory;
 import com.netflix.curator.retry.RetryOneTime;
 
 import ar.uba.fi.tppro.core.broker.IndexBrokerHandler;
+import ar.uba.fi.tppro.core.broker.VersionGenerator;
 import ar.uba.fi.tppro.core.index.IndexPartitionsGroup;
 import ar.uba.fi.tppro.core.index.LocalNodeDescriptor;
 import ar.uba.fi.tppro.core.index.lock.LockManager;
@@ -96,7 +97,7 @@ public class Broker implements Runnable {
 				}
 
 						
-				handler = new IndexBrokerHandler(partitionResolver, lockManager, versionTracker);
+				handler = new IndexBrokerHandler(partitionResolver, lockManager, versionTracker, new VersionGenerator());
 
 			} else {
 				//Distributed mode
@@ -113,7 +114,7 @@ public class Broker implements Runnable {
 				ShardVersionTracker versionTracker = new ZkShardVersionTracker(curator);
 				LockManager lockManager = new NullLockManager();
 				
-				handler = new IndexBrokerHandler(partitionResolver, lockManager, versionTracker);
+				handler = new IndexBrokerHandler(partitionResolver, lockManager, versionTracker, new VersionGenerator());
 				
 				logger.info("Registering node in zookeeper");
 				String localhostname = java.net.InetAddress.getLocalHost().getHostAddress();

@@ -1,7 +1,5 @@
 package ar.uba.fi.tppro.console.commands;
 
-import java.io.File;
-import java.io.FileNotFoundException;
 import java.util.Map;
 
 import ar.uba.fi.tppro.console.Command;

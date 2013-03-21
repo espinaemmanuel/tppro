@@ -25,6 +25,7 @@ import ar.uba.fi.tppro.core.index.lock.NullLockManager;
 import ar.uba.fi.tppro.core.index.versionTracker.ShardVersionTracker;
 import ar.uba.fi.tppro.core.index.versionTracker.VersionTrackerServerException;
 import ar.uba.fi.tppro.core.service.thrift.Document;
+import ar.uba.fi.tppro.core.service.thrift.MessageId;
 import ar.uba.fi.tppro.core.service.thrift.QueryResult;
 import ar.uba.fi.tppro.partition.PartitionResolver;
 
@@ -84,7 +85,7 @@ public class GeneralTest {
 			partitionsGroup.createPartition(1, 123);
 		}
 		
-		partitionsGroup.prepareCommit(1, 123, 1, Lists.newArrayList(doc));
+		partitionsGroup.prepareCommit(1, 123, new MessageId(0, 1), Lists.newArrayList(doc));
 		partitionsGroup.commit(1, 123);
 
 		QueryResult queryResult = partitionsGroup.search(1, 123, "information", 10, 0);

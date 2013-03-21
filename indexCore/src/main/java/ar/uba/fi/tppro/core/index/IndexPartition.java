@@ -38,6 +38,7 @@ import ar.uba.fi.tppro.core.index.versionTracker.ShardVersionTracker;
 import ar.uba.fi.tppro.core.index.versionTracker.VersionTrackerServerException;
 import ar.uba.fi.tppro.core.service.thrift.Document;
 import ar.uba.fi.tppro.core.service.thrift.Hit;
+import ar.uba.fi.tppro.core.service.thrift.MessageId;
 import ar.uba.fi.tppro.core.service.thrift.ParseException;
 import ar.uba.fi.tppro.core.service.thrift.QueryResult;
 
@@ -167,9 +168,10 @@ public class IndexPartition implements Closeable, ShardVersionObserver {
 	 * @throws PartitionNotReadyException
 	 */
 	public void index(List<Document> documents) throws IOException, PartitionNotReadyException {
-		long messageId = this.lastPreparedMessageId != null ? this.lastPreparedMessageId + 1 : this.lastCommittedMessageId + 1;
+		long previousState = this.lastPreparedMessageId != null ? this.lastPreparedMessageId : this.lastCommittedMessageId;
+		long nextState = previousState + 1;
 			
-		this.prepare(messageId, documents);
+		this.prepare(new MessageId(previousState, nextState), documents);
 		this.commit();	
 	}
 
@@ -180,7 +182,7 @@ public class IndexPartition implements Closeable, ShardVersionObserver {
 	 * @throws IOException
 	 * @throws PartitionNotReadyException
 	 */
-	public void prepare(long messageId, List<Document> documents) throws IOException, PartitionNotReadyException {
+	public void prepare(MessageId messageId, List<Document> documents) throws IOException, PartitionNotReadyException {
 		
 		if(this.status != IndexPartitionStatus.READY){
 			throw new PartitionNotReadyException("partition not ready: " + this.status);
@@ -193,25 +195,24 @@ public class IndexPartition implements Closeable, ShardVersionObserver {
 			this.currentWriter = new IndexWriter(indexDir, config);
 		}	
 		
-		//lastPrepared = messageId -> discard last prepared
-		if(this.lastPreparedMessageId != null && this.lastPreparedMessageId == messageId){
-			this.currentWriter.rollback();			
-			this.currentWriter = new IndexWriter(indexDir, config);			
-			this.lastPreparedMessageId = null;
+		
+		if(this.lastPreparedMessageId != null){
+			if(this.lastPreparedMessageId == messageId.previousState){
+				//Commit previous state. This sets lastPreparedMessageId to null
+				this.commit();
+			} else if (this.lastCommittedMessageId == messageId.previousState){
+				this.currentWriter.rollback();			
+				this.currentWriter = new IndexWriter(indexDir, config);			
+				this.lastPreparedMessageId = null;
+			} else {
+				this.status = IndexPartitionStatus.RESTORING;
+				throw new PartitionNotReadyException("stale partition. Will eventually restore");
+			}	
 		}
 		
-		//lost messages
-		if(this.lastPreparedMessageId != null && messageId - this.lastPreparedMessageId > 1 ||
-		   this.lastPreparedMessageId == null && messageId - this.lastCommittedMessageId > 1){
-			this.status = IndexPartitionStatus.RESTORING;
-			throw new PartitionNotReadyException("stale partition. Will eventually restore");
-		}
+		assert this.lastPreparedMessageId == null : "At this point last prepared message id should be null";
 		
-		//Correct order but missed some commits
-		if(this.lastPreparedMessageId != null && messageId == this.lastPreparedMessageId + 1){
-			this.commit();
-		}
-		
+		//Prepare documents
 		for (Document document : documents) {
 			org.apache.lucene.document.Document luceneDoc = new org.apache.lucene.document.Document();
 
@@ -222,14 +223,12 @@ public class IndexPartition implements Closeable, ShardVersionObserver {
 			
 			this.currentWriter.addDocument(luceneDoc);
 		}
-		
-		assert this.lastCommittedMessageId == null : "last committed message Id should be null";
-		
+				
 		Map<String, String> userDataMap = Maps.newConcurrentMap();
-		userDataMap.put(INDEX_VERSION, Long.toString(messageId));
-		this.lastPreparedMessageId = messageId;
+		userDataMap.put(INDEX_VERSION, Long.toString(messageId.nextState));
 		
 		this.currentWriter.prepareCommit(userDataMap);
+		this.lastPreparedMessageId = messageId.nextState;
 		
 		long endTime = System.currentTimeMillis();	
 		logger.debug(String.format("PREPARED (id: %d): DocCount=%d IndexTime=%d", this.lastPreparedMessageId, documents.size(), endTime - startTime));
@@ -255,7 +254,6 @@ public class IndexPartition implements Closeable, ShardVersionObserver {
 			this.currentWriter = null;
 			
 			mgr.maybeRefresh();
-			
 		}
 	}
 
