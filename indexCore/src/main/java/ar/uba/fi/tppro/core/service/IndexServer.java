@@ -25,6 +25,7 @@ import ar.uba.fi.tppro.core.index.IndexNodeDescriptor;
 import ar.uba.fi.tppro.core.index.IndexPartitionsGroup;
 import ar.uba.fi.tppro.core.index.RemoteIndexNodeDescriptor;
 import ar.uba.fi.tppro.core.index.lock.LockManager;
+import ar.uba.fi.tppro.core.index.lock.NullLockManager;
 import ar.uba.fi.tppro.core.index.versionTracker.ShardVersionTracker;
 import ar.uba.fi.tppro.core.index.versionTracker.ZkShardVersionTracker;
 import ar.uba.fi.tppro.core.service.thrift.IndexNode;
@@ -68,7 +69,7 @@ public class IndexServer implements Runnable {
 		
 		PartitionResolver partitionResolver = new ZookeeperPartitionResolver(curator);
 		ShardVersionTracker versionTracker = new ZkShardVersionTracker(curator);
-		LockManager lockManager = null;
+		LockManager lockManager = new NullLockManager();
 		
 		new Thread(new IndexServer(Integer.parseInt(port), new File(dataDir), partitionResolver, versionTracker, lockManager))
 				.start();
@@ -138,7 +139,6 @@ public class IndexServer implements Runnable {
 			server.serve();
 
 		} catch (Exception e) {
-			// TODO: mejorar esto
 			e.printStackTrace();
 		}
 	}
