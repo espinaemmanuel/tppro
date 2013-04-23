@@ -44,19 +44,19 @@ public class PartitionReplicator extends Thread {
 	@Override
 	public void run() {
 
-		IndexLock lock;
-		try {
-			lock = this.lockManager.aquire(indexPartition.getShardId(), 2000);
-		} catch (LockAquireTimeoutException e1) {
-			logger.error("Could not aquire lock");
-			return;
-		}
+		logger.info(String.format("Starting replication of partition (%d, %d)", indexPartition.getShardId(), indexPartition.getPartitionId()));
+
+		IndexLock lock = null;
 
 		try {
 			lock = lockManager.aquire(indexPartition.getShardId(), LOCK_TIMEOUT);
 			
 			Multimap<Integer, IndexNodeDescriptor> partitions = partitionResolver.resolve(indexPartition.getShardId());
 			Collection<IndexNodeDescriptor> nodeDescriptors = partitions.get(indexPartition.getPartitionId());
+			
+			if(nodeDescriptors.size() == 0){
+				logger.warn(String.format("No partition with replica of (%d,%d) in a valid state was found", this.indexPartition.getShardId(), this.indexPartition.getPartitionId()));
+			}
 
 			for (int i = 0; i < nodeDescriptors.size(); i++) {
 				IndexNodeDescriptor nodeDescriptor = Iterables.get(

@@ -114,7 +114,7 @@ public class IndexPartition implements Closeable, ShardVersionObserver {
 				logger.info(String.format("Partition (%d, %d) up to date", this.shardId, this.partitionId));
 				this.status = IndexPartitionStatus.READY;
 			} else {
-				logger.info(String.format("Index stale - Local version = %d, Cluster version = %d. Will eventally restore", this.lastCommittedMessageId, clusterVersion));
+				logger.info(String.format("Partition (%d, %d) stale - Local version = %d, Cluster version = %d. Will eventally restore", this.shardId, this.partitionId, this.lastCommittedMessageId, clusterVersion));
 				this.status = IndexPartitionStatus.RESTORING;
 			}
 		} else {

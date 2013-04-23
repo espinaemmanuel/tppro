@@ -91,6 +91,14 @@ public class IndexPartitionsGroup implements IndexInterface,
 
 				partition.open(checkVersions);
 				partitionMap.put(new PartitionIdentifier(shardId, partitionId), partition);
+				
+				if(partition.getStatus() != IndexPartitionStatus.CREATED){
+					try {
+						this.partitionResolver.updatePartitionStatus(shardId, partitionId, this.getThisNodeDescriptor(), partition.getStatus());
+					} catch (PartitionResolverException e) {
+						logger.info("Could not update zookeper status", e);
+					}
+				}
 
 			} catch (IOException e) {
 				logger.error("Could not open partition " + partitionId, e);
@@ -100,6 +108,7 @@ public class IndexPartitionsGroup implements IndexInterface,
 		// Check and replicate failed partitions
 		for (IndexPartition partition : partitionMap.values()) {
 			if (partition.getStatus() == IndexPartitionStatus.RESTORING) {
+				logger.info(String.format("Scheduling replication of partition (%d, %d)", partition.getShardId(), partition.getPartitionId()));
 				PartitionReplicator replicator = new PartitionReplicator();
 				replicator.setPartitionResolver(partitionResolver);
 				replicator.setLockManager(lockManager);
@@ -337,7 +346,15 @@ public class IndexPartitionsGroup implements IndexInterface,
 
 	@Override
 	public void notifyStatusChange(IndexPartition indexPartition) {
-		// TODO Auto-generated method stub
+		logger.info(String.format("New partition status (%d, %d): %s", indexPartition.getShardId(), indexPartition.getPartitionId(), indexPartition.getStatus().toString()));
+		logger.info(String.format("Partition (%d, %d) last error: %s", indexPartition.getShardId(), indexPartition.getPartitionId(), indexPartition.getLastError()));
+
+		try {
+			this.partitionResolver.updatePartitionStatus(indexPartition.getShardId(), indexPartition.getPartitionId(),
+					this.getThisNodeDescriptor(), indexPartition.getStatus());
+		} catch (PartitionResolverException e) {
+			logger.error("Could not notify zookeeper about the status change", e);
+		}
 	}
 
 	public ShardVersionTracker getVersionTracker() {

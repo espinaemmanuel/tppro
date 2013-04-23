@@ -55,5 +55,13 @@ public class CSVPartitionResolver extends AbstractPartitionResolver {
 		
 	}
 
+	@Override
+	public void updatePartitionStatus(int shardId, int partitionId,
+			IndexNodeDescriptor descriptor, IndexPartitionStatus status)
+			throws PartitionResolverException {
+		// TODO Auto-generated method stub
+		
+	}
+
 	
 }

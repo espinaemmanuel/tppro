@@ -20,7 +20,23 @@ public class ZookeeperPartitionResolver implements PartitionResolver {
 	private String BASE_PATH = "/replicas";
 
 	public ZookeeperPartitionResolver(CuratorFramework curatorClient) {
-		this.client = curatorClient;
+		this.client = curatorClient;		
+	}
+	
+	@Override
+	public void updatePartitionStatus(int shardId, int partitionId,
+			IndexNodeDescriptor descriptor, IndexPartitionStatus status) throws PartitionResolverException{
+		
+		String path = pathForReplica(shardId, partitionId,
+				descriptor.getHost(), descriptor.getPort());
+		byte[] statusBytes = status.toString().getBytes();
+		
+		try {
+			client.setData().forPath(path, statusBytes);
+		} catch (Exception e) {
+			throw new PartitionResolverException("curator exception:", e);
+		}
+
 	}
 
 	@Override

@@ -21,5 +21,8 @@ public interface PartitionResolver {
 	 */
 	void registerPartition(int shardId, int partitionId, IndexNodeDescriptor descriptor,
 			IndexPartitionStatus status) throws PartitionResolverException;
+	
+	public void updatePartitionStatus(int shardId, int partitionId,
+			IndexNodeDescriptor descriptor, IndexPartitionStatus status) throws PartitionResolverException;
 
 }
