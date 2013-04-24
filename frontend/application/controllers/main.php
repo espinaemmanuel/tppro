@@ -23,7 +23,7 @@ class main extends CI_Controller {
         if(!$this->session->userdata('logged_in')) 
           $this->login();
         else{
-          $this->load->view("main", array('user_id'=> $this->session->userdata('user_id'), 'query'=>''));
+          $this->load->view("main", array('user_id'=> $this->session->userdata('user_id'), 'title'=>'', 'text'=>'', 'director'=>'','year'=>'', 'operator'=>''));
         }  
 	}
 	
@@ -47,12 +47,10 @@ class main extends CI_Controller {
 		unlink($file);
   	  }
       
-      $shard_id=$this->session->userdata('shardId');
-      
+      $shard_id=$this->session->userdata('shard_id');
       $get=array('documents'=>$documents, 'shard_id'=>$shard_id);
 	  $res=$this->curl->simple_get(URL_MAKE_INDEX,$get);
-      
-      //echo '<pre>'; print_r($res); echo '</pre>';
+      //echo '<pre>'; print_r($res); echo '</pre>';exit;
 	}
     
     function parse($file=null){
@@ -95,14 +93,61 @@ class main extends CI_Controller {
     function search(){
     
         if($_POST){
-          $query=$_POST['query'];
+          $query="";
+          
+          $title="";
+          $text="";
+          $director="";
+          $year="";
+          $operator=$_POST['operator'];
+          
+          if($_POST['title']!==''){
+            $query.="title: ".$_POST['title']."*";
+            $title=$_POST['title'];
+            
+            if($_POST['text']!==''){
+              $query.= " " . $_POST['operator'] . " overview: ". $_POST['text'] . "*) ";
+              $text=$_POST['text'];
+            }
+            else
+              $query.= " ";
+          }
+          else if($_POST['text']!==''){
+            
+              $query.= "overview: " . $_POST['text'] . "* ";
+          }
+          
+          if ($query !== ''){
+            
+            if($_POST['director']){
+              $query.=" and director: ". $_POST['director'];
+              $director=$_POST['director'];
+            }
+            if($_POST['year']){
+              $query.=" and release: [". $_POST['year'] . " TO 2013]";
+              $year=$_POST['year'];
+            }  
+          }
+          
+          else{
+            if($_POST['director']){
+              $query.="director: ". $_POST['director'];
+              $director=$_POST['director'];
+            }  
+         
+            if($_POST['year']){
+              $query.="release: [" . $_POST['year']. " TO 2013]";
+              $year=$_POST['year'];
+            }
+          }  
           $shard_id=$this->session->userdata('shard_id');
-          $get=array('query'=>'text:'.$query, 'shard_id'=>$shard_id);
+          $get=array('query'=>$query, 'shard_id'=>$shard_id);
           
  		  $res=$this->curl->simple_get(URLGET,$get);
-          $result=json_decode($res);
-          
-          $this->load->view("main", array('user_id'=> $this->session->userdata('user_id'),'query'=>$query, 'result'=>$result));
+          //print_r($res); //exit;
+          $result=json_decode($res);//exit;
+          //echo "<pre>";print_r($result); echo "</pre>";exit;
+          $this->load->view("main", array('user_id'=> $this->session->userdata('user_id'),'title'=>$title, 'text'=>$text, 'director'=>$director,'year'=>$year, 'operator'=>$operator, 'result'=>$result));
         }
         else{ 
           $this->login();

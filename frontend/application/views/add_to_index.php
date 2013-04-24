@@ -6,7 +6,7 @@
   <br><h2>Add to index</h2>  
   
   <form action="" method="post">
-    <input type="file" name="file_upload" id="file_upload" />
+    <input type="file" class="btn btn-primary btn-large" name="file_upload" id="file_upload" />
   </form>
   <div class="indexing" style="display: none;">Indexing...</div>
   
@@ -36,13 +36,6 @@ $(function() {
 		'formData' : { 'user_id' : '<?= $this->session->userdata('user_id') ?>' }
     });
 });
-
-/*function indexAll(user_id) {
-    console.log('indexa todos los arch del usuario', user_id);
-    $.get('/tppro/phpClient/indexService.php', { user_id: user_id, partitions: 2 }, function(){
-      $('.indexing').hide();;
-    } );
-}*/
 
 function indexAll(user_id) {
     console.log('indexa todos los arch del usuario', user_id);

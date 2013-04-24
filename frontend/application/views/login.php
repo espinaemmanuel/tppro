@@ -6,8 +6,8 @@
 <title>Login</title>
 </head>
 
-<body>
-<h2>Ingrese su usuario y contrase&ntilde;a</h2>
+<body style="margin-left:15px">
+<h2>Login to the system</h2>
 <form action="main/login" method="post">
 	<input name="username" placeholder="User Name" required focus type="text" value=""/><br/><br/>
     </label><input name="pass" placeholder="Password" required type="password" value=""/><br/><br/>
