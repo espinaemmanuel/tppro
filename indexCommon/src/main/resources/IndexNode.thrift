@@ -90,4 +90,27 @@ service IndexNode{
 	PartitionStatus partitionStatus(1: i32 shardId, 2: i32 partitionId) throws (1: NonExistentPartitionException e),
 	list<string> listPartitionFiles(1: i32 shardId, 2: i32 partitionId) throws (1: NonExistentPartitionException e),
 }
+
+struct NodePartition{
+	1: i32 groupId,
+	2: i32 partitionId,
+	3: string nodeUrl,
+	4: string status,
+}
+
+enum NodeType{
+	INDEX,
+	BROKER,
+}
+
+struct Node{
+	1: string url,
+	2: NodeType type,
+}
+	
+service Monitor{
+	list<NodePartition> getReplicas(),
+	map<i32, string> getGroupVersion(),
+	list<Node> getNodes(),	
+}
 	

@@ -1,12 +1,15 @@
 package ar.uba.fi.tppro.core.index.versionTracker;
 
 import java.nio.ByteBuffer;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentMap;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import com.google.common.util.concurrent.MoreExecutors;
@@ -23,7 +26,7 @@ public class ZkShardVersionTracker implements ShardVersionTracker {
 	
 	final Logger logger = LoggerFactory.getLogger(ZkShardVersionTracker.class);
 
-	private static final String SHARD_VERSIONS = "/shardVersions/";
+	private static final String SHARD_VERSIONS = "/shardVersions";
 	private CuratorFramework client;
 	
 	private ConcurrentMap<Integer, SharedValue> versionCounters = Maps
@@ -61,7 +64,7 @@ public class ZkShardVersionTracker implements ShardVersionTracker {
 
 	protected SharedValue initializeCounter(final int shardId) throws Exception {
 		SharedValue newCounter = new SharedValue(this.client,
-				SHARD_VERSIONS + shardId, toBytes(0l));
+				SHARD_VERSIONS + "/" + shardId, toBytes(0l));
 		
 		SharedValueListener valueListener = new SharedValueListener()
         {
@@ -105,6 +108,29 @@ public class ZkShardVersionTracker implements ShardVersionTracker {
 					"could not initialize the counter for partition "
 							+ shardId, e);
 		}
+	}
+	
+	@Override
+	public Map<Integer, Long> getAllVersions() throws VersionTrackerServerException{
+		
+		List<String> groups = Lists.newArrayList();
+		Map<Integer, Long> versionMap = Maps.newHashMap();
+		
+		try {
+			groups.addAll(this.client.getChildren().forPath(SHARD_VERSIONS));
+		} catch (Exception e) {
+			logger.info("no group found");
+		}
+		
+		for(String groupStr : groups){
+			Integer groupId = Integer.parseInt(groupStr);
+			long version = this.getCurrentVersion(groupId);
+			
+			versionMap.put(groupId, version);
+		}
+		
+		return versionMap;
+
 	}
 
 	@Override

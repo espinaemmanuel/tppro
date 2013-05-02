@@ -63,5 +63,11 @@ public class CSVPartitionResolver extends AbstractPartitionResolver {
 		
 	}
 
+	@Override
+	public List<PartitionDescriptor> getAll() throws PartitionResolverException {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
 	
 }

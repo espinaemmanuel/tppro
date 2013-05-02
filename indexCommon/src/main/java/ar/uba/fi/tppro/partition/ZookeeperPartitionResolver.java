@@ -4,11 +4,14 @@ import java.util.List;
 
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import ar.uba.fi.tppro.core.index.IndexNodeDescriptor;
 import ar.uba.fi.tppro.core.index.IndexPartitionStatus;
 import ar.uba.fi.tppro.core.index.RemoteIndexNodeDescriptor;
 
+import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.LinkedListMultimap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
@@ -16,21 +19,25 @@ import com.netflix.curator.framework.CuratorFramework;
 
 public class ZookeeperPartitionResolver implements PartitionResolver {
 
+	final Logger logger = LoggerFactory
+			.getLogger(ZookeeperPartitionResolver.class);
+
 	private CuratorFramework client;
 	private String BASE_PATH = "/replicas";
 
 	public ZookeeperPartitionResolver(CuratorFramework curatorClient) {
-		this.client = curatorClient;		
+		this.client = curatorClient;
 	}
-	
+
 	@Override
 	public void updatePartitionStatus(int shardId, int partitionId,
-			IndexNodeDescriptor descriptor, IndexPartitionStatus status) throws PartitionResolverException{
-		
+			IndexNodeDescriptor descriptor, IndexPartitionStatus status)
+			throws PartitionResolverException {
+
 		String path = pathForReplica(shardId, partitionId,
 				descriptor.getHost(), descriptor.getPort());
 		byte[] statusBytes = status.toString().getBytes();
-		
+
 		try {
 			client.setData().forPath(path, statusBytes);
 		} catch (Exception e) {
@@ -68,13 +75,13 @@ public class ZookeeperPartitionResolver implements PartitionResolver {
 	}
 
 	@Override
-	public Multimap<Integer, IndexNodeDescriptor> resolve(int shardId)
+	public Multimap<Integer, IndexNodeDescriptor> resolve(int groupId)
 			throws PartitionResolverException {
 
 		Multimap<Integer, IndexNodeDescriptor> partitionMap = LinkedListMultimap
 				.create();
 
-		String path = pathForShard(shardId);
+		String path = pathForGroup(groupId);
 		List<String> replicas;
 
 		try {
@@ -108,7 +115,56 @@ public class ZookeeperPartitionResolver implements PartitionResolver {
 		return partitionMap;
 	}
 
-	private String pathForShard(int shardId) {
+	
+	@Override
+	public List<PartitionDescriptor> getAll()
+			throws PartitionResolverException {
+		
+		List<PartitionDescriptor> returnReplicas = Lists.newArrayList();
+
+		try {
+
+			List<String> groupIds = Lists.newArrayList();
+
+			try {
+				groupIds.addAll(client.getChildren().forPath(BASE_PATH));
+			} catch (KeeperException.NoNodeException e) {
+				logger.info("no partition groups assigned yet");
+			}
+			
+			for(String groupIdStr : groupIds){
+				Integer groupId = Integer.parseInt(groupIdStr);
+				List<String> replicas = Lists.newArrayList();
+				String pathForGroup = pathForGroup(groupId);
+				
+				try {
+					replicas.addAll(client.getChildren().forPath(pathForGroup));
+				} catch (KeeperException.NoNodeException e) {
+					logger.info("no partition for group " + groupId);
+				}
+				
+				for(String replica : replicas){
+					String[] replicaParts = replica.split("_");
+					int partitionId = Integer.parseInt(replicaParts[0]);
+					String host = replicaParts[1];
+					int port = Integer.parseInt(replicaParts[2]);
+					
+					byte[] bytes = client.getData().forPath(pathForGroup + "/" + replica);
+					IndexPartitionStatus status = IndexPartitionStatus
+							.valueOf(new String(bytes));
+					
+					returnReplicas.add(new PartitionDescriptor(groupId, partitionId, String.format("%s:%d", host, port), status));
+				}
+			}
+
+		} catch (Exception e) {
+			throw new PartitionResolverException("curator exception", e);
+		}
+		
+		return returnReplicas;
+	}
+
+	private String pathForGroup(int shardId) {
 		return String.format("%s/%d", BASE_PATH, shardId);
 	}
 

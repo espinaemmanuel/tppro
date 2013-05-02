@@ -25,4 +25,6 @@ public interface PartitionResolver {
 	public void updatePartitionStatus(int shardId, int partitionId,
 			IndexNodeDescriptor descriptor, IndexPartitionStatus status) throws PartitionResolverException;
 
+	public List<PartitionDescriptor> getAll() throws PartitionResolverException;
+
 }

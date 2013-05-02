@@ -10,5 +10,6 @@
 		<module>indexBroker</module>
 		<module>indexCommon</module>
 		<module>console</module>
+		<module>monitor</module>
 	</modules>
 </project>

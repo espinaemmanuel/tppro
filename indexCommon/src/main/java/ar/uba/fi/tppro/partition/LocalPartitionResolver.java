@@ -1,5 +1,6 @@
 package ar.uba.fi.tppro.partition;
 
+import java.util.List;
 import java.util.Map;
 
 import com.google.common.collect.HashMultimap;
@@ -46,6 +47,12 @@ public class LocalPartitionResolver implements PartitionResolver {
 			throws PartitionResolverException {
 		// TODO Auto-generated method stub
 		
+	}
+
+	@Override
+	public List<PartitionDescriptor> getAll() throws PartitionResolverException {
+		// TODO Auto-generated method stub
+		return null;
 	}
 	
 

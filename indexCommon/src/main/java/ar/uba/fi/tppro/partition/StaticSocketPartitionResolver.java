@@ -1,5 +1,7 @@
 package ar.uba.fi.tppro.partition;
 
+import java.util.List;
+
 import ar.uba.fi.tppro.core.index.IndexNodeDescriptor;
 import ar.uba.fi.tppro.core.index.IndexPartitionStatus;
 import ar.uba.fi.tppro.core.index.RemoteNodePool;
@@ -30,6 +32,12 @@ public class StaticSocketPartitionResolver extends AbstractPartitionResolver {
 			throws PartitionResolverException {
 		// TODO Auto-generated method stub
 		
+	}
+
+	@Override
+	public List<PartitionDescriptor> getAll() throws PartitionResolverException {
+		// TODO Auto-generated method stub
+		return null;
 	}
 
 

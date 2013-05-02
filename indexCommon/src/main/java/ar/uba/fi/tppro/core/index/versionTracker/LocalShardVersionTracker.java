@@ -1,5 +1,6 @@
 package ar.uba.fi.tppro.core.index.versionTracker;
 
+import java.util.Map;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -54,6 +55,13 @@ public class LocalShardVersionTracker implements ShardVersionTracker {
 	public void addVersionObserver(int shardId,
 			ShardVersionObserver observer) {
 		this.observers.put(shardId, observer);
+	}
+
+	@Override
+	public Map<Integer, Long> getAllVersions()
+			throws VersionTrackerServerException {
+		// TODO Auto-generated method stub
+		return null;
 	}
 
 }
