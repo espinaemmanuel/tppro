@@ -63,8 +63,7 @@ public class ParalellIndexer {
 
 		@Override
 		public String toString() {
-			return String.format("Replica:%s , Docs:%s", replica.toString(),
-					docs.toString());
+			return String.format("PartitionId: %d, Replica:%s", partitionId, replica.toString());
 		}
 	}
 

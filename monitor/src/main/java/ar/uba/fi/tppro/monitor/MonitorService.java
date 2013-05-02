@@ -53,6 +53,10 @@ public class MonitorService implements Runnable {
 		curator.start();
 
 		handler = new MonitorHandler(curator);
+		
+		if(System.getProperties().containsKey("test")){
+			new Thread(new LoopStatusPrinter(this.handler)).start();
+		}
 
 		processor = new Monitor.Processor<Monitor.Iface>(handler);
 
