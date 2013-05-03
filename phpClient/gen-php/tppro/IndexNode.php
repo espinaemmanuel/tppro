@@ -18,11 +18,13 @@ use Thrift\Exception\TApplicationException;
 interface IndexNodeIf {
   public function search($shardId, $partitionId, $query, $limit, $offset);
   public function deleteByQuery($shardId, $partitionId, $query);
-  public function prepareCommit($shardId, $partitionId, $messageId, $documents);
+  public function prepareCommit($shardId, $partitionId, \tppro\MessageId $messageId, $documents);
   public function commit($shardId, $partitionId);
   public function createPartition($shardId, $partitionId);
   public function removePartition($shardId, $partitionId);
   public function containsPartition($shardId, $partitionId);
+  public function listPartitions();
+  public function totalDocuments($shardId, $partitionId);
   public function partitionStatus($shardId, $partitionId);
   public function listPartitionFiles($shardId, $partitionId);
 }
@@ -149,13 +151,13 @@ class IndexNodeClient implements \tppro\IndexNodeIf {
     return;
   }
 
-  public function prepareCommit($shardId, $partitionId, $messageId, $documents)
+  public function prepareCommit($shardId, $partitionId, \tppro\MessageId $messageId, $documents)
   {
     $this->send_prepareCommit($shardId, $partitionId, $messageId, $documents);
     $this->recv_prepareCommit();
   }
 
-  public function send_prepareCommit($shardId, $partitionId, $messageId, $documents)
+  public function send_prepareCommit($shardId, $partitionId, \tppro\MessageId $messageId, $documents)
   {
     $args = new \tppro\IndexNode_prepareCommit_args();
     $args->shardId = $shardId;
@@ -415,6 +417,111 @@ class IndexNodeClient implements \tppro\IndexNodeIf {
       return $result->success;
     }
     throw new \Exception("containsPartition failed: unknown result");
+  }
+
+  public function listPartitions()
+  {
+    $this->send_listPartitions();
+    return $this->recv_listPartitions();
+  }
+
+  public function send_listPartitions()
+  {
+    $args = new \tppro\IndexNode_listPartitions_args();
+    $bin_accel = ($this->output_ instanceof TProtocol::$TBINARYPROTOCOLACCELERATED) && function_exists('thrift_protocol_write_binary');
+    if ($bin_accel)
+    {
+      thrift_protocol_write_binary($this->output_, 'listPartitions', TMessageType::CALL, $args, $this->seqid_, $this->output_->isStrictWrite());
+    }
+    else
+    {
+      $this->output_->writeMessageBegin('listPartitions', TMessageType::CALL, $this->seqid_);
+      $args->write($this->output_);
+      $this->output_->writeMessageEnd();
+      $this->output_->getTransport()->flush();
+    }
+  }
+
+  public function recv_listPartitions()
+  {
+    $bin_accel = ($this->input_ instanceof TProtocol::$TBINARYPROTOCOLACCELERATED) && function_exists('thrift_protocol_read_binary');
+    if ($bin_accel) $result = thrift_protocol_read_binary($this->input_, '\tppro\IndexNode_listPartitions_result', $this->input_->isStrictRead());
+    else
+    {
+      $rseqid = 0;
+      $fname = null;
+      $mtype = 0;
+
+      $this->input_->readMessageBegin($fname, $mtype, $rseqid);
+      if ($mtype == TMessageType::EXCEPTION) {
+        $x = new TApplicationException();
+        $x->read($this->input_);
+        $this->input_->readMessageEnd();
+        throw $x;
+      }
+      $result = new \tppro\IndexNode_listPartitions_result();
+      $result->read($this->input_);
+      $this->input_->readMessageEnd();
+    }
+    if ($result->success !== null) {
+      return $result->success;
+    }
+    throw new \Exception("listPartitions failed: unknown result");
+  }
+
+  public function totalDocuments($shardId, $partitionId)
+  {
+    $this->send_totalDocuments($shardId, $partitionId);
+    return $this->recv_totalDocuments();
+  }
+
+  public function send_totalDocuments($shardId, $partitionId)
+  {
+    $args = new \tppro\IndexNode_totalDocuments_args();
+    $args->shardId = $shardId;
+    $args->partitionId = $partitionId;
+    $bin_accel = ($this->output_ instanceof TProtocol::$TBINARYPROTOCOLACCELERATED) && function_exists('thrift_protocol_write_binary');
+    if ($bin_accel)
+    {
+      thrift_protocol_write_binary($this->output_, 'totalDocuments', TMessageType::CALL, $args, $this->seqid_, $this->output_->isStrictWrite());
+    }
+    else
+    {
+      $this->output_->writeMessageBegin('totalDocuments', TMessageType::CALL, $this->seqid_);
+      $args->write($this->output_);
+      $this->output_->writeMessageEnd();
+      $this->output_->getTransport()->flush();
+    }
+  }
+
+  public function recv_totalDocuments()
+  {
+    $bin_accel = ($this->input_ instanceof TProtocol::$TBINARYPROTOCOLACCELERATED) && function_exists('thrift_protocol_read_binary');
+    if ($bin_accel) $result = thrift_protocol_read_binary($this->input_, '\tppro\IndexNode_totalDocuments_result', $this->input_->isStrictRead());
+    else
+    {
+      $rseqid = 0;
+      $fname = null;
+      $mtype = 0;
+
+      $this->input_->readMessageBegin($fname, $mtype, $rseqid);
+      if ($mtype == TMessageType::EXCEPTION) {
+        $x = new TApplicationException();
+        $x->read($this->input_);
+        $this->input_->readMessageEnd();
+        throw $x;
+      }
+      $result = new \tppro\IndexNode_totalDocuments_result();
+      $result->read($this->input_);
+      $this->input_->readMessageEnd();
+    }
+    if ($result->success !== null) {
+      return $result->success;
+    }
+    if ($result->e !== null) {
+      throw $result->e;
+    }
+    throw new \Exception("totalDocuments failed: unknown result");
   }
 
   public function partitionStatus($shardId, $partitionId)
@@ -987,7 +1094,8 @@ class IndexNode_prepareCommit_args {
           ),
         3 => array(
           'var' => 'messageId',
-          'type' => TType::I32,
+          'type' => TType::STRUCT,
+          'class' => '\tppro\MessageId',
           ),
         4 => array(
           'var' => 'documents',
@@ -1050,8 +1158,9 @@ class IndexNode_prepareCommit_args {
           }
           break;
         case 3:
-          if ($ftype == TType::I32) {
-            $xfer += $input->readI32($this->messageId);
+          if ($ftype == TType::STRUCT) {
+            $this->messageId = new \tppro\MessageId();
+            $xfer += $this->messageId->read($input);
           } else {
             $xfer += $input->skip($ftype);
           }
@@ -1098,8 +1207,11 @@ class IndexNode_prepareCommit_args {
       $xfer += $output->writeFieldEnd();
     }
     if ($this->messageId !== null) {
-      $xfer += $output->writeFieldBegin('messageId', TType::I32, 3);
-      $xfer += $output->writeI32($this->messageId);
+      if (!is_object($this->messageId)) {
+        throw new TProtocolException('Bad type in structure.', TProtocolException::INVALID_DATA);
+      }
+      $xfer += $output->writeFieldBegin('messageId', TType::STRUCT, 3);
+      $xfer += $this->messageId->write($output);
       $xfer += $output->writeFieldEnd();
     }
     if ($this->documents !== null) {
@@ -1906,6 +2018,342 @@ class IndexNode_containsPartition_result {
 
 }
 
+class IndexNode_listPartitions_args {
+  static $_TSPEC;
+
+
+  public function __construct() {
+    if (!isset(self::$_TSPEC)) {
+      self::$_TSPEC = array(
+        );
+    }
+  }
+
+  public function getName() {
+    return 'IndexNode_listPartitions_args';
+  }
+
+  public function read($input)
+  {
+    $xfer = 0;
+    $fname = null;
+    $ftype = 0;
+    $fid = 0;
+    $xfer += $input->readStructBegin($fname);
+    while (true)
+    {
+      $xfer += $input->readFieldBegin($fname, $ftype, $fid);
+      if ($ftype == TType::STOP) {
+        break;
+      }
+      switch ($fid)
+      {
+        default:
+          $xfer += $input->skip($ftype);
+          break;
+      }
+      $xfer += $input->readFieldEnd();
+    }
+    $xfer += $input->readStructEnd();
+    return $xfer;
+  }
+
+  public function write($output) {
+    $xfer = 0;
+    $xfer += $output->writeStructBegin('IndexNode_listPartitions_args');
+    $xfer += $output->writeFieldStop();
+    $xfer += $output->writeStructEnd();
+    return $xfer;
+  }
+
+}
+
+class IndexNode_listPartitions_result {
+  static $_TSPEC;
+
+  public $success = null;
+
+  public function __construct($vals=null) {
+    if (!isset(self::$_TSPEC)) {
+      self::$_TSPEC = array(
+        0 => array(
+          'var' => 'success',
+          'type' => TType::LST,
+          'etype' => TType::STRUCT,
+          'elem' => array(
+            'type' => TType::STRUCT,
+            'class' => '\tppro\PartitionStatus',
+            ),
+          ),
+        );
+    }
+    if (is_array($vals)) {
+      if (isset($vals['success'])) {
+        $this->success = $vals['success'];
+      }
+    }
+  }
+
+  public function getName() {
+    return 'IndexNode_listPartitions_result';
+  }
+
+  public function read($input)
+  {
+    $xfer = 0;
+    $fname = null;
+    $ftype = 0;
+    $fid = 0;
+    $xfer += $input->readStructBegin($fname);
+    while (true)
+    {
+      $xfer += $input->readFieldBegin($fname, $ftype, $fid);
+      if ($ftype == TType::STOP) {
+        break;
+      }
+      switch ($fid)
+      {
+        case 0:
+          if ($ftype == TType::LST) {
+            $this->success = array();
+            $_size51 = 0;
+            $_etype54 = 0;
+            $xfer += $input->readListBegin($_etype54, $_size51);
+            for ($_i55 = 0; $_i55 < $_size51; ++$_i55)
+            {
+              $elem56 = null;
+              $elem56 = new \tppro\PartitionStatus();
+              $xfer += $elem56->read($input);
+              $this->success []= $elem56;
+            }
+            $xfer += $input->readListEnd();
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        default:
+          $xfer += $input->skip($ftype);
+          break;
+      }
+      $xfer += $input->readFieldEnd();
+    }
+    $xfer += $input->readStructEnd();
+    return $xfer;
+  }
+
+  public function write($output) {
+    $xfer = 0;
+    $xfer += $output->writeStructBegin('IndexNode_listPartitions_result');
+    if ($this->success !== null) {
+      if (!is_array($this->success)) {
+        throw new TProtocolException('Bad type in structure.', TProtocolException::INVALID_DATA);
+      }
+      $xfer += $output->writeFieldBegin('success', TType::LST, 0);
+      {
+        $output->writeListBegin(TType::STRUCT, count($this->success));
+        {
+          foreach ($this->success as $iter57)
+          {
+            $xfer += $iter57->write($output);
+          }
+        }
+        $output->writeListEnd();
+      }
+      $xfer += $output->writeFieldEnd();
+    }
+    $xfer += $output->writeFieldStop();
+    $xfer += $output->writeStructEnd();
+    return $xfer;
+  }
+
+}
+
+class IndexNode_totalDocuments_args {
+  static $_TSPEC;
+
+  public $shardId = null;
+  public $partitionId = null;
+
+  public function __construct($vals=null) {
+    if (!isset(self::$_TSPEC)) {
+      self::$_TSPEC = array(
+        1 => array(
+          'var' => 'shardId',
+          'type' => TType::I32,
+          ),
+        2 => array(
+          'var' => 'partitionId',
+          'type' => TType::I32,
+          ),
+        );
+    }
+    if (is_array($vals)) {
+      if (isset($vals['shardId'])) {
+        $this->shardId = $vals['shardId'];
+      }
+      if (isset($vals['partitionId'])) {
+        $this->partitionId = $vals['partitionId'];
+      }
+    }
+  }
+
+  public function getName() {
+    return 'IndexNode_totalDocuments_args';
+  }
+
+  public function read($input)
+  {
+    $xfer = 0;
+    $fname = null;
+    $ftype = 0;
+    $fid = 0;
+    $xfer += $input->readStructBegin($fname);
+    while (true)
+    {
+      $xfer += $input->readFieldBegin($fname, $ftype, $fid);
+      if ($ftype == TType::STOP) {
+        break;
+      }
+      switch ($fid)
+      {
+        case 1:
+          if ($ftype == TType::I32) {
+            $xfer += $input->readI32($this->shardId);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 2:
+          if ($ftype == TType::I32) {
+            $xfer += $input->readI32($this->partitionId);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        default:
+          $xfer += $input->skip($ftype);
+          break;
+      }
+      $xfer += $input->readFieldEnd();
+    }
+    $xfer += $input->readStructEnd();
+    return $xfer;
+  }
+
+  public function write($output) {
+    $xfer = 0;
+    $xfer += $output->writeStructBegin('IndexNode_totalDocuments_args');
+    if ($this->shardId !== null) {
+      $xfer += $output->writeFieldBegin('shardId', TType::I32, 1);
+      $xfer += $output->writeI32($this->shardId);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->partitionId !== null) {
+      $xfer += $output->writeFieldBegin('partitionId', TType::I32, 2);
+      $xfer += $output->writeI32($this->partitionId);
+      $xfer += $output->writeFieldEnd();
+    }
+    $xfer += $output->writeFieldStop();
+    $xfer += $output->writeStructEnd();
+    return $xfer;
+  }
+
+}
+
+class IndexNode_totalDocuments_result {
+  static $_TSPEC;
+
+  public $success = null;
+  public $e = null;
+
+  public function __construct($vals=null) {
+    if (!isset(self::$_TSPEC)) {
+      self::$_TSPEC = array(
+        0 => array(
+          'var' => 'success',
+          'type' => TType::I32,
+          ),
+        1 => array(
+          'var' => 'e',
+          'type' => TType::STRUCT,
+          'class' => '\tppro\NonExistentPartitionException',
+          ),
+        );
+    }
+    if (is_array($vals)) {
+      if (isset($vals['success'])) {
+        $this->success = $vals['success'];
+      }
+      if (isset($vals['e'])) {
+        $this->e = $vals['e'];
+      }
+    }
+  }
+
+  public function getName() {
+    return 'IndexNode_totalDocuments_result';
+  }
+
+  public function read($input)
+  {
+    $xfer = 0;
+    $fname = null;
+    $ftype = 0;
+    $fid = 0;
+    $xfer += $input->readStructBegin($fname);
+    while (true)
+    {
+      $xfer += $input->readFieldBegin($fname, $ftype, $fid);
+      if ($ftype == TType::STOP) {
+        break;
+      }
+      switch ($fid)
+      {
+        case 0:
+          if ($ftype == TType::I32) {
+            $xfer += $input->readI32($this->success);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 1:
+          if ($ftype == TType::STRUCT) {
+            $this->e = new \tppro\NonExistentPartitionException();
+            $xfer += $this->e->read($input);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        default:
+          $xfer += $input->skip($ftype);
+          break;
+      }
+      $xfer += $input->readFieldEnd();
+    }
+    $xfer += $input->readStructEnd();
+    return $xfer;
+  }
+
+  public function write($output) {
+    $xfer = 0;
+    $xfer += $output->writeStructBegin('IndexNode_totalDocuments_result');
+    if ($this->success !== null) {
+      $xfer += $output->writeFieldBegin('success', TType::I32, 0);
+      $xfer += $output->writeI32($this->success);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->e !== null) {
+      $xfer += $output->writeFieldBegin('e', TType::STRUCT, 1);
+      $xfer += $this->e->write($output);
+      $xfer += $output->writeFieldEnd();
+    }
+    $xfer += $output->writeFieldStop();
+    $xfer += $output->writeStructEnd();
+    return $xfer;
+  }
+
+}
+
 class IndexNode_partitionStatus_args {
   static $_TSPEC;
 
@@ -2245,14 +2693,14 @@ class IndexNode_listPartitionFiles_result {
         case 0:
           if ($ftype == TType::LST) {
             $this->success = array();
-            $_size51 = 0;
-            $_etype54 = 0;
-            $xfer += $input->readListBegin($_etype54, $_size51);
-            for ($_i55 = 0; $_i55 < $_size51; ++$_i55)
+            $_size58 = 0;
+            $_etype61 = 0;
+            $xfer += $input->readListBegin($_etype61, $_size58);
+            for ($_i62 = 0; $_i62 < $_size58; ++$_i62)
             {
-              $elem56 = null;
-              $xfer += $input->readString($elem56);
-              $this->success []= $elem56;
+              $elem63 = null;
+              $xfer += $input->readString($elem63);
+              $this->success []= $elem63;
             }
             $xfer += $input->readListEnd();
           } else {
@@ -2288,9 +2736,9 @@ class IndexNode_listPartitionFiles_result {
       {
         $output->writeListBegin(TType::STRING, count($this->success));
         {
-          foreach ($this->success as $iter57)
+          foreach ($this->success as $iter64)
           {
-            $xfer += $output->writeString($iter57);
+            $xfer += $output->writeString($iter64);
           }
         }
         $output->writeListEnd();

@@ -16,6 +16,15 @@ use Thrift\Protocol\TProtocol;
 use Thrift\Exception\TApplicationException;
 
 
+final class NodeType {
+  const INDEX = 0;
+  const BROKER = 1;
+  static public $__names = array(
+    0 => 'INDEX',
+    1 => 'BROKER',
+  );
+}
+
 class Document {
   static $_TSPEC;
 
@@ -1229,6 +1238,7 @@ class IndexResult {
 class PartitionStatus {
   static $_TSPEC;
 
+  public $groupId = null;
   public $partitionId = null;
   public $status = null;
 
@@ -1236,16 +1246,23 @@ class PartitionStatus {
     if (!isset(self::$_TSPEC)) {
       self::$_TSPEC = array(
         1 => array(
-          'var' => 'partitionId',
+          'var' => 'groupId',
           'type' => TType::I32,
           ),
         2 => array(
+          'var' => 'partitionId',
+          'type' => TType::I32,
+          ),
+        3 => array(
           'var' => 'status',
           'type' => TType::STRING,
           ),
         );
     }
     if (is_array($vals)) {
+      if (isset($vals['groupId'])) {
+        $this->groupId = $vals['groupId'];
+      }
       if (isset($vals['partitionId'])) {
         $this->partitionId = $vals['partitionId'];
       }
@@ -1276,12 +1293,19 @@ class PartitionStatus {
       {
         case 1:
           if ($ftype == TType::I32) {
-            $xfer += $input->readI32($this->partitionId);
+            $xfer += $input->readI32($this->groupId);
           } else {
             $xfer += $input->skip($ftype);
           }
           break;
         case 2:
+          if ($ftype == TType::I32) {
+            $xfer += $input->readI32($this->partitionId);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 3:
           if ($ftype == TType::STRING) {
             $xfer += $input->readString($this->status);
           } else {
@@ -1301,14 +1325,335 @@ class PartitionStatus {
   public function write($output) {
     $xfer = 0;
     $xfer += $output->writeStructBegin('PartitionStatus');
+    if ($this->groupId !== null) {
+      $xfer += $output->writeFieldBegin('groupId', TType::I32, 1);
+      $xfer += $output->writeI32($this->groupId);
+      $xfer += $output->writeFieldEnd();
+    }
     if ($this->partitionId !== null) {
-      $xfer += $output->writeFieldBegin('partitionId', TType::I32, 1);
+      $xfer += $output->writeFieldBegin('partitionId', TType::I32, 2);
       $xfer += $output->writeI32($this->partitionId);
       $xfer += $output->writeFieldEnd();
     }
     if ($this->status !== null) {
-      $xfer += $output->writeFieldBegin('status', TType::STRING, 2);
+      $xfer += $output->writeFieldBegin('status', TType::STRING, 3);
       $xfer += $output->writeString($this->status);
+      $xfer += $output->writeFieldEnd();
+    }
+    $xfer += $output->writeFieldStop();
+    $xfer += $output->writeStructEnd();
+    return $xfer;
+  }
+
+}
+
+class MessageId {
+  static $_TSPEC;
+
+  public $previousState = null;
+  public $nextState = null;
+
+  public function __construct($vals=null) {
+    if (!isset(self::$_TSPEC)) {
+      self::$_TSPEC = array(
+        1 => array(
+          'var' => 'previousState',
+          'type' => TType::I64,
+          ),
+        2 => array(
+          'var' => 'nextState',
+          'type' => TType::I64,
+          ),
+        );
+    }
+    if (is_array($vals)) {
+      if (isset($vals['previousState'])) {
+        $this->previousState = $vals['previousState'];
+      }
+      if (isset($vals['nextState'])) {
+        $this->nextState = $vals['nextState'];
+      }
+    }
+  }
+
+  public function getName() {
+    return 'MessageId';
+  }
+
+  public function read($input)
+  {
+    $xfer = 0;
+    $fname = null;
+    $ftype = 0;
+    $fid = 0;
+    $xfer += $input->readStructBegin($fname);
+    while (true)
+    {
+      $xfer += $input->readFieldBegin($fname, $ftype, $fid);
+      if ($ftype == TType::STOP) {
+        break;
+      }
+      switch ($fid)
+      {
+        case 1:
+          if ($ftype == TType::I64) {
+            $xfer += $input->readI64($this->previousState);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 2:
+          if ($ftype == TType::I64) {
+            $xfer += $input->readI64($this->nextState);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        default:
+          $xfer += $input->skip($ftype);
+          break;
+      }
+      $xfer += $input->readFieldEnd();
+    }
+    $xfer += $input->readStructEnd();
+    return $xfer;
+  }
+
+  public function write($output) {
+    $xfer = 0;
+    $xfer += $output->writeStructBegin('MessageId');
+    if ($this->previousState !== null) {
+      $xfer += $output->writeFieldBegin('previousState', TType::I64, 1);
+      $xfer += $output->writeI64($this->previousState);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->nextState !== null) {
+      $xfer += $output->writeFieldBegin('nextState', TType::I64, 2);
+      $xfer += $output->writeI64($this->nextState);
+      $xfer += $output->writeFieldEnd();
+    }
+    $xfer += $output->writeFieldStop();
+    $xfer += $output->writeStructEnd();
+    return $xfer;
+  }
+
+}
+
+class NodePartition {
+  static $_TSPEC;
+
+  public $groupId = null;
+  public $partitionId = null;
+  public $nodeUrl = null;
+  public $status = null;
+
+  public function __construct($vals=null) {
+    if (!isset(self::$_TSPEC)) {
+      self::$_TSPEC = array(
+        1 => array(
+          'var' => 'groupId',
+          'type' => TType::I32,
+          ),
+        2 => array(
+          'var' => 'partitionId',
+          'type' => TType::I32,
+          ),
+        3 => array(
+          'var' => 'nodeUrl',
+          'type' => TType::STRING,
+          ),
+        4 => array(
+          'var' => 'status',
+          'type' => TType::STRING,
+          ),
+        );
+    }
+    if (is_array($vals)) {
+      if (isset($vals['groupId'])) {
+        $this->groupId = $vals['groupId'];
+      }
+      if (isset($vals['partitionId'])) {
+        $this->partitionId = $vals['partitionId'];
+      }
+      if (isset($vals['nodeUrl'])) {
+        $this->nodeUrl = $vals['nodeUrl'];
+      }
+      if (isset($vals['status'])) {
+        $this->status = $vals['status'];
+      }
+    }
+  }
+
+  public function getName() {
+    return 'NodePartition';
+  }
+
+  public function read($input)
+  {
+    $xfer = 0;
+    $fname = null;
+    $ftype = 0;
+    $fid = 0;
+    $xfer += $input->readStructBegin($fname);
+    while (true)
+    {
+      $xfer += $input->readFieldBegin($fname, $ftype, $fid);
+      if ($ftype == TType::STOP) {
+        break;
+      }
+      switch ($fid)
+      {
+        case 1:
+          if ($ftype == TType::I32) {
+            $xfer += $input->readI32($this->groupId);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 2:
+          if ($ftype == TType::I32) {
+            $xfer += $input->readI32($this->partitionId);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 3:
+          if ($ftype == TType::STRING) {
+            $xfer += $input->readString($this->nodeUrl);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 4:
+          if ($ftype == TType::STRING) {
+            $xfer += $input->readString($this->status);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        default:
+          $xfer += $input->skip($ftype);
+          break;
+      }
+      $xfer += $input->readFieldEnd();
+    }
+    $xfer += $input->readStructEnd();
+    return $xfer;
+  }
+
+  public function write($output) {
+    $xfer = 0;
+    $xfer += $output->writeStructBegin('NodePartition');
+    if ($this->groupId !== null) {
+      $xfer += $output->writeFieldBegin('groupId', TType::I32, 1);
+      $xfer += $output->writeI32($this->groupId);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->partitionId !== null) {
+      $xfer += $output->writeFieldBegin('partitionId', TType::I32, 2);
+      $xfer += $output->writeI32($this->partitionId);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->nodeUrl !== null) {
+      $xfer += $output->writeFieldBegin('nodeUrl', TType::STRING, 3);
+      $xfer += $output->writeString($this->nodeUrl);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->status !== null) {
+      $xfer += $output->writeFieldBegin('status', TType::STRING, 4);
+      $xfer += $output->writeString($this->status);
+      $xfer += $output->writeFieldEnd();
+    }
+    $xfer += $output->writeFieldStop();
+    $xfer += $output->writeStructEnd();
+    return $xfer;
+  }
+
+}
+
+class Node {
+  static $_TSPEC;
+
+  public $url = null;
+  public $type = null;
+
+  public function __construct($vals=null) {
+    if (!isset(self::$_TSPEC)) {
+      self::$_TSPEC = array(
+        1 => array(
+          'var' => 'url',
+          'type' => TType::STRING,
+          ),
+        2 => array(
+          'var' => 'type',
+          'type' => TType::I32,
+          ),
+        );
+    }
+    if (is_array($vals)) {
+      if (isset($vals['url'])) {
+        $this->url = $vals['url'];
+      }
+      if (isset($vals['type'])) {
+        $this->type = $vals['type'];
+      }
+    }
+  }
+
+  public function getName() {
+    return 'Node';
+  }
+
+  public function read($input)
+  {
+    $xfer = 0;
+    $fname = null;
+    $ftype = 0;
+    $fid = 0;
+    $xfer += $input->readStructBegin($fname);
+    while (true)
+    {
+      $xfer += $input->readFieldBegin($fname, $ftype, $fid);
+      if ($ftype == TType::STOP) {
+        break;
+      }
+      switch ($fid)
+      {
+        case 1:
+          if ($ftype == TType::STRING) {
+            $xfer += $input->readString($this->url);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 2:
+          if ($ftype == TType::I32) {
+            $xfer += $input->readI32($this->type);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        default:
+          $xfer += $input->skip($ftype);
+          break;
+      }
+      $xfer += $input->readFieldEnd();
+    }
+    $xfer += $input->readStructEnd();
+    return $xfer;
+  }
+
+  public function write($output) {
+    $xfer = 0;
+    $xfer += $output->writeStructBegin('Node');
+    if ($this->url !== null) {
+      $xfer += $output->writeFieldBegin('url', TType::STRING, 1);
+      $xfer += $output->writeString($this->url);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->type !== null) {
+      $xfer += $output->writeFieldBegin('type', TType::I32, 2);
+      $xfer += $output->writeI32($this->type);
       $xfer += $output->writeFieldEnd();
     }
     $xfer += $output->writeFieldStop();
