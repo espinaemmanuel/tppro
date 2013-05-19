@@ -26,6 +26,7 @@ import com.netflix.curator.retry.RetryOneTime;
 import ar.uba.fi.tppro.core.index.IndexCoreHandler;
 import ar.uba.fi.tppro.core.index.RemoteIndexNodeDescriptor;
 import ar.uba.fi.tppro.core.index.ClusterManager.ClusterManager;
+import ar.uba.fi.tppro.core.index.ClusterManager.ZkClusterManager;
 import ar.uba.fi.tppro.core.index.lock.LockManager;
 import ar.uba.fi.tppro.core.index.lock.NullLockManager;
 import ar.uba.fi.tppro.core.index.versionTracker.GroupVersionTracker;
@@ -124,6 +125,11 @@ public class IndexServer implements Runnable {
 
 		RemoteIndexNodeDescriptor localNodeDescriptor = new RemoteIndexNodeDescriptor(
 				this.bindIp, port);
+		
+		if(this.clusterManager == null){
+			this.clusterManager = new ZkClusterManager(curator);
+		}
+		
 		try {
 			this.clusterManager.registerNode(localNodeDescriptor, ClusterManager.NodeType.INDEX);
 		} catch (Exception e) {
