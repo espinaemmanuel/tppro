@@ -34,7 +34,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
 import ar.uba.fi.tppro.core.index.versionTracker.ShardVersionObserver;
-import ar.uba.fi.tppro.core.index.versionTracker.ShardVersionTracker;
+import ar.uba.fi.tppro.core.index.versionTracker.GroupVersionTracker;
 import ar.uba.fi.tppro.core.index.versionTracker.VersionTrackerServerException;
 import ar.uba.fi.tppro.core.service.thrift.Document;
 import ar.uba.fi.tppro.core.service.thrift.Hit;
@@ -56,7 +56,7 @@ public class IndexPartition implements Closeable, ShardVersionObserver {
 	private StandardAnalyzer analyzer;
 	private SearcherManager mgr;
 	boolean isOpen = false;
-	private ShardVersionTracker versionTracker;
+	private GroupVersionTracker versionTracker;
 	
 	private int partitionId;
 	private int shardId;
@@ -74,7 +74,7 @@ public class IndexPartition implements Closeable, ShardVersionObserver {
 
 	private String lastError;
 
-	public IndexPartition(int shardId, int partitionId, File dataPath, ShardVersionTracker versionTracker) {
+	public IndexPartition(int shardId, int partitionId, File dataPath, GroupVersionTracker versionTracker) {
 		this.partitionId = partitionId;
 		this.shardId = shardId;
 		this.dataPath = dataPath;
@@ -433,6 +433,11 @@ public class IndexPartition implements Closeable, ShardVersionObserver {
 
 	public int getShardId() {
 		return shardId;
+	}
+	
+	@Override
+	public String toString(){
+		return String.format("groupId=%d partitionId=%d", this.shardId, this.partitionId);
 	}
 
 }

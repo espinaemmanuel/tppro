@@ -47,11 +47,13 @@ public class ZookeeperPartitionResolver implements PartitionResolver {
 	}
 
 	@Override
-	public void registerPartition(int shardId, int partitionId,
+	public void registerPartition(int groupId, int partitionId,
 			IndexNodeDescriptor descriptor, IndexPartitionStatus status)
 			throws PartitionResolverException {
+		
+		logger.debug(String.format("Registering partition in zookeeper: host=%s, group=%d partition=%d status=%s", descriptor, groupId, partitionId, status));
 
-		String path = pathForReplica(shardId, partitionId,
+		String path = pathForReplica(groupId, partitionId,
 				descriptor.getHost(), descriptor.getPort());
 		byte[] statusBytes = status.toString().getBytes();
 

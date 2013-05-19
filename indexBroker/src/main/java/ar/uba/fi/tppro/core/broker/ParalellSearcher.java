@@ -1,5 +1,6 @@
 package ar.uba.fi.tppro.core.broker;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -49,20 +50,21 @@ public class ParalellSearcher {
 				@Override
 				public QueryResult call() throws Exception {
 					
-					Random random = new Random();
-					int replicaNum = partitions.get(pId).size();
-					int firstTry = replicaNum > 1 ? random.nextInt(replicaNum - 1) : 0;
-					
+					List<IndexNodeDescriptor> partitionList = Lists.newArrayList(partitions.get(pId));
+					Collections.shuffle(partitionList);
+									
 					Map<IndexNodeDescriptor, Exception> coughtExceptions = Maps.newHashMap();
 					
-					for(int i=0; i < replicaNum ; i++){
-						int selectedPartition = (firstTry + i) % replicaNum;
-						IndexNodeDescriptor indexNode = Iterables.get(partitions.get(pId), selectedPartition);
-						
-						QueryResult result = null;
-						
+					for(int i=0; i < partitionList.size() ; i++){
+						IndexNodeDescriptor indexNode = partitionList.get(i);
+												
 						try {
-							result = indexNode.getClient().search(shardId, pId, query, limit, offset);
+							QueryResult result = indexNode.getClient().search(shardId, pId, query, limit, offset);
+							
+							if(result != null){							
+								processExceptions(pId, coughtExceptions);
+								return result;
+							}	
 						} catch (IndexNodeDescriptorException e){
 							logger.info("CLUSTER FAILURE: Could not connect to node " + indexNode + ". A replica will be used");
 							coughtExceptions.put(indexNode, e);
@@ -72,12 +74,7 @@ public class ParalellSearcher {
 							coughtExceptions.put(indexNode, e);
 						} catch (TException e) {
 							coughtExceptions.put(indexNode, e);
-						}
-						
-						if(result != null){							
-							processExceptions(pId, coughtExceptions);
-							return result;
-						}		
+						}	
 					}
 					
 					throw new BrokenPartitionException("Could not resolve the search on any replica", coughtExceptions);

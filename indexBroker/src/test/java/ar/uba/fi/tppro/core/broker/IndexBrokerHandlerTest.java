@@ -1,12 +1,11 @@
 package ar.uba.fi.tppro.core.broker;
 
 import static org.junit.Assert.*;
-import static org.mockito.Matchers.anyInt;
-import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
 
@@ -15,17 +14,19 @@ import org.apache.thrift.protocol.TBinaryProtocol;
 import org.apache.thrift.protocol.TProtocol;
 import org.apache.thrift.transport.TSocket;
 import org.apache.thrift.transport.TTransport;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import ar.uba.fi.tppro.core.index.RemoteNodePool;
-import ar.uba.fi.tppro.core.index.lock.IndexLock;
+import ar.uba.fi.tppro.core.index.ClusterManager.ZkClusterManager;
 import ar.uba.fi.tppro.core.index.lock.LockManager;
 import ar.uba.fi.tppro.core.index.lock.NullLockManager;
-import ar.uba.fi.tppro.core.index.versionTracker.ShardVersionTracker;
+import ar.uba.fi.tppro.core.index.versionTracker.GroupVersionTracker;
 import ar.uba.fi.tppro.core.index.versionTracker.ZkShardVersionTracker;
 import ar.uba.fi.tppro.core.service.IndexServer;
+import ar.uba.fi.tppro.core.service.IndexServerConfig;
 import ar.uba.fi.tppro.core.service.thrift.Document;
 import ar.uba.fi.tppro.core.service.thrift.IndexNode;
 import ar.uba.fi.tppro.core.service.thrift.ParalellSearchResult;
@@ -37,7 +38,6 @@ import com.google.common.collect.LinkedListMultimap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
-import com.google.common.io.Files;
 import com.netflix.curator.framework.CuratorFramework;
 import com.netflix.curator.framework.CuratorFrameworkFactory;
 import com.netflix.curator.retry.RetryOneTime;
@@ -46,25 +46,41 @@ import com.netflix.curator.test.TestingServer;
 public class IndexBrokerHandlerTest {
 	
 	final Logger logger = LoggerFactory.getLogger(IndexBrokerHandlerTest.class);
-
-	protected IndexServer initServer(int port, CuratorFramework client)
-			throws Exception {
-		File tempDir = Files.createTempDir();
-		tempDir.deleteOnExit();
-
-		if (tempDir.list().length > 0)
+	
+	@Rule
+	public TemporaryFolder testFolder = new TemporaryFolder();
+	
+	protected IndexServer createIndexServer(CuratorFramework client, int port) throws IOException{
+		File dataDir = testFolder.newFolder();
+		logger.debug("Temp dir: " + dataDir);
+		
+		if(dataDir.list().length > 0)
 			fail("temp directory not empty");
-
+		
+		IndexServerConfig config1 = new IndexServerConfig();
+		config1.listenPort = port;
+		config1.dataDir = dataDir;
+		
 		PartitionResolver partitionResolver = new ZookeeperPartitionResolver(
 				client);
-		ShardVersionTracker versionTracker = new ZkShardVersionTracker(client);
+		GroupVersionTracker versionTracker = new ZkShardVersionTracker(client);
 		LockManager lockManager = new NullLockManager();
+		
+		IndexServer core = new IndexServer(config1);
+		core.setPartitionResolver(partitionResolver);
+		core.setVersionTracker(versionTracker);
+		core.setLockManager(lockManager);
+		core.setCurator(client);
+		core.setClusterManager(new ZkClusterManager(client));
+		
+		return core;
+	}
 
-		IndexServer core = new IndexServer(port, tempDir, partitionResolver,
-				versionTracker, lockManager);
-
+	protected IndexServer initServer(int port, CuratorFramework client)
+			throws Exception {	
+		IndexServer core = createIndexServer(client, port);
+		
 		new Thread(core).start();
-
 		return core;
 	}
 
@@ -240,7 +256,7 @@ public class IndexBrokerHandlerTest {
 			brokerClient.start();
 
 			LockManager lockManager = new NullLockManager();
-			ShardVersionTracker versionTracker = new ZkShardVersionTracker(brokerClient);
+			GroupVersionTracker versionTracker = new ZkShardVersionTracker(brokerClient);
 			PartitionResolver resolver = new ZookeeperPartitionResolver(brokerClient);
 			
 			VersionGenerator mockVersionGenerator = mock(VersionGenerator.class);

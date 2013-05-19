@@ -1,12 +1,13 @@
 package ar.uba.fi.tppro.core.service;
 
 import java.io.File;
+import java.net.InetAddress;
+import java.util.Collection;
 
 import org.apache.thrift.server.TServer;
 import org.apache.thrift.server.TThreadPoolServer;
 import org.apache.thrift.transport.TServerSocket;
 import org.apache.thrift.transport.TServerTransport;
-import org.apache.zookeeper.CreateMode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -16,17 +17,21 @@ import com.netflix.curator.retry.RetryOneTime;
 
 import ar.uba.fi.tppro.core.broker.IndexBrokerHandler;
 import ar.uba.fi.tppro.core.broker.VersionGenerator;
-import ar.uba.fi.tppro.core.index.IndexPartitionsGroup;
+import ar.uba.fi.tppro.core.index.IndexCoreHandler;
 import ar.uba.fi.tppro.core.index.LocalNodeDescriptor;
+import ar.uba.fi.tppro.core.index.RemoteIndexNodeDescriptor;
+import ar.uba.fi.tppro.core.index.ClusterManager.ClusterManager;
+import ar.uba.fi.tppro.core.index.ClusterManager.ClusterManager.NodeType;
 import ar.uba.fi.tppro.core.index.lock.LockManager;
 import ar.uba.fi.tppro.core.index.lock.NullLockManager;
 import ar.uba.fi.tppro.core.index.versionTracker.LocalShardVersionTracker;
-import ar.uba.fi.tppro.core.index.versionTracker.ShardVersionTracker;
+import ar.uba.fi.tppro.core.index.versionTracker.GroupVersionTracker;
 import ar.uba.fi.tppro.core.index.versionTracker.ZkShardVersionTracker;
 import ar.uba.fi.tppro.core.service.thrift.IndexBroker;
 import ar.uba.fi.tppro.partition.LocalPartitionResolver;
 import ar.uba.fi.tppro.partition.PartitionResolver;
 import ar.uba.fi.tppro.partition.ZookeeperPartitionResolver;
+import ar.uba.fi.tppro.util.NetworkUtils;
 
 public class Broker implements Runnable {
 
@@ -39,10 +44,9 @@ public class Broker implements Runnable {
 	protected IndexBroker.Processor<IndexBroker.Iface> processor;
 	private boolean localMode;
 	
-	protected static CuratorFramework curator;
-
-	
-	private IndexPartitionsGroup localIndexServer;
+	protected CuratorFramework curator;
+	private IndexCoreHandler localIndexServer;
+	private ClusterManager clusterManager;
 
 	public static void main(String[] args) {
 		
@@ -69,11 +73,11 @@ public class Broker implements Runnable {
 			if(this.localMode){
 				PartitionResolver partitionResolver = new LocalPartitionResolver();
 				NullLockManager lockManager = new NullLockManager();
-				ShardVersionTracker versionTracker = new LocalShardVersionTracker();
+				GroupVersionTracker versionTracker = new LocalShardVersionTracker();
 				
 				LocalNodeDescriptor descriptor = new LocalNodeDescriptor();
 				
-				this.localIndexServer = new IndexPartitionsGroup(descriptor, partitionResolver, versionTracker, lockManager);
+				this.localIndexServer = new IndexCoreHandler(descriptor, partitionResolver, versionTracker, lockManager);
 				descriptor.setlocalIndex(this.localIndexServer);
 				
 				this.localIndexServer.open(this.dataDir, true);
@@ -81,47 +85,37 @@ public class Broker implements Runnable {
 				if(!this.localIndexServer.containsPartition(1, 1)){
 					this.localIndexServer.createPartition(1, 1);
 				}
-				
-				String zookeeperHost = System.getProperty("zookeeper");
-				
-				if(zookeeperHost != null){
-					curator = createZookeeperClient(zookeeperHost);
-					curator.start();
-					
-					logger.info("Registering node in zookeeper");
-					String localhostname = java.net.InetAddress.getLocalHost().getHostAddress();
-					
-					curator.create().creatingParentsIfNeeded()
-					.withMode(CreateMode.EPHEMERAL)
-					.forPath("/brokers/" + localhostname + "_" + port, null);
-				}
-
 						
 				handler = new IndexBrokerHandler(partitionResolver, lockManager, versionTracker, new VersionGenerator());
 
 			} else {
-				//Distributed mode
-				String zookeeperHost = System.getProperty("zookeeper", "localhost:2181");
-				if(zookeeperHost == null){
-					System.out.println("Zookeeper server not specified");
-					return;
+				//Distributed mode				
+				if(this.curator == null){
+					String zookeeperHost = System.getProperty("zookeeper", "localhost:2181");
+					if(zookeeperHost == null){
+						System.out.println("Zookeeper server not specified");
+						return;
+					}
+					
+					curator = createZookeeperClient(zookeeperHost);
+					curator.start();
 				}
 				
-				curator = createZookeeperClient(zookeeperHost);
-				curator.start();
-				
 				PartitionResolver partitionResolver = new ZookeeperPartitionResolver(curator);
-				ShardVersionTracker versionTracker = new ZkShardVersionTracker(curator);
+				GroupVersionTracker versionTracker = new ZkShardVersionTracker(curator);
 				LockManager lockManager = new NullLockManager();
 				
 				handler = new IndexBrokerHandler(partitionResolver, lockManager, versionTracker, new VersionGenerator());
 				
 				logger.info("Registering node in zookeeper");
-				String localhostname = java.net.InetAddress.getLocalHost().getHostAddress();
+				Collection<InetAddress> ips = NetworkUtils.getAllLocalIPs();
+				if (ips.size() == 0) {
+					throw new Exception("Could not retrieve the local ip");
+				}
+				String address = ips.iterator().next().getHostAddress();
 				
-				curator.create().creatingParentsIfNeeded()
-				.withMode(CreateMode.EPHEMERAL)
-				.forPath("/brokers/" + localhostname + "_" + port, null);
+				RemoteIndexNodeDescriptor nodeDescriptor = new RemoteIndexNodeDescriptor(address, port);
+				clusterManager.registerNode(nodeDescriptor, NodeType.BROKER);
 			}
 			
 			
@@ -137,5 +131,21 @@ public class Broker implements Runnable {
 		} catch (Exception e) {
 			logger.error("Fatal error", e);
 		}
+	}
+	
+	public CuratorFramework getCurator() {
+		return curator;
+	}
+
+	public void setCurator(CuratorFramework curator) {
+		this.curator = curator;
+	}
+
+	public ClusterManager getClusterManager() {
+		return clusterManager;
+	}
+
+	public void setClusterManager(ClusterManager clusterManager) {
+		this.clusterManager = clusterManager;
 	}
 }

@@ -13,7 +13,7 @@ import ar.uba.fi.tppro.core.index.BrokerIterface;
 import ar.uba.fi.tppro.core.index.IndexNodeDescriptor;
 import ar.uba.fi.tppro.core.index.lock.LockAquireTimeoutException;
 import ar.uba.fi.tppro.core.index.lock.LockManager;
-import ar.uba.fi.tppro.core.index.versionTracker.ShardVersionTracker;
+import ar.uba.fi.tppro.core.index.versionTracker.GroupVersionTracker;
 import ar.uba.fi.tppro.core.index.versionTracker.StaleVersionException;
 import ar.uba.fi.tppro.core.index.versionTracker.VersionTrackerServerException;
 import ar.uba.fi.tppro.core.service.thrift.Document;
@@ -32,12 +32,12 @@ public class IndexBrokerHandler implements BrokerIterface {
 	private ParalellSearcher searcher;
 	private ParalellIndexer indexer;
 	private LockManager lockManager;
-	private ShardVersionTracker versionTracker;
+	private GroupVersionTracker versionTracker;
 
 	private PartitionResolver resolver;
 
 	public IndexBrokerHandler(PartitionResolver resolver,
-			LockManager lockManager, ShardVersionTracker versionTracker, VersionGenerator versionGenerator) {
+			LockManager lockManager, GroupVersionTracker versionTracker, VersionGenerator versionGenerator) {
 		super();
 		this.resolver = resolver;
 		this.lockManager = lockManager;

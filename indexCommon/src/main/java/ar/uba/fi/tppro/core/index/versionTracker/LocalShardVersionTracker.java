@@ -11,7 +11,7 @@ import com.google.common.collect.LinkedListMultimap;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 
-public class LocalShardVersionTracker implements ShardVersionTracker {
+public class LocalShardVersionTracker implements GroupVersionTracker {
 	
 	final Logger logger = LoggerFactory.getLogger(LocalShardVersionTracker.class);
 

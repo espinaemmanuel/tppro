@@ -6,14 +6,9 @@ import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import java.io.File;
 import java.util.List;
 
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.netflix.curator.framework.CuratorFramework;
 import com.netflix.curator.framework.CuratorFrameworkFactory;
@@ -22,9 +17,9 @@ import com.netflix.curator.test.TestingServer;
 
 import ar.uba.fi.tppro.core.index.RemoteNodePool;
 import ar.uba.fi.tppro.core.index.TestUtil;
+import ar.uba.fi.tppro.core.index.ClusterManager.ClusterManager;
 import ar.uba.fi.tppro.core.index.lock.IndexLock;
 import ar.uba.fi.tppro.core.index.lock.LockManager;
-import ar.uba.fi.tppro.core.index.versionTracker.ShardVersionTracker;
 import ar.uba.fi.tppro.core.index.versionTracker.ZkShardVersionTracker;
 import ar.uba.fi.tppro.core.service.thrift.Document;
 import ar.uba.fi.tppro.core.service.thrift.IndexNode;
@@ -32,48 +27,34 @@ import ar.uba.fi.tppro.core.service.thrift.MessageId;
 import ar.uba.fi.tppro.core.service.thrift.QueryResult;
 import ar.uba.fi.tppro.partition.StaticSocketPartitionResolver;
 
-public class ReplicationTest {
+public class ReplicationTest extends IndexCoreTest {
 	
-	final Logger logger = LoggerFactory.getLogger(ReplicationTest.class);
-
-	@Rule
-	public TemporaryFolder testFolder = new TemporaryFolder();
-
 	@Test
 	public void testReplication() throws Exception {
 		TestingServer server = new TestingServer();
 
 		try {
-			
-			File data1 = testFolder.newFolder();
-			File data2 = testFolder.newFolder();
-			
-			logger.debug("Temp dir 1: " + data1);
-			logger.debug("Temp dir 2: " + data2);
-
-
-
 			CuratorFramework client = CuratorFrameworkFactory.newClient(
 					server.getConnectString(), new RetryOneTime(1));
-			
 			client.start();
 			
-			ShardVersionTracker versionTracker = new ZkShardVersionTracker(client);
+			this.versionTracker = new ZkShardVersionTracker(client);
 
-			LockManager lockManager = mock(LockManager.class);
+			this.lockManager = mock(LockManager.class);
 			IndexLock indexLock = mock(IndexLock.class);
 			when(lockManager.aquire(eq(1), anyInt())).thenReturn(
 					indexLock);
 
 			RemoteNodePool nodePool = new RemoteNodePool();
-			StaticSocketPartitionResolver partitionResolver = new StaticSocketPartitionResolver(
+			this.partitionResolver = new StaticSocketPartitionResolver(
 					nodePool);
 			partitionResolver.addReplica("localhost", 9000, 1, 1);
+			
+			clusterManager = mock(ClusterManager.class);
 
-			// create index cores
-			IndexServer core1 = new IndexServer(9000, data1, partitionResolver, versionTracker, lockManager);
-			IndexServer core2 = new IndexServer(9090, data2, partitionResolver, versionTracker, lockManager);
-
+			IndexServer core1 = createIndexServer(client, 9000);
+			IndexServer core2 = createIndexServer(client, 9090);
+			
 			new Thread(core1).start();
 			new Thread(core2).start();
 

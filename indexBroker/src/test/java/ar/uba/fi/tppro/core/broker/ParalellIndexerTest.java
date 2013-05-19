@@ -16,7 +16,7 @@ import ar.uba.fi.tppro.core.index.IndexNodeDescriptorException;
 import ar.uba.fi.tppro.core.index.lock.IndexLock;
 import ar.uba.fi.tppro.core.index.lock.LockAquireTimeoutException;
 import ar.uba.fi.tppro.core.index.lock.LockManager;
-import ar.uba.fi.tppro.core.index.versionTracker.ShardVersionTracker;
+import ar.uba.fi.tppro.core.index.versionTracker.GroupVersionTracker;
 import ar.uba.fi.tppro.core.index.versionTracker.StaleVersionException;
 import ar.uba.fi.tppro.core.index.versionTracker.VersionTrackerServerException;
 import ar.uba.fi.tppro.core.service.thrift.Document;
@@ -71,7 +71,7 @@ public class ParalellIndexerTest {
 		IndexLock indexLock = mock(IndexLock.class);
 		when(lockManager.aquire(eq(1), anyInt())).thenReturn(indexLock);
 		
-		ShardVersionTracker versionTracker = mock(ShardVersionTracker.class);
+		GroupVersionTracker versionTracker = mock(GroupVersionTracker.class);
 		
 		VersionGenerator mockVersionGenerator = mock(VersionGenerator.class);
 		when(mockVersionGenerator.getNextVersion()).thenReturn(1234l);

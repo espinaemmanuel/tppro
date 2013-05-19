@@ -18,11 +18,11 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import ar.uba.fi.tppro.core.index.IndexNodeDescriptor;
-import ar.uba.fi.tppro.core.index.IndexPartitionsGroup;
+import ar.uba.fi.tppro.core.index.IndexCoreHandler;
 import ar.uba.fi.tppro.core.index.RemoteIndexNodeDescriptor;
 import ar.uba.fi.tppro.core.index.lock.LockManager;
 import ar.uba.fi.tppro.core.index.lock.NullLockManager;
-import ar.uba.fi.tppro.core.index.versionTracker.ShardVersionTracker;
+import ar.uba.fi.tppro.core.index.versionTracker.GroupVersionTracker;
 import ar.uba.fi.tppro.core.index.versionTracker.VersionTrackerServerException;
 import ar.uba.fi.tppro.core.service.thrift.Document;
 import ar.uba.fi.tppro.core.service.thrift.MessageId;
@@ -40,11 +40,11 @@ public class GeneralTest {
     public void testExistingIndex() throws VersionTrackerServerException, TException{
     	IndexNodeDescriptor localNodeDescriptor = new RemoteIndexNodeDescriptor("localhost", 1234);
 		PartitionResolver partitionResolver = mock(PartitionResolver.class);
-		ShardVersionTracker versionTracker = mock(ShardVersionTracker.class);
+		GroupVersionTracker versionTracker = mock(GroupVersionTracker.class);
 		when(versionTracker.getCurrentVersion(1)).thenReturn(1l);
 		LockManager lockManager = new NullLockManager();
 		
-		IndexPartitionsGroup partitionsGroup = new IndexPartitionsGroup(localNodeDescriptor, partitionResolver, versionTracker, lockManager);
+		IndexCoreHandler partitionsGroup = new IndexCoreHandler(localNodeDescriptor, partitionResolver, versionTracker, lockManager);
 		
 		File existingIndex = new File(getClass().getResource("./sampleIndex").getFile());
 		partitionsGroup.open(existingIndex, false);
@@ -64,11 +64,11 @@ public class GeneralTest {
 	public void testIndex() throws TException, VersionTrackerServerException {
 		IndexNodeDescriptor localNodeDescriptor = new RemoteIndexNodeDescriptor("localhost", 1234);
 		PartitionResolver partitionResolver = mock(PartitionResolver.class);
-		ShardVersionTracker versionTracker = mock(ShardVersionTracker.class);
+		GroupVersionTracker versionTracker = mock(GroupVersionTracker.class);
 		when(versionTracker.getCurrentVersion(1)).thenReturn(0l);
 		LockManager lockManager = new NullLockManager();
 		
-		IndexPartitionsGroup partitionsGroup = new IndexPartitionsGroup(localNodeDescriptor, partitionResolver, versionTracker, lockManager);
+		IndexCoreHandler partitionsGroup = new IndexCoreHandler(localNodeDescriptor, partitionResolver, versionTracker, lockManager);
 		partitionsGroup.open(testFolder.getRoot(), false);
 		
 		logger.info("Creating index in directory " + testFolder.getRoot());

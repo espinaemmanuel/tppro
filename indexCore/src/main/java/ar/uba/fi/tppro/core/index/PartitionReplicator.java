@@ -31,7 +31,7 @@ import ar.uba.fi.tppro.partition.PartitionResolverException;
 
 public class PartitionReplicator extends Thread {
 
-	final Logger logger = LoggerFactory.getLogger(IndexPartitionsGroup.class);
+	final Logger logger = LoggerFactory.getLogger(IndexCoreHandler.class);
 
 	private LockManager lockManager;
 	private IndexPartition indexPartition;

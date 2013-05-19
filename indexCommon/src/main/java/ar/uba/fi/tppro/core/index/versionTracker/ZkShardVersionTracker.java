@@ -22,7 +22,7 @@ import com.netflix.curator.framework.recipes.shared.SharedValueListener;
 import com.netflix.curator.framework.recipes.shared.SharedValueReader;
 import com.netflix.curator.framework.state.ConnectionState;
 
-public class ZkShardVersionTracker implements ShardVersionTracker {
+public class ZkShardVersionTracker implements GroupVersionTracker {
 	
 	final Logger logger = LoggerFactory.getLogger(ZkShardVersionTracker.class);
 

@@ -2,7 +2,7 @@ package ar.uba.fi.tppro.core.index.versionTracker;
 
 import java.util.Map;
 
-public interface ShardVersionTracker {
+public interface GroupVersionTracker {
 
 	public long getCurrentVersion(int shardId) throws VersionTrackerServerException;
 

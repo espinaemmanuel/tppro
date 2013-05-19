@@ -1,7 +1,6 @@
 package ar.uba.fi.tppro.core.service;
 import static org.junit.Assert.*;
 
-import java.io.File;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -11,50 +10,40 @@ import org.apache.thrift.protocol.TProtocol;
 import org.apache.thrift.transport.TSocket;
 import org.apache.thrift.transport.TTransport;
 import org.apache.thrift.transport.TTransportException;
-import org.junit.BeforeClass;
+import org.junit.Before;
 import org.junit.Test;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import com.google.common.io.Files;
+import com.netflix.curator.framework.CuratorFramework;
 
-import ar.uba.fi.tppro.core.index.lock.LockManager;
+import ar.uba.fi.tppro.core.index.ClusterManager.ClusterManager;
 import ar.uba.fi.tppro.core.index.lock.NullLockManager;
-import ar.uba.fi.tppro.core.index.versionTracker.ShardVersionTracker;
+import ar.uba.fi.tppro.core.index.versionTracker.GroupVersionTracker;
 import ar.uba.fi.tppro.core.service.IndexServer;
 import ar.uba.fi.tppro.core.service.thrift.Document;
 import ar.uba.fi.tppro.core.service.thrift.IndexNode;
 import ar.uba.fi.tppro.core.service.thrift.MessageId;
 import ar.uba.fi.tppro.core.service.thrift.QueryResult;
-import ar.uba.fi.tppro.partition.PartitionResolver;
+import ar.uba.fi.tppro.partition.StaticSocketPartitionResolver;
 
-public class ThriftIndexCoreTest {
+public class ThriftIndexCoreTest extends IndexCoreTest{
 
 	private static final int PORT = 7911;
 
-	@BeforeClass
-	public static void startServer() throws Exception {
+	@Before
+	public void startServer() throws Exception {
 		// Start thrift server in a seperate thread
 		
-		//Create temp dir
-		File tempDir = Files.createTempDir();
-		tempDir.deleteOnExit();
-		
-		if(tempDir.list().length > 0)
-			fail("temp directory not empty");
-		
-		ShardVersionTracker versionTracker = mock(ShardVersionTracker.class);
+		this.versionTracker = mock(GroupVersionTracker.class);
 		when(versionTracker.getCurrentVersion(123)).thenReturn(0l);
 		
-		PartitionResolver partitionResolver = mock(PartitionResolver.class);
+		this.partitionResolver = mock(StaticSocketPartitionResolver.class);
+		this.lockManager = new NullLockManager();
+		CuratorFramework client = mock(CuratorFramework.class);
+		this.clusterManager = mock(ClusterManager.class);
 		
-		LockManager lockManager = new NullLockManager();
-		
-		IndexServer server = new IndexServer(PORT, tempDir, partitionResolver, versionTracker, lockManager);
-		
-		server.getHandler().setVersionTracker(versionTracker);
-		server.getHandler().setPartitionResolver(partitionResolver);
-		
+		IndexServer server = this.createIndexServer(client, PORT);
 		new Thread(server).start();
 		try {
 			// wait for the server start up

@@ -17,7 +17,7 @@ import ar.uba.fi.tppro.core.index.IndexInterface;
 import ar.uba.fi.tppro.core.index.IndexNodeDescriptor;
 import ar.uba.fi.tppro.core.index.IndexPartitionStatus;
 import ar.uba.fi.tppro.core.index.lock.LockManager;
-import ar.uba.fi.tppro.core.index.versionTracker.ShardVersionTracker;
+import ar.uba.fi.tppro.core.index.versionTracker.GroupVersionTracker;
 import ar.uba.fi.tppro.core.service.thrift.Document;
 import ar.uba.fi.tppro.core.service.thrift.IndexException;
 import ar.uba.fi.tppro.core.service.thrift.MessageId;
@@ -35,10 +35,10 @@ import ar.uba.fi.tppro.partition.PartitionResolverException;
  * @author emmanuelespina
  * 
  */
-public class IndexPartitionsGroup implements IndexInterface,
+public class IndexCoreHandler implements IndexInterface,
 		PartitionStatusObserver {
 
-	final Logger logger = LoggerFactory.getLogger(IndexPartitionsGroup.class);
+	final Logger logger = LoggerFactory.getLogger(IndexCoreHandler.class);
 
 	private File dataPath;
 	private ConcurrentMap<PartitionIdentifier, IndexPartition> partitionMap = Maps
@@ -46,11 +46,11 @@ public class IndexPartitionsGroup implements IndexInterface,
 	private PartitionResolver partitionResolver;
 	private LockManager lockManager;
 	private IndexNodeDescriptor thisNodeDescriptor;
-	private ShardVersionTracker versionTracker;
+	private GroupVersionTracker versionTracker;
 
-	public IndexPartitionsGroup(IndexNodeDescriptor thisNode,
+	public IndexCoreHandler(IndexNodeDescriptor thisNode,
 			PartitionResolver partitionResolver,
-			ShardVersionTracker versionTracker, LockManager lockManager) {
+			GroupVersionTracker versionTracker, LockManager lockManager) {
 		this.thisNodeDescriptor = thisNode;
 		this.partitionResolver = partitionResolver;
 		this.versionTracker = versionTracker;
@@ -59,10 +59,9 @@ public class IndexPartitionsGroup implements IndexInterface,
 
 	public void open(File dataPath, boolean checkVersions) {
 		this.dataPath = dataPath;
-		
-		if(!this.dataPath.exists()){
-			this.dataPath.mkdir();			
-		}
+
+		Preconditions.checkArgument(this.dataPath.exists(),
+				"data dir %s does not exists", this.dataPath);
 
 		for (File partitionDir : dataPath.listFiles()) {
 
@@ -71,44 +70,58 @@ public class IndexPartitionsGroup implements IndexInterface,
 			}
 
 			String[] nameParts = partitionDir.getName().split("_");
-			
-			int shardId = Integer.parseInt(nameParts[0]);
+
+			int groupId = Integer.parseInt(nameParts[0]);
 			int partitionId = Integer.parseInt(nameParts[1]);
 
-			
-			IndexPartition partition = new IndexPartition(shardId, partitionId,
+			logger.debug(String
+					.format("existing partition found in data dir: group=%d partition=%d",
+							groupId, partitionId));
+
+			IndexPartition partition = new IndexPartition(groupId, partitionId,
 					partitionDir, this.versionTracker);
-			
+
 			try {
-				this.partitionResolver.registerPartition(partition.getShardId(), partition.getPartitionId(),
+				this.partitionResolver.registerPartition(
+						partition.getShardId(), partition.getPartitionId(),
 						this.getThisNodeDescriptor(), partition.getStatus());
-			} catch (PartitionResolverException e1) {
-				// TODO Auto-generated catch block
-				e1.printStackTrace();
+			} catch (PartitionResolverException e) {
+				logger.error(
+						String.format(
+								"could not register partition. omitting: group=%d partition=%d",
+								groupId, partitionId), e);
+				continue;
 			}
 
 			try {
-
 				partition.open(checkVersions);
-				partitionMap.put(new PartitionIdentifier(shardId, partitionId), partition);
-				
-				if(partition.getStatus() != IndexPartitionStatus.CREATED){
-					try {
-						this.partitionResolver.updatePartitionStatus(shardId, partitionId, this.getThisNodeDescriptor(), partition.getStatus());
-					} catch (PartitionResolverException e) {
-						logger.info("Could not update zookeper status", e);
-					}
-				}
-
 			} catch (IOException e) {
-				logger.error("Could not open partition " + partitionId, e);
+				logger.error("Could not open partition " + partition, e);
+				continue;
+			}
+
+			partitionMap.put(new PartitionIdentifier(groupId, partitionId),
+					partition);
+			logger.debug(String
+					.format("partition opened and registered: group=%d partition=%d status=%s",
+							groupId, partitionId, partition.getStatus()));
+
+			if (partition.getStatus() != IndexPartitionStatus.CREATED) {
+				try {
+					this.partitionResolver.updatePartitionStatus(groupId,
+							partitionId, this.getThisNodeDescriptor(),
+							partition.getStatus());
+				} catch (PartitionResolverException e) {
+					logger.info("Could not update zookeper status", e);
+				}
 			}
 		}
 
 		// Check and replicate failed partitions
 		for (IndexPartition partition : partitionMap.values()) {
 			if (partition.getStatus() == IndexPartitionStatus.RESTORING) {
-				logger.info(String.format("Scheduling replication of partition (%d, %d)", partition.getShardId(), partition.getPartitionId()));
+				logger.debug("Scheduling replication of partition " + partition);
+				
 				PartitionReplicator replicator = new PartitionReplicator();
 				replicator.setPartitionResolver(partitionResolver);
 				replicator.setLockManager(lockManager);
@@ -125,7 +138,8 @@ public class IndexPartitionsGroup implements IndexInterface,
 	}
 
 	@Override
-	public void deleteByQuery(int shardId, int partitionId, String query) throws TException {
+	public void deleteByQuery(int shardId, int partitionId, String query)
+			throws TException {
 		logger.debug("DeleteByQuery request");
 		throw new UnsupportedOperationException("delete Not yet implemented");
 	}
@@ -148,7 +162,8 @@ public class IndexPartitionsGroup implements IndexInterface,
 
 		IndexPartition newPartition = new IndexPartition(shardId, partitionId,
 				partitionPath, this.versionTracker);
-		partitionMap.put(new PartitionIdentifier(shardId, partitionId), newPartition);
+		partitionMap.put(new PartitionIdentifier(shardId, partitionId),
+				newPartition);
 
 		try {
 			newPartition.open(true);
@@ -180,8 +195,9 @@ public class IndexPartitionsGroup implements IndexInterface,
 
 	private File getPartitionPath(int shardId, int partitionId) {
 		Preconditions.checkNotNull(this.dataPath);
-		
-		return new File(dataPath, Integer.toString(shardId) + "_" + Integer.toString(partitionId));
+
+		return new File(dataPath, Integer.toString(shardId) + "_"
+				+ Integer.toString(partitionId));
 	}
 
 	@Override
@@ -191,9 +207,9 @@ public class IndexPartitionsGroup implements IndexInterface,
 	}
 
 	@Override
-	public QueryResult search(int shardId, int partitionId, String query, int limit,
-			int offset) throws ParseException, NonExistentPartitionException,
-			TException {
+	public QueryResult search(int shardId, int partitionId, String query,
+			int limit, int offset) throws ParseException,
+			NonExistentPartitionException, TException {
 		logger.debug("Search request");
 
 		IndexPartition partition;
@@ -219,14 +235,17 @@ public class IndexPartitionsGroup implements IndexInterface,
 	}
 
 	@Override
-	public boolean containsPartition(int shardId, int partitionId) throws TException {
+	public boolean containsPartition(int shardId, int partitionId)
+			throws TException {
 		logger.debug("containsPartition request");
 
-		return partitionMap.containsKey(new PartitionIdentifier(shardId, partitionId));
+		return partitionMap.containsKey(new PartitionIdentifier(shardId,
+				partitionId));
 
 	}
 
-	protected void replicate(int shardId, int partitionId) throws IOException, TException {
+	protected void replicate(int shardId, int partitionId) throws IOException,
+			TException {
 
 		IndexPartition partition = partitionMap.get(partitionId);
 
@@ -241,15 +260,15 @@ public class IndexPartitionsGroup implements IndexInterface,
 			switch (partition.getStatus()) {
 			case FAILURE:
 			case RESTORE_FAILED:
-					partition.clear();
+				partition.clear();
 				break;
 
 			case READY:
-				throw new IllegalStateException("The partition "
-						+ partitionId + " already exists and is ready");
+				throw new IllegalStateException("The partition " + partitionId
+						+ " already exists and is ready");
 			case RESTORING:
-				throw new IllegalStateException("The partition "
-						+ partitionId + " is already replicating");
+				throw new IllegalStateException("The partition " + partitionId
+						+ " is already replicating");
 			default:
 				break;
 			}
@@ -346,29 +365,36 @@ public class IndexPartitionsGroup implements IndexInterface,
 
 	@Override
 	public void notifyStatusChange(IndexPartition indexPartition) {
-		logger.info(String.format("New partition status (%d, %d): %s", indexPartition.getShardId(), indexPartition.getPartitionId(), indexPartition.getStatus().toString()));
-		logger.info(String.format("Partition (%d, %d) last error: %s", indexPartition.getShardId(), indexPartition.getPartitionId(), indexPartition.getLastError()));
+		logger.info(String.format("New partition status (%d, %d): %s",
+				indexPartition.getShardId(), indexPartition.getPartitionId(),
+				indexPartition.getStatus().toString()));
+		logger.info(String.format("Partition (%d, %d) last error: %s",
+				indexPartition.getShardId(), indexPartition.getPartitionId(),
+				indexPartition.getLastError()));
 
 		try {
-			this.partitionResolver.updatePartitionStatus(indexPartition.getShardId(), indexPartition.getPartitionId(),
+			this.partitionResolver.updatePartitionStatus(
+					indexPartition.getShardId(),
+					indexPartition.getPartitionId(),
 					this.getThisNodeDescriptor(), indexPartition.getStatus());
 		} catch (PartitionResolverException e) {
-			logger.error("Could not notify zookeeper about the status change", e);
+			logger.error("Could not notify zookeeper about the status change",
+					e);
 		}
 	}
 
-	public ShardVersionTracker getVersionTracker() {
+	public GroupVersionTracker getVersionTracker() {
 		return versionTracker;
 	}
 
-	public void setVersionTracker(ShardVersionTracker versionTracker) {
+	public void setVersionTracker(GroupVersionTracker versionTracker) {
 		this.versionTracker = versionTracker;
 	}
 
 	@Override
-	public void prepareCommit(int shardId, int partitionId, MessageId messageId,
-			List<Document> documents) throws NonExistentPartitionException,
-			IndexException, TException {
+	public void prepareCommit(int shardId, int partitionId,
+			MessageId messageId, List<Document> documents)
+			throws NonExistentPartitionException, IndexException, TException {
 		logger.debug("prepareCommit request");
 
 		IndexPartition partition;
@@ -401,8 +427,8 @@ public class IndexPartitionsGroup implements IndexInterface,
 	}
 
 	@Override
-	public void commit(int shardId, int partitionId) throws NonExistentPartitionException,
-			IndexException, TException {
+	public void commit(int shardId, int partitionId)
+			throws NonExistentPartitionException, IndexException, TException {
 		logger.debug("commit request");
 
 		IndexPartition partition;
@@ -416,7 +442,7 @@ public class IndexPartitionsGroup implements IndexInterface,
 			throw new NonExistentPartitionException(
 					Lists.newArrayList(partitionId));
 		}
-		
+
 		try {
 			partition.commit();
 		} catch (IOException e) {
@@ -428,14 +454,16 @@ public class IndexPartitionsGroup implements IndexInterface,
 
 	@Override
 	public List<PartitionStatus> listPartitions() throws TException {
-		
+
 		List<PartitionStatus> result = Lists.newArrayList();
-		
-		for(PartitionIdentifier partition : this.partitionMap.keySet()){
-			PartitionStatus ps = new PartitionStatus(partition.shardId, partition.partitionId, this.partitionMap.get(partition).getStatus().toString());
+
+		for (PartitionIdentifier partition : this.partitionMap.keySet()) {
+			PartitionStatus ps = new PartitionStatus(partition.shardId,
+					partition.partitionId, this.partitionMap.get(partition)
+							.getStatus().toString());
 			result.add(ps);
 		}
-		
+
 		return result;
 	}
 

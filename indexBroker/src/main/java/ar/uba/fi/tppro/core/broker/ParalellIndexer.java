@@ -19,7 +19,7 @@ import ar.uba.fi.tppro.core.index.IndexNodeDescriptorException;
 import ar.uba.fi.tppro.core.index.lock.IndexLock;
 import ar.uba.fi.tppro.core.index.lock.LockAquireTimeoutException;
 import ar.uba.fi.tppro.core.index.lock.LockManager;
-import ar.uba.fi.tppro.core.index.versionTracker.ShardVersionTracker;
+import ar.uba.fi.tppro.core.index.versionTracker.GroupVersionTracker;
 import ar.uba.fi.tppro.core.index.versionTracker.StaleVersionException;
 import ar.uba.fi.tppro.core.index.versionTracker.VersionTrackerServerException;
 import ar.uba.fi.tppro.core.service.thrift.Document;
@@ -43,14 +43,14 @@ public class ParalellIndexer {
 			.newCachedThreadPool(threadFactory);
 
 	private LockManager lockManager;
-	private ShardVersionTracker versionTracker;
+	private GroupVersionTracker versionTracker;
 	private VersionGenerator versionGenerator;
 
 	protected long lockTimeout = 8000;
 	protected long indexTimeout = 1000000;
 
 	public ParalellIndexer(LockManager lockManager,
-			ShardVersionTracker versionTracker, VersionGenerator versionGenerator) {
+			GroupVersionTracker versionTracker, VersionGenerator versionGenerator) {
 		this.lockManager = lockManager;
 		this.versionTracker = versionTracker;
 		this.versionGenerator = versionGenerator;
@@ -73,6 +73,8 @@ public class ParalellIndexer {
 			VersionTrackerServerException, StaleVersionException {
 
 		IndexResult result = new IndexResult();
+		result.errors = Lists.newArrayList();
+		
 		boolean hasFailures = false;
 
 		Multimap<Integer, PartialList> partitionReplicas = LinkedListMultimap
