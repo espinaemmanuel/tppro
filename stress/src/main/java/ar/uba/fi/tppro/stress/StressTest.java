@@ -27,8 +27,9 @@ public class StressTest {
 	 * @throws TException 
 	 * @throws NonExistentPartitionException 
 	 * @throws ParalellSearchException 
+	 * @throws InterruptedException 
 	 */
-	public static void main(String[] args) throws IOException, IndexNodeDescriptorException, ParalellSearchException, NonExistentPartitionException, TException {
+	public static void main(String[] args) throws IOException, IndexNodeDescriptorException, ParalellSearchException, NonExistentPartitionException, TException, InterruptedException {
 
 		if (args.length < 3) {
 			System.out.println("USE: host port queriesFile");
@@ -50,25 +51,19 @@ public class StressTest {
 		}
 		
 		reader.close();
-
-		RemoteBrokerNodeDescriptor remoteNode = new RemoteBrokerNodeDescriptor(
-				brokerHost, port);
-		IndexBroker.Iface broker = remoteNode.getClient();
 		
-		Random random = new Random();
-
-		while (true) {
-			
-			String query = queriesList.get(random.nextInt(queriesList.size()));
-			
-			long t1 = System.currentTimeMillis();
-			ParalellSearchResult result = broker.search(1, query, 1000, 0);
-			long t2 = System.currentTimeMillis();
-			
-			int totalHits = result.qr.totalHits;
-			long elapsedTime = t2 - t1;
-			
-			System.out.println(String.format("time:%d,results:%d", elapsedTime, totalHits));
+		List<Thread> threadList = Lists.newArrayList();
+		
+		for(int i=0; i<100; i++){
+			threadList.add(new Thread(new QueryExecutor(queriesList, brokerHost, port)));
+		}
+		
+		for(Thread t : threadList){
+			t.start();
+		}
+		
+		for(Thread t : threadList){
+			t.wait();
 		}
 	}
 

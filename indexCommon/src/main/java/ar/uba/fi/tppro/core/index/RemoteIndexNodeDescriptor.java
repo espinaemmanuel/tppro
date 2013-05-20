@@ -12,9 +12,10 @@ import ar.uba.fi.tppro.core.service.thrift.IndexNode;
 public class RemoteIndexNodeDescriptor implements IndexNodeDescriptor {
 	
 	private TTransport transport;
-	TProtocol protocol;
-	String host;
-	int port;
+	private TProtocol protocol;
+	private String host;
+	private int port;
+	private IndexNode.Iface client;
 
 	public RemoteIndexNodeDescriptor(String host, int port) {
 		super();
@@ -24,26 +25,33 @@ public class RemoteIndexNodeDescriptor implements IndexNodeDescriptor {
 		this.port = port;
 	}
 	
-	public void open() throws TTransportException{
+	synchronized public void open() throws TTransportException{
 		transport.open();
 	}
 	
-	public void close() {
+	synchronized public void close() {
 		if(transport.isOpen()){
 			transport.close();
 		}
+		
+		this.client = null;
 	}
 	
 	@Override
-	public IndexNode.Iface getClient() throws IndexNodeDescriptorException{
-		if (!transport.isOpen()) {
-			try {
-				transport.open();
-			} catch (TTransportException e) {
-				throw new IndexNodeDescriptorException("Could not open socket to remote host", e);
+	synchronized public IndexNode.Iface getClient() throws IndexNodeDescriptorException{
+		if(this.client == null){
+			if (!transport.isOpen()) {
+				try {
+					transport.open();
+				} catch (TTransportException e) {
+					throw new IndexNodeDescriptorException("Could not open socket to remote host", e);
+				}
 			}
+			
+			this.client = new SynchronizedClient(new IndexNode.Client(protocol));
 		}
-		return new IndexNode.Client(protocol);
+
+		return this.client;
 	}
 	
 	@Override

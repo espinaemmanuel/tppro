@@ -59,6 +59,7 @@ public class ParalellSearcher {
 						IndexNodeDescriptor indexNode = partitionList.get(i);
 												
 						try {
+							
 							QueryResult result = indexNode.getClient().search(shardId, pId, query, limit, offset);
 							
 							if(result != null){							
@@ -66,7 +67,7 @@ public class ParalellSearcher {
 								return result;
 							}	
 						} catch (IndexNodeDescriptorException e){
-							logger.info("CLUSTER FAILURE: Could not connect to node " + indexNode + ". A replica will be used");
+							logger.info("CLUSTER FAILURE: Could not connect to node " + indexNode + ". A replica will be used", e);
 							coughtExceptions.put(indexNode, e);
 						} catch (ParseException e) {
 							coughtExceptions.put(indexNode, e);
