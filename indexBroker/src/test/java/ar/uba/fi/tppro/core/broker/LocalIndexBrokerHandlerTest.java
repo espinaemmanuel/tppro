@@ -16,7 +16,7 @@ import org.junit.rules.TemporaryFolder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import ar.uba.fi.tppro.core.service.Broker;
+import ar.uba.fi.tppro.core.service.BrokerServer;
 import ar.uba.fi.tppro.core.service.thrift.Document;
 import ar.uba.fi.tppro.core.service.thrift.IndexBroker;
 import ar.uba.fi.tppro.core.service.thrift.IndexNode;
@@ -166,7 +166,7 @@ public class LocalIndexBrokerHandlerTest {
 	@Test
 	public void testIndexAndSearch() throws Exception {
 
-		new Thread(new Broker(9000, folder.newFolder(), true)).start();
+		new Thread(new BrokerServer(9000, folder.newFolder(), true)).start();
 		Thread.sleep(5000);
 
 		// Run the test

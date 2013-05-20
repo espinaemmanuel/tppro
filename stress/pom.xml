@@ -1,28 +1,18 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-	<modelVersion>4.0.0</modelVersion>
-	<parent>
-		<groupId>ar.fi.uba</groupId>
-		<artifactId>tp-pro</artifactId>
-		<version>0.0.1-SNAPSHOT</version>
-	</parent>
-	<artifactId>console</artifactId>
-
-	<dependencies>
-		<dependency>
-			<groupId>com.netflix.curator</groupId>
-			<artifactId>curator-framework</artifactId>
-			<version>1.3.2</version>
-		</dependency>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>ar.fi.uba</groupId>
+    <artifactId>tp-pro</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+  </parent>
+  <artifactId>stress</artifactId>
+  
+  
+  <dependencies>
 		<dependency>
 			<groupId>ar.fi.uba</groupId>
 			<artifactId>indexCommon</artifactId>
 			<version>0.0.1-SNAPSHOT</version>
-		</dependency>
-		<dependency>
-			<groupId>org.reflections</groupId>
-			<artifactId>reflections</artifactId>
-			<version>0.9.8</version>
 		</dependency>
 		<dependency>
 			<groupId>org.slf4j</groupId>
@@ -54,12 +44,12 @@
 					</descriptorRefs>
 					<archive>
 						<manifest>
-							<mainClass>ar.uba.fi.tppro.console.Console</mainClass>
+							<mainClass>ar.uba.fi.tppro.stress.StressTest</mainClass>
 						</manifest>
 					</archive>
 				</configuration>
 			</plugin>
 		</plugins>
 	</build>
-
+	
 </project>

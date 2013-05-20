@@ -21,6 +21,7 @@ import ar.uba.fi.tppro.core.index.IndexCoreHandler;
 import ar.uba.fi.tppro.core.index.LocalNodeDescriptor;
 import ar.uba.fi.tppro.core.index.RemoteIndexNodeDescriptor;
 import ar.uba.fi.tppro.core.index.ClusterManager.ClusterManager;
+import ar.uba.fi.tppro.core.index.ClusterManager.ZkClusterManager;
 import ar.uba.fi.tppro.core.index.ClusterManager.ClusterManager.NodeType;
 import ar.uba.fi.tppro.core.index.lock.LockManager;
 import ar.uba.fi.tppro.core.index.lock.NullLockManager;
@@ -33,7 +34,7 @@ import ar.uba.fi.tppro.partition.PartitionResolver;
 import ar.uba.fi.tppro.partition.ZookeeperPartitionResolver;
 import ar.uba.fi.tppro.util.NetworkUtils;
 
-public class Broker implements Runnable {
+public class BrokerServer implements Runnable {
 
 	final Logger logger = LoggerFactory.getLogger(IndexBroker.class);
 	
@@ -54,10 +55,10 @@ public class Broker implements Runnable {
 		String port = System.getProperty("port", "9090");
 		String dataDir = System.getProperty("dataDir", "./data");
 
-		new Thread(new Broker(Integer.parseInt(port), new File(dataDir), localMode)).start();
+		new Thread(new BrokerServer(Integer.parseInt(port), new File(dataDir), localMode)).start();
 	}
 	
-	public Broker(int port, File dataDir, boolean localMode){
+	public BrokerServer(int port, File dataDir, boolean localMode){
 		this.port = port;
 		this.dataDir = dataDir;
 		this.localMode = localMode;
@@ -113,6 +114,10 @@ public class Broker implements Runnable {
 					throw new Exception("Could not retrieve the local ip");
 				}
 				String address = ips.iterator().next().getHostAddress();
+				
+				if(this.clusterManager == null){
+					this.clusterManager = new ZkClusterManager(curator);
+				}
 				
 				RemoteIndexNodeDescriptor nodeDescriptor = new RemoteIndexNodeDescriptor(address, port);
 				clusterManager.registerNode(nodeDescriptor, NodeType.BROKER);

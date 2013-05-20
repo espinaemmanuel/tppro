@@ -22,11 +22,24 @@ public class ZkClusterManager implements ClusterManager {
 	@Override
 	public void registerNode(IndexNodeDescriptor nodeDescriptor,
 			NodeType index) throws Exception {
-		curator.create().creatingParentsIfNeeded()
-		.withMode(CreateMode.EPHEMERAL)
-		.forPath("/cluster/" + nodeDescriptor.getHost() + "_" + nodeDescriptor.getPort(), null);
-logger.debug("Node registered in zookeeper " + nodeDescriptor.getHost() + ":"
-		+ nodeDescriptor.getPort());
+		
+		switch(index){
+		case INDEX:
+			curator.create().creatingParentsIfNeeded()
+			.withMode(CreateMode.EPHEMERAL)
+			.forPath("/cluster/" + nodeDescriptor.getHost() + "_" + nodeDescriptor.getPort(), null);
+	logger.debug("Node registered in zookeeper " + nodeDescriptor.getHost() + ":"
+			+ nodeDescriptor.getPort());
+			break;
+		case BROKER:
+			curator.create().creatingParentsIfNeeded()
+			.withMode(CreateMode.EPHEMERAL)
+			.forPath("/brokers/" + nodeDescriptor.getHost() + "_" + nodeDescriptor.getPort(), null);
+	logger.debug("Node registered in zookeeper " + nodeDescriptor.getHost() + ":"
+			+ nodeDescriptor.getPort());
+			break;
+		}
+
 
 	}
 

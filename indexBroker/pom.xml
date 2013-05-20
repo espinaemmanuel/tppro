@@ -54,7 +54,7 @@
 					</descriptorRefs>
 					<archive>
 						<manifest>
-							<mainClass>ar.uba.fi.tppro.core.service.Broker</mainClass>
+							<mainClass>ar.uba.fi.tppro.core.service.BrokerServer</mainClass>
 						</manifest>
 					</archive>
 				</configuration>
