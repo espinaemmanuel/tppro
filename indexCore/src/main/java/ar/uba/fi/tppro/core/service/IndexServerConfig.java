@@ -14,4 +14,5 @@ public class IndexServerConfig{
 	public GroupVersionTracker versionTracker;
 	public LockManager lockManager;
 	public String zookeeperUrl;
+	public int simulateDelay;
 }

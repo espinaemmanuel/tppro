@@ -55,11 +55,14 @@ public class IndexServer implements Runnable {
 
 	private String zookeeperUrl;
 
+	private int simulateDelay;
+
 	public static void main(String[] args) throws NumberFormatException,
 			Exception {
 
 		String port = System.getProperty("port", "9090");
 		String dataDir = System.getProperty("dataDir", "data");
+		int simulateDelay = Integer.parseInt(System.getProperty("simulateDelay", "0"));
 		String zookeeperHost = System
 				.getProperty("zookeeper", "localhost:2181");
 
@@ -73,6 +76,7 @@ public class IndexServer implements Runnable {
 		config.listenPort = Integer.parseInt(port);
 		config.dataDir = new File(dataDir);
 		config.zookeeperUrl = zookeeperHost;
+		config.simulateDelay = simulateDelay;
 
 		new Thread(new IndexServer(config)).start();
 
@@ -88,6 +92,7 @@ public class IndexServer implements Runnable {
 		this.dataDir = config.dataDir;
 		this.bindIp = config.bindIp;
 		this.zookeeperUrl = config.zookeeperUrl;
+		this.simulateDelay = config.simulateDelay;
 	}
 
 	public void stop() {
@@ -154,6 +159,9 @@ public class IndexServer implements Runnable {
 		this.handler = new IndexCoreHandler(localNodeDescriptor,
 				this.getPartitionResolver(), this.getVersionTracker(), this.getLockManager());
 
+		if(this.simulateDelay > 0){
+			this.handler.setSimulationDelay(this.simulateDelay);
+		}
 		if (!this.dataDir.exists()) {
 			logger.debug("Data dir does not exist. Creating it");
 			if (!this.dataDir.mkdir()) {

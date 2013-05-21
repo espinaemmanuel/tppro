@@ -48,6 +48,8 @@ public class IndexCoreHandler implements IndexInterface,
 	private IndexNodeDescriptor thisNodeDescriptor;
 	private GroupVersionTracker versionTracker;
 
+	private int simulationDelay;
+
 	public IndexCoreHandler(IndexNodeDescriptor thisNode,
 			PartitionResolver partitionResolver,
 			GroupVersionTracker versionTracker, LockManager lockManager) {
@@ -225,6 +227,16 @@ public class IndexCoreHandler implements IndexInterface,
 		}
 
 		try {
+			
+			if(this.simulationDelay > 0){
+				try {
+					logger.debug("simulating delay: " + this.simulationDelay );
+					Thread.sleep(this.simulationDelay);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+			}
+			
 			return partition.search(partitionId, query, limit, offset);
 		} catch (IOException e) {
 			throw new TException("Could not search the index partition "
@@ -472,6 +484,10 @@ public class IndexCoreHandler implements IndexInterface,
 			throws NonExistentPartitionException, TException {
 		// TODO Auto-generated method stub
 		return 0;
+	}
+
+	public void setSimulationDelay(int simulateDelay) {
+		this.simulationDelay = simulateDelay;		
 	}
 
 }
