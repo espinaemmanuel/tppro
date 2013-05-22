@@ -19,8 +19,8 @@
               <th><?= $user->name;?></th>
               <th><?= $user->surname;?></th>
               <th>  
-                <a href="<?php echo base_url();?>index.php/reports/dinamic_type/<?=$user->id;?>">Dinamic</a>&nbsp;|&nbsp; 
-                <a href="<?php echo base_url();?>index.php/reports/static_type/<?=$user->id;?>">Static</a>
+                <a href="< ?php echo base_url();?>index.php/reports/dinamic_type/< ?=$user->id;?>">Monitor</a> 
+                <!--a href="< ?php echo base_url();?>index.php/reports/static_type/< ?=$user->id;?>">Monitor</a><!-->
               </th>
             </tr>  
           <?php }?>

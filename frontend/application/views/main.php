@@ -42,13 +42,21 @@
     <div class="btn btn-primary btn-large op" id="addY">
         <?=$button_text;?>
     </div> 
-    <input name="year" id="year" placeholder="Release year" style="<?=$style;?>" type="text" value="<?= $year?>" /><br/>
+    <input name="year" id="year" placeholder="Release greater than ..." style="<?=$style;?>" type="text" value="<?= $year?>" /><br/>
+    
+    <?php $style="display: none;"; $button_text="Add genre"; $addGenre="addG"; 
+    if($genre!=""){ $style = ""; $button_text="Hide genre"; $addGenre="hideG";}?>
+    <div class="btn btn-primary btn-large op" id="addG">
+        <?=$button_text;?>
+    </div> 
+    <input name="genre" id="genre" placeholder="Genre" style="<?=$style;?>" type="text" value="<?= $genre?>" /><br/>
  
     <input type="hidden" value="<?php echo $user_id?>" name="user_id" class="button" />
     <input type="hidden" value="and" name="operator" id="operator" class="button" />
     <input type="hidden" value="<?=$addDir;?>" name="addDirector" id="addDirector" class="button" />
     <input type="hidden" value="<?=$addYear;?>" name="addYear" id="addYear" class="button" />
-    <input class="btn btn-primary btn-large" type="submit" value="Filtrar" name="" class="button" />
+    <input type="hidden" value="<?=$addGenre;?>" name="addGenre" id="addGenre" class="button" />
+    <input class="btn btn-primary btn-large" type="submit" value="Search" name="" class="button" />
 
   </form>
 
@@ -106,6 +114,7 @@
     if($('#addDirector').val()=="addDir"){
       $('#addDir').html("Hide director");
       $('#addDirector').val("hideDir");
+      $('#director').val("");
       $('#director').show();
     }  
     else{
@@ -124,6 +133,20 @@
       $('#addY').html("Add year");
       $('#addYear').val("addY");
       $('#year').hide();
+      $('#year').val("");
+    }  
+  });
+  $("#addG").click(function() {
+    if($('#addGenre').val()=="addG"){
+      $('#addG').html("Hide genre");
+      $('#addGenre').val("hideG");
+      $('#genre').show();
+    }  
+    else{
+      $('#addG').html("Add genre");
+      $('#addGenre').val("addG");
+      $('#genre').hide();
+      $('#genre').val("");
     }  
   });
   </script>
