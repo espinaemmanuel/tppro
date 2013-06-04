@@ -3,11 +3,8 @@
 
 <div class="container-fluid">
   
-  <br><h2>Add to index</h2>  
-  
-  <form action="" method="post">
-    <input type="file" class="btn btn-primary btn-large" name="file_upload" id="file_upload" />
-  </form>
+  <br><h3>Add to index</h3>  
+  <input id="file_upload" name="file_upload" type="file" />
   <div class="indexing" style="display: none;">Indexing...</div>
   
 </div>  
@@ -27,7 +24,7 @@ $(function() {
         // Your options here
         'onUploadSuccess' : function() {},
         'onQueueComplete': function() {
-            console.log('listo');
+            //console.log('listo');
             indexAll(<?= $this->session->userdata('user_id') ?>);
             $('.indexing').show();
         },

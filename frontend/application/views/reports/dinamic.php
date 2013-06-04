@@ -26,13 +26,16 @@ foreach ($replicas as $replica) {
 </script>  
 
 <div class="container-fluid">
+  <?php if(is_array($nodes)){ ?>
   
   <br><h3 style="padding-left: 0px;">Nodes and replicas status</h3>
+  
   <table id="table" class="table">
       <tbody>
           <tr>
-            <th>Replicas</th>
-            <?php foreach ($nodes as $node){ ?>
+            <th>&nbsp;</th>
+            <?php 
+            foreach ($nodes as $node){ ?>
                 <th><?= $node ?></th>
             <?php }?>
           </tr>
@@ -73,6 +76,10 @@ foreach ($replicas as $replica) {
       </tbody>
   </table>
   
+  <?php } 
+  
+  if(is_array($groupVersion)){ ?>
+
   <div class="container-fluid">
   <br><h3>Groups info</h3>  
   <table class="table">
@@ -91,8 +98,9 @@ foreach ($replicas as $replica) {
         </tbody>
     </table>
   </div>
-  
-  
+
+  <?php } ?>
+
 </div>
 
 <?php $this->load->view('include/footer');?>

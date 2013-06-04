@@ -1,6 +1,6 @@
 <?php
 
-define("URLGET", 'http://localhost/tppro/phpClient/getStatus.php');
+define("URLGET", 'http://localhost/tppro/phpClient/monitorService.php');
 
 class reports extends CI_Controller {
 	

@@ -33,5 +33,5 @@
   <!-- Le javascript==================================================-
   ->
   <!-- Placed at the end of the document so the pages load faster -->
-  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js"></script>
-  <script src="//netdna.bootstrapcdn.com/twitter-bootstrap/2.3.0/js/bootstrap.min.js"></script>
+  <script src="<?=baseUrl()?>/assets/js/jquery.min.js"></script>
+  <script src="<?=baseUrl()?>/assets/js/bootstrap.min.js"></script>
