@@ -28,20 +28,20 @@ $data->response=  search($data->request_vars['query'], $data->request_vars['shar
 $data->response= json_encode($data->response);
 RestUtils::sendResponse(200, $data->response, 'application/json');
 
-function search($query='world', $parts='0'){
+function search($query='world', $shard_id='0'){
   try{
-  
-      $socket = new TSocket ( 'localhost', 9090 );
+      $socket = new TSocket ( '192.168.42.128', 8008 );
       $transport = new TBufferedTransport ( $socket, 1024, 1024 );
       $protocol = new TBinaryProtocol ( $transport );
     
       $client = new IndexBrokerClient($protocol);
 
       $transport->open ();
+      //echo "query: $query - sid: $shard_id <br>";
       
-      //echo $parts.'<br>';
-
-      $results = $client->search(0, $query, 10, $parts);
+      //exit;
+      
+      $results = $client->search($shard_id, $query, 100, 0);
 
       $transport->close();
       
