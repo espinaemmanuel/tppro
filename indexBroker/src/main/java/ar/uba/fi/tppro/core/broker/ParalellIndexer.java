@@ -151,25 +151,28 @@ public class ParalellIndexer {
 				try {
 					future.get(indexTimeout, TimeUnit.MILLISECONDS);
 				} catch (InterruptedException e) {
-					notifyError(futures.get(future), e.getCause().getCause());
+					notifyError(futures.get(future), e);
 					hasFailures = true;
 					result.errors
 							.add(new ar.uba.fi.tppro.core.service.thrift.Error(
-									0, e.getCause().getCause().getMessage()));
+									0, e.getMessage()));
 
 				} catch (ExecutionException e) {
-					notifyError(futures.get(future), e.getCause().getCause());
+					Throwable wrapped = e.getCause();
+					wrapped.printStackTrace();
+					
+					notifyError(futures.get(future), wrapped);
 					hasFailures = true;
 					result.errors
 							.add(new ar.uba.fi.tppro.core.service.thrift.Error(
-									0, e.getCause().getCause().getMessage()));
+									0, wrapped.getMessage()));
 
 				} catch (TimeoutException e) {
-					notifyError(futures.get(future), e.getCause().getCause());
+					notifyError(futures.get(future), e);
 					hasFailures = true;
 					result.errors
 							.add(new ar.uba.fi.tppro.core.service.thrift.Error(
-									0, e.getCause().getCause().getMessage()));
+									0, e.getMessage()));
 				}
 			}
 
@@ -191,11 +194,10 @@ public class ParalellIndexer {
 				pl.partitionId, pl.replica, e));
 	}
 
-	private void notifyNodeException(IndexNodeDescriptor replica,
+	private void notifyNodeException(IndexNodeDescriptor nodeDescriptor,
 			IndexNodeDescriptorException e) {
 		logger.error(String.format(
-				"Exception getting client for node: %d, node: %s - %s",
-				replica, e.getMessage()));
+				"Exception in remote node %s: %s", nodeDescriptor, e.getMessage()));
 
 	}
 
