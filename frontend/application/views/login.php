@@ -6,8 +6,8 @@
 <title>Login</title>
 </head>
 
-<body style="margin-left:15px">
-<h2>Login to the system</h2>
+<body style="margin-left:15px; text-align: center;">
+  <img width="220px" src="<?=  base_url()."/assets/img/indexCore_logo.png"?>"/>
 <form action="main/login" method="post">
 	<input name="username" placeholder="User Name" required focus type="text" value=""/><br/><br/>
     </label><input name="pass" placeholder="Password" required type="password" value=""/><br/><br/>

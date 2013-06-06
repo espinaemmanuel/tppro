@@ -30,7 +30,6 @@ $data->response=  index($data->request_vars['documents'], $data->request_vars['s
 $data->response= json_encode($data->response);
 RestUtils::sendResponse(200, $data->response, 'application/json');
 
-//TODO el segundo parametro deberian ser varias particiones pertenecientes al usuario.
 function index($doc_array=null, $shard_id=0){
   try{
 	  //echo '<pre>'; //print_r($documents); echo '</pre>';
@@ -41,21 +40,19 @@ function index($doc_array=null, $shard_id=0){
          $documents[]=$doc;
       }
   
-      $socket = new TSocket ( 'localhost', 9090 );
+      $socket = new TSocket ( '192.168.42.128', 8008  );
       $transport = new TBufferedTransport ( $socket, 1024, 1024 );
       $protocol = new TBinaryProtocol ( $transport );
 	 
       $client = new IndexBrokerClient($protocol);
 
       $transport->open ();
+    
+      //print_r($documents); exit;
       
-	  if(!$client->containsPartition($shard_id)){
-		$client->createPartition($shard_id);
-	  }
-	
       $client->index($shard_id, $documents);
       
-	  return 1;
+      return 1;
     } 
 	catch ( TException $tx ) {
 	  print 'TException: ' . $tx->getMessage () . "\n";

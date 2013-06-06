@@ -19,8 +19,8 @@
               <th><?= $user->name;?></th>
               <th><?= $user->surname;?></th>
               <th>  
-                <a href="<?php echo base_url();?>index.php/reports/dinamic_type/<?=$user->id;?>">Dinamic</a>&nbsp;|&nbsp; 
-                <a href="<?php echo base_url();?>index.php/reports/static_type/<?=$user->id;?>">Static</a>
+                <a href="< ?php echo base_url();?>index.php/reports/dinamic_type/< ?=$user->id;?>">Monitor</a> 
+                <!--a href="< ?php echo base_url();?>index.php/reports/static_type/< ?=$user->id;?>">Monitor</a><!-->
               </th>
             </tr>  
           <?php }?>
@@ -33,5 +33,5 @@
   <!-- Le javascript==================================================-
   ->
   <!-- Placed at the end of the document so the pages load faster -->
-  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js"></script>
-  <script src="//netdna.bootstrapcdn.com/twitter-bootstrap/2.3.0/js/bootstrap.min.js"></script>
+  <script src="<?=baseUrl()?>/assets/js/jquery.min.js"></script>
+  <script src="<?=baseUrl()?>/assets/js/bootstrap.min.js"></script>

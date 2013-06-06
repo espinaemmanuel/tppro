@@ -1,6 +1,6 @@
 <?php
 
-define("URLGET", 'http://localhost/tppro/phpClient/service.php');
+define("URLGET", 'http://localhost/tppro/phpClient/searchService.php');
 define("URL_MAKE_INDEX", 'http://localhost/tppro/phpClient/indexService.php');
 
 class main extends CI_Controller {
@@ -23,7 +23,7 @@ class main extends CI_Controller {
         if(!$this->session->userdata('logged_in')) 
           $this->login();
         else{
-          $this->load->view("main", array('user_id'=> $this->session->userdata('user_id'), 'title'=>'', 'text'=>'', 'director'=>'','year'=>'', 'operator'=>''));
+          $this->load->view("main", array('user_id'=> $this->session->userdata('user_id'), 'title'=>'', 'text'=>'', 'director'=>'','year'=>'', 'genre'=>'', 'operator'=>''));
         }  
 	}
 	
@@ -95,10 +95,7 @@ class main extends CI_Controller {
         if($_POST){
           $query="";
           
-          $title="";
-          $text="";
-          $director="";
-          $year="";
+          $title=$text=$director=$year=$genre="";
           $operator=$_POST['operator'];
           
           if($_POST['title']!==''){
@@ -113,19 +110,23 @@ class main extends CI_Controller {
               $query.= " ";
           }
           else if($_POST['text']!==''){
-            
+              $text=$_POST['text'];
               $query.= "overview: " . $_POST['text'] . "* ";
           }
           
           if ($query !== ''){
             
             if($_POST['director']){
-              $query.=" and director: ". $_POST['director'];
+              $query.=" AND  director: ". $_POST['director'];
               $director=$_POST['director'];
             }
             if($_POST['year']){
-              $query.=" and release: [". $_POST['year'] . " TO 2013]";
+              $query.=" AND  release: [". $_POST['year'] . " TO 2013]";
               $year=$_POST['year'];
+            }  
+            if($_POST['genre']){
+              $query.=" AND genres: ". $_POST['genre'];
+              $genre=$_POST['genre'];
             }  
           }
           
@@ -133,13 +134,21 @@ class main extends CI_Controller {
             if($_POST['director']){
               $query.="director: ". $_POST['director'];
               $director=$_POST['director'];
-            }  
-         
+            }
             if($_POST['year']){
+              if($_POST['director'])
+                $query.=" AND ";
               $query.="release: [" . $_POST['year']. " TO 2013]";
               $year=$_POST['year'];
             }
+            if($_POST['genre']){
+              if($_POST['director'] || $_POST['year'])
+                $query.=" AND ";
+              $query.="genres: ". $_POST['genre'];
+              $genre=$_POST['genre'];
+            }
           }  
+          //echo "<pre>";print_r($query); echo "</pre>";exit;
           $shard_id=$this->session->userdata('shard_id');
           $get=array('query'=>$query, 'shard_id'=>$shard_id);
           
@@ -147,7 +156,7 @@ class main extends CI_Controller {
           //print_r($res); //exit;
           $result=json_decode($res);//exit;
           //echo "<pre>";print_r($result); echo "</pre>";exit;
-          $this->load->view("main", array('user_id'=> $this->session->userdata('user_id'),'title'=>$title, 'text'=>$text, 'director'=>$director,'year'=>$year, 'operator'=>$operator, 'result'=>$result));
+          $this->load->view("main", array('user_id'=> $this->session->userdata('user_id'),'title'=>$title, 'text'=>$text, 'director'=>$director,'year'=>$year, 'genre'=>$genre, 'operator'=>$operator, 'result'=>$result));
         }
         else{ 
           $this->login();

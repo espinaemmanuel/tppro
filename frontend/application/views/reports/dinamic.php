@@ -1,56 +1,181 @@
 <?php $this->load->view('include/header');?>
-<?php $this->load->view('menu');?>
+<?php $this->load->view('menu');
+
+/*Data una direccion, la parsea y devuelve el puerto. ip:puerto y ip_puerto*/
+function getPort($address){
+  if(strpos($address, '_')>-1)
+    return substr($address, strpos($address, '_')+1);
+  return substr($address, strpos($address, ':')+1);
+}
+
+/*
+ * Se guarda un array con las particiones tanto en PHP ($parts) como en JS (parts)
+ */
+$parts=array();?>
+<script type="text/javascript">
+var parts=new Array();
+<?php
+foreach ($replicas as $replica) { 
+  foreach ($replica as $data) {
+   $parts["'".$data['groupId']."_".$data['partitionId']."'"]=$data;?>
+   parts['<?php echo $data['groupId']."_".$data['partitionId']?>']=new Array(<?php echo $data['groupId'].','.$data['partitionId']?>);
+   <?php
+  }
+}
+?>
+</script>  
 
 <div class="container-fluid">
+  <?php if(is_array($nodes)){ ?>
   
-  <br><h2>Report</h2>  
+  <br><h3 style="padding-left: 0px;">Nodes and replicas status</h3>
   
-  <table class="table">
+  <table id="table" class="table">
       <tbody>
-          <h3>Partitions</h3>
           <tr>
-            <th>Mirrors</th>
-            <?php foreach ($partitions as $part){ ?>
-                <th><?= $part ?></th>
+            <th>&nbsp;</th>
+            <?php 
+            foreach ($nodes as $node){ ?>
+                <th><?= $node ?></th>
             <?php }?>
           </tr>
           <?php
-            $i=1;
-            for ($j=0; $j<count(reset($mirrors)); $j++) {
-              echo "<tr>";
-                echo "<th>$i</th>";
-                foreach ($partitions as $part){ 
-                  echo "<th id='status_$part"."_$i' class='".$mirrors[$part][$i-1]->status."'></th>";
-                }  
+            foreach ($parts as $part)  {?>
+              <tr>
+                <th  style='width: 130px;'>Group id: <?=$part['groupId']."<br>Partition id: ".$part['partitionId'];?></th> 
+                <?php 
+                /*
+                 * Armo la fila: nodo 1 | nodo 2 | .... | nodo n  
+                 */
+                foreach ($nodes as $node){
+                  foreach($replicas[$node] as $data){
+                    $node_replica=NULL;
+                    if($data['groupId']==$part['groupId'] && $data['partitionId']===$part['partitionId']){
+                      $node_replica=$data;
+                      break;
+                    }
+                  }
+                  /* Armo las columnas: 
+                   * Group id: 1 Replica: 1
+                   * Group id: 1 Replica: 2
+                   */
+                  ?>
+                  <th class="<?=$node_replica['status'];?>">
+                    <?php if($node_replica!=NULL){?>
+                      <a class="tooltip2" href="#">&nbsp;&nbsp;&nbsp;&nbsp;</a>
+                      <div class="tooltip-seg">
+                        Group id: <?=$node_replica['groupId'];?><br>
+                        Partition id: <?=$node_replica['partitionId'];?><br>
+                        Status: <?=$node_replica['status'];?>
+                      </div><br/>
+                    <?php }?>
+                  </th>
+                <?php }  
               echo "</tr>";  
-            $i++;
           }?>
       </tbody>
   </table>
+  
+  <?php } 
+  
+  if(is_array($groupVersion)){ ?>
+
+  <div class="container-fluid">
+  <br><h3>Groups info</h3>  
+  <table class="table">
+        <tbody>
+            <tr class="list_header">
+                <th style="width:100px;">Group Id</th>
+                <th style="width:100px;">Version</th>
+            </tr>
+            <?php 
+            foreach ($groupVersion as $group=>$version) {?>
+                <tr>  
+                  <th><?=$group;?></th>
+                  <th><?=$version;?></th>
+                </tr>  
+            <?php }?>
+        </tbody>
+    </table>
+  </div>
+
+  <?php } ?>
+
 </div>
-    
+
 <?php $this->load->view('include/footer');?>
 
-<script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js"></script>
-<script src="//netdna.bootstrapcdn.com/twitter-bootstrap/2.3.0/js/bootstrap.min.js"></script>
+<script src="<?=base_url()?>/assets/js/jquery.min.js"></script>
+<script src="<?=base_url()?>/assets/js/bootstrap.min.js"></script>
   
 <script type="text/javascript">
-  
-  setInterval(function() {
-    $.ajax({
-        url: 'http://localhost/tppro/phpClient/getStatus.php',
-        type: 'GET',
-        dataType: 'json',
-        data: 'extraparam=45869159&another=32',
-        success: function (data) {
-            //console.log(data[1][0]);
+setInterval(function() {
+  $.ajax({
+      url: 'http://localhost/tppro/phpClient/getStatus.php',
+      type: 'GET',
+      dataType: 'json',
+      data: 'extraparam=45869159&another=32',
+      success: function (data) {
+          //console.log('nodes',data['nodes']);
+          //console.log('replicas',data['replicas']);
+          var estado = '<tbody>'+
+          '<tr>'+
+            '<th>Replicas</th>';
 
-            $('#status_1_1').removeClass('active');
-            $('#status_1_1').addClass(data[1][0].status);
-            
-            $('#status_1_3').removeClass('active');
-            $('#status_1_3').addClass(data[1][2].status);
-        }
-    });
-  }, 5000);
+          for(var i in data['nodes'])  
+            estado+='<th>'+ data['nodes'][i] +'</th>';
+          
+          for (var j in parts) {
+              estado+='<tr>'+
+                '<th  style="width: 130px;">Group id: '+parts[j][0]+'<br>Partition id: '+parts[j][1]+'</th>'; 
+              for(var z in data['nodes']){
+                var node=data['nodes'][z];
+                for (var k in data['replicas'][node]){
+                    var node_replica='';
+                    if(data['replicas'][node][k]['groupId']==parts[j][0] && data['replicas'][node][k]['partitionId']==parts[j][1]){
+                      node_replica=data['replicas'][node][k];
+                      break;
+                    }
+                  }
+                if(node_replica!=''){
+                  estado+='<th class="' + node_replica['status'] + '">'+
+                  '<a class="tooltip2" href="#">&nbsp;&nbsp;&nbsp;&nbsp;</a>'+
+                  '<div class="tooltip-seg">'+
+                  'Group id: ' + node_replica['groupId'] + '<br>'+
+                  'Partition id: ' + node_replica['partitionId'] + '<br>'+
+                  'Status: ' + node_replica['status']+
+                  '</div><br/>';
+                }
+                else{
+                  estado+='<th>';
+                }
+                estado+='</th>';
+                }  
+              estado+='</tr>';
+          }
+          estado+='</tbody>';
+          //console.log("estado3",estado);
+          $('#table').html(estado);
+      }
+  });
+}, 3000);
+</script>
+<script type="text/javascript">
+$(document).ready(function() {
+  $(document).on("mouseover", ".tooltip2", function(){
+      $(".tooltip2").mousemove(function(e){
+           $(this).next().css({left : e.pageX , top: e.pageY});
+        });
+      eleOffset = $(this).offset();
+      $(this).next().fadeIn("fast").css({
+
+              left: eleOffset.left + $(this).outerWidth(),
+              top: eleOffset.top
+
+          });
+  }).on("mouseout", ".tooltip2", function(){
+        $(this).next().fadeOut("slow");
+    }); 
+});
+
 </script>
