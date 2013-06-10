@@ -38,6 +38,14 @@ public class SearchBroker implements Command {
 		String query = argv[2];
 		
 		ParalellSearchResult result = broker.search(groupId, query, 1000, 0);
+
+		System.out.println("Hits:");
+		for(Hit hit : result.qr.hits){
+			for(Map.Entry<String, String> entry : hit.doc.fields.entrySet()){
+				System.out.println("\t" + entry.getKey() + " : " + entry.getValue());
+			}
+			System.out.println();
+		}
 		
 		System.out.println("Errors:");
 		
@@ -46,15 +54,6 @@ public class SearchBroker implements Command {
 		}
 		
 		System.out.println("Total results: " + result.getQr().totalHits);
-		System.out.println("Hits:");
-
-		for(Hit hit : result.qr.hits){
-			for(Map.Entry<String, String> entry : hit.doc.fields.entrySet()){
-				System.out.println("\t" + entry.getKey() + " : " + entry.getValue());
-			}
-			System.out.println();
-		}
-
 	}
 
 }

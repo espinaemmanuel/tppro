@@ -22,19 +22,23 @@ public class StressTest {
 
 	/**
 	 * @param args
-	 * @throws IOException 
-	 * @throws IndexNodeDescriptorException 
-	 * @throws TException 
-	 * @throws NonExistentPartitionException 
-	 * @throws ParalellSearchException 
-	 * @throws InterruptedException 
+	 * @throws IOException
+	 * @throws IndexNodeDescriptorException
+	 * @throws TException
+	 * @throws NonExistentPartitionException
+	 * @throws ParalellSearchException
+	 * @throws InterruptedException
 	 */
-	public static void main(String[] args) throws IOException, IndexNodeDescriptorException, ParalellSearchException, NonExistentPartitionException, TException, InterruptedException {
+	public static void main(String[] args) throws IOException,
+			IndexNodeDescriptorException, ParalellSearchException,
+			NonExistentPartitionException, TException, InterruptedException {
 
 		if (args.length < 3) {
-			System.out.println("USE: host port queriesFile");
+			System.out.println("USE: [-Dthreads=1] host port queriesFile");
 			return;
 		}
+
+		int threads = Integer.parseInt(System.getProperty("threads", "1"));
 
 		String brokerHost = args[0];
 		int port = Integer.parseInt(args[1]);
@@ -49,20 +53,21 @@ public class StressTest {
 			queriesList.add(line);
 			line = reader.readLine();
 		}
-		
+
 		reader.close();
-		
+
 		List<Thread> threadList = Lists.newArrayList();
-		
-		for(int i=0; i<100; i++){
-			threadList.add(new Thread(new QueryExecutor(queriesList, brokerHost, port)));
+
+		for (int i = 0; i < threads; i++) {
+			threadList.add(new Thread(new QueryExecutor(queriesList,
+					brokerHost, port)));
 		}
-		
-		for(Thread t : threadList){
+
+		for (Thread t : threadList) {
 			t.start();
 		}
-		
-		for(Thread t : threadList){
+
+		for (Thread t : threadList) {
 			t.wait();
 		}
 	}
