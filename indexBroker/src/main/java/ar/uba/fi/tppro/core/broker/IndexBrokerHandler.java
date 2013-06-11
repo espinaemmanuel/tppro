@@ -51,6 +51,8 @@ public class IndexBrokerHandler implements BrokerIterface {
 	public ParalellSearchResult search(int shardId, String query, int limit,
 			int offset) throws ParalellSearchException,
 			NonExistentPartitionException, TException {
+		
+		logger.info(String.format("Search request[group: %d, query: %s, limit: %d, offset: %d]", shardId, query, limit, offset));
 
 		Multimap<Integer, IndexNodeDescriptor> partitionsMap;
 		try {
@@ -62,6 +64,10 @@ public class IndexBrokerHandler implements BrokerIterface {
 
 		try {
 			// Check existence of partitions
+			if(partitionsMap.size() == 0){
+				throw new NonExistentPartitionException();
+			}
+			
 			List<Integer> emptyPartitions = Lists.newArrayList();
 			for (Integer pId : partitionsMap.keySet()) {
 				if (partitionsMap.get(pId).size() == 0) {

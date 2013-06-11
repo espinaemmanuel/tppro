@@ -37,7 +37,9 @@ public class SearchBroker implements Command {
 		int groupId = Integer.parseInt(argv[1]);
 		String query = argv[2];
 		
+		long t1 = System.nanoTime();
 		ParalellSearchResult result = broker.search(groupId, query, 1000, 0);
+		long t2 = System.nanoTime();
 
 		System.out.println("Hits:");
 		for(Hit hit : result.qr.hits){
@@ -53,6 +55,7 @@ public class SearchBroker implements Command {
 			System.out.println(error.code + ": " + error.desc);
 		}
 		
+		System.out.println(String.format("Elapsed time: %.3f milliseconds", 1e-6*(t2-t1)));
 		System.out.println("Total results: " + result.getQr().totalHits);
 	}
 

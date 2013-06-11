@@ -45,10 +45,10 @@ public class Console {
 			ConsoleReader console = new ConsoleReader();
 			console.setPrompt("tppro> ");
 			console.addCompleter(new StringsCompleter(commands.keySet()));
-			
-			//TOOD: cargar historia desde un archivo
+
+			// TOOD: cargar historia desde un archivo
 			console.getHistory().add("sarasa");
-			
+
 			console.println("Enter a line of text (type 'quit' to exit): ");
 
 			String curLine = ""; // Line read from standard in
@@ -70,8 +70,7 @@ public class Console {
 						try {
 							commands.get(parts[0]).execute(parts, context);
 						} catch (TException e) {
-							logger.error("Remote exception on command: "
-									+ e.getMessage());
+							logger.error("Remote exception on command: " + e);
 						} catch (Exception e) {
 							logger.error("Exception on command", e);
 						}
