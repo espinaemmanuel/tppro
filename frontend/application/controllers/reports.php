@@ -1,7 +1,6 @@
 <?php
 
-define("URLGET", 'http://localhost/tppro/phpClient/monitorService.php');
-
+//define("URL_MONITOR", 'http://192.168.42.130/phpClient/monitorService.php');
 class reports extends CI_Controller {
 	
 	function __construct(){
@@ -39,7 +38,7 @@ class reports extends CI_Controller {
           redirect(base_url().'/index.php/main/login');
       
       $get=array('shard_id'=>1);
-	  $res=$this->curl->simple_get(URLGET,$get);
+	  $res=$this->curl->simple_get(URL_MONITOR,$get);
       $result=json_decode($res, true);
       
       $this->load->view("reports/dinamic", array('nodes'=> $result['nodes'], 'replicas'=>$result['replicas'], 'groupVersion'=>$result['groupVersion']));

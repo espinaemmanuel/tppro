@@ -1,7 +1,7 @@
 <?php $this->load->view('include/header');?>
 <?php $this->load->view('menu');?>
 
-<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.6.2/jquery.min.js"></script>
+<script type="text/javascript" src="<?= base_url();?>assets/js/jquery.min.js"></script>
 
 <div class="container">
 	<div id="content">
@@ -88,6 +88,7 @@
                   <th id="overview"><?=  substr($hit->doc->fields->overview,0,80)."...";?></th>
                   <th><?=  $hit->doc->fields->director;?></th>
                   <th><?=  $hit->doc->fields->release;?></th>
+                  
                 </tr>  
               <?php }
             }?>
@@ -97,8 +98,8 @@
     
 <?php $this->load->view('include/footer');?>
 
-  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js"></script>
-  <script src="//netdna.bootstrapcdn.com/twitter-bootstrap/2.3.0/js/bootstrap.min.js"></script>
+  <script src="<?= base_url();?>assets/js/jquery.min.js"></script>
+  <script src="<?= base_url();?>assets/js/bootstrap.min.js"></script>
   <script type="text/javascript">
   $("#op").click(function() {
     if($('#operator').val()=="and"){

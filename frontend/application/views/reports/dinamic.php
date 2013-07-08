@@ -111,13 +111,11 @@ foreach ($replicas as $replica) {
 <script type="text/javascript">
 setInterval(function() {
   $.ajax({
-      url: 'http://localhost/tppro/phpClient/getStatus.php',
+      url: '<?php echo URL_MONITOR?>',
       type: 'GET',
       dataType: 'json',
       data: 'extraparam=45869159&another=32',
       success: function (data) {
-          //console.log('nodes',data['nodes']);
-          //console.log('replicas',data['replicas']);
           var estado = '<tbody>'+
           '<tr>'+
             '<th>Replicas</th>';

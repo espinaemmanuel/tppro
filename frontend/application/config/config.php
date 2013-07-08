@@ -16,6 +16,14 @@
 */
 $config['base_url']	= 'http://localhost/tppro/frontend/';
 
+/*Enpoint de los servicios*/
+//$endpoint= 'http://192.168.42.130/phpClient/';
+$endpoint= 'http://localhost/tppro/phpClient/';
+
+define("URL_SEARCH", $endpoint.'searchService.php');
+define("URL_MAKE_INDEX", $endpoint.'indexService.php');
+define("URL_MONITOR", $endpoint.'monitorService.php');
+
 /*
 |--------------------------------------------------------------------------
 | Index File

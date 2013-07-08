@@ -1,8 +1,7 @@
 <?php
 
-define("URLGET", 'http://localhost/tppro/phpClient/searchService.php');
-define("URL_MAKE_INDEX", 'http://localhost/tppro/phpClient/indexService.php');
-
+//define("URL_SEARCH", 'http://192.168.42.130/phpClient/searchService.php');
+//define("URL_MAKE_INDEX", 'http://192.168.42.130/phpClient/indexService.php');
 class main extends CI_Controller {
 	
 	function __construct(){
@@ -152,7 +151,7 @@ class main extends CI_Controller {
           $shard_id=$this->session->userdata('shard_id');
           $get=array('query'=>$query, 'shard_id'=>$shard_id);
           
- 		  $res=$this->curl->simple_get(URLGET,$get);
+ 		  $res=$this->curl->simple_get(URL_SEARCH,$get);
           //print_r($res); //exit;
           $result=json_decode($res);//exit;
           //echo "<pre>";print_r($result); echo "</pre>";exit;
