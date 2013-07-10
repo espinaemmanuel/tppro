@@ -33,7 +33,7 @@ foreach ($replicas as $replica) {
   <table id="table" class="table">
       <tbody>
           <tr>
-            <th>&nbsp;</th>
+            <th>Replicas</th>
             <?php 
             foreach ($nodes as $node){ ?>
                 <th><?= $node ?></th>

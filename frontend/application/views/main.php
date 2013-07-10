@@ -83,7 +83,7 @@
                   <?php }?>  
                   movies[<?=$i;?>]=movie;
                 </script>
-                <tr onclick="showBox(<?=$i++;?>);">  
+                <tr class="list_row" onclick="showBox(<?=$i++;?>);">  
                   <th><?=$hit->doc->fields->title;?></th>
                   <th id="overview"><?=  substr($hit->doc->fields->overview,0,80)."...";?></th>
                   <th><?=  $hit->doc->fields->director;?></th>

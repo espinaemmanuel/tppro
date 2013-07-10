@@ -67,6 +67,10 @@ a.tooltip2:hover{
 
 .list_header { background-color:#F9F9F9; }
 
+.list_row {
+  cursor: pointer;
+}
+
 /*Movie description box*/
 
 .container {width: 960px; margin: 0 auto; overflow: hidden;}
