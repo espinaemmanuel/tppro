@@ -28,7 +28,7 @@
   <form name="form" method="post" style="width: 240px;" action="<?= base_url();?>index.php/main/search">
     <input name="title" id="title" placeholder="Title" type="text" value="<?=$title?>" /><br/>  
       <div class="btn btn-primary btn-large op" id="op">
-        And
+        <?php if($operator=="AND") echo "And"; else echo "Or"; ?>
       </div><br/> 
     <input name="text" id="text" placeholder="Overview" type="text" value="<?= $text?>" /><br/> 
     <?php $style="display: none;"; $button_text="Add director"; $addDir="addDir"; 
@@ -52,7 +52,7 @@
     <input name="genre" id="genre" placeholder="Genre" style="<?=$style;?>" type="text" value="<?= $genre?>" /><br/>
  
     <input type="hidden" value="<?php echo $user_id?>" name="user_id" class="button" />
-    <input type="hidden" value="and" name="operator" id="operator" class="button" />
+    <input type="hidden" value="AND" name="operator" id="operator" class="button" />
     <input type="hidden" value="<?=$addDir;?>" name="addDirector" id="addDirector" class="button" />
     <input type="hidden" value="<?=$addYear;?>" name="addYear" id="addYear" class="button" />
     <!--input type="hidden" value="< ?=$addGenre;?>" name="addGenre" id="addGenre" class="button" /-->
@@ -102,13 +102,13 @@
   <script src="<?= base_url();?>assets/js/bootstrap.min.js"></script>
   <script type="text/javascript">
   $("#op").click(function() {
-    if($('#operator').val()=="and"){
+    if($('#operator').val()=="AND"){
       $('#op').html("Or");
-      $('#operator').val("or");
+      $('#operator').val("OR");
     }  
     else{
       $('#op').html("And");
-      $('#operator').val("and");
+      $('#operator').val("AND");
     }  
   });
   $("#addDir").click(function() {

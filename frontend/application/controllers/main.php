@@ -22,7 +22,7 @@ class main extends CI_Controller {
         if(!$this->session->userdata('logged_in')) 
           $this->login();
         else{
-          $this->load->view("main", array('user_id'=> $this->session->userdata('user_id'), 'title'=>'', 'text'=>'', 'director'=>'','year'=>'', 'genre'=>'', 'operator'=>''));
+          $this->load->view("main", array('user_id'=> $this->session->userdata('user_id'), 'title'=>'', 'text'=>'', 'director'=>'','year'=>'', 'genre'=>'', 'operator'=>'AND'));
         }  
 	}
 	
@@ -102,7 +102,7 @@ class main extends CI_Controller {
             $title=$_POST['title'];
             
             if($_POST['text']!==''){
-              $query.= " " . $_POST['operator'] . " overview: ". $_POST['text'] . "*) ";
+              $query.= " " . $operator . " overview: ". $_POST['text'];
               $text=$_POST['text'];
             }
             else
@@ -123,10 +123,6 @@ class main extends CI_Controller {
               $query.=" AND  release: [". $_POST['year'] . " TO 2013]";
               $year=$_POST['year'];
             }  
-            if($_POST['genre']){
-              $query.=" AND genres: ". $_POST['genre'];
-              $genre=$_POST['genre'];
-            }  
           }
           
           else{
@@ -140,14 +136,8 @@ class main extends CI_Controller {
               $query.="release: [" . $_POST['year']. " TO 2013]";
               $year=$_POST['year'];
             }
-            if($_POST['genre']){
-              if($_POST['director'] || $_POST['year'])
-                $query.=" AND ";
-              $query.="genres: ". $_POST['genre'];
-              $genre=$_POST['genre'];
-            }
           }  
-          //echo "<pre>";print_r($query); echo "</pre>";exit;
+          //echo "<br><pre>";print_r($query); echo "</pre>";//exit;
           $shard_id=$this->session->userdata('shard_id');
           $get=array('query'=>$query, 'shard_id'=>$shard_id);
           
