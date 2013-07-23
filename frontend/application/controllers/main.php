@@ -42,6 +42,7 @@ class main extends CI_Controller {
       $documents = array();
 	  
 	  foreach($files as $file){
+        error_log(print_r($file, true));
 		$documents[]=$this->parse($file);
 		unlink($file);
   	  }
