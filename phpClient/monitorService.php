@@ -5,6 +5,7 @@ error_reporting ( E_ALL );
 
 require_once __DIR__ . '/lib/Thrift/ClassLoader/ThriftClassLoader.php';
 require_once __DIR__ . '/REST/RestUtils.php';
+require_once __DIR__ . '/config/config.php';
 
 use Thrift\ClassLoader\ThriftClassLoader;
 
@@ -38,7 +39,7 @@ function getPort($address){
 function getStatus(){
   try{
   
-      $socket = new TSocket ( '192.168.42.128', 9000 );
+      $socket = new TSocket ( ENDPOINT, MONITORPORT );
       $transport = new TBufferedTransport ( $socket, 1024, 1024 );
       $protocol = new TBinaryProtocol ( $transport );
     

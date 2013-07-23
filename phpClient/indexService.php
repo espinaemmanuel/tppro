@@ -5,6 +5,7 @@ error_reporting ( E_ALL );
 
 require_once __DIR__ . '/lib/Thrift/ClassLoader/ThriftClassLoader.php';
 require_once __DIR__ . '/REST/RestUtils.php';
+require_once __DIR__ . '/config/config.php';
 
 use Thrift\ClassLoader\ThriftClassLoader;
 
@@ -40,7 +41,7 @@ function index($doc_array=null, $shard_id=0){
          $documents[]=$doc;
       }
   
-      $socket = new TSocket ( '192.168.42.128', 8008  );
+      $socket = new TSocket ( ENDPOINT, BROKERPORT  );
       $transport = new TBufferedTransport ( $socket, 1024, 1024 );
       $protocol = new TBinaryProtocol ( $transport );
 	 
@@ -48,7 +49,7 @@ function index($doc_array=null, $shard_id=0){
 
       $transport->open ();
     
-      //print_r($documents); exit;
+      error_log("---Documents: ".print_r($documents), true); //exit;
       
       $client->index($shard_id, $documents);
       
