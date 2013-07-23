@@ -4,13 +4,17 @@ namespace tppro;
 
 class RestUtils
 {
-	public static function processRequest()
+	public static function processRequest($method="get")
 	{
-		$return_obj		= new RestRequest();
-		$data = $_GET;
+		$return_obj	= new RestRequest();
+		
+        if($method=="get")
+          $data = $_GET;
+        else
+          $data = $_POST;
 		
 		// store the method
-		$return_obj->setMethod('get');
+		$return_obj->setMethod($method);
 
 		// set the raw data, so we can access it if needed (there may be
 		// other pieces to your requests)

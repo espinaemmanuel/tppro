@@ -23,9 +23,7 @@ use Thrift\Transport\TBufferedTransport;
 use Thrift\Exception\TException;
 
 //Service call
-$data = RestUtils::processRequest();
-
-//print_r($data->request_vars);
+$data = RestUtils::processRequest("post");
 
 $data->response=  index($data->request_vars['documents'], $data->request_vars['shard_id']);
 $data->response= json_encode($data->response);
@@ -33,7 +31,6 @@ RestUtils::sendResponse(200, $data->response, 'application/json');
 
 function index($doc_array=null, $shard_id=0){
   try{
-	  //echo '<pre>'; //print_r($documents); echo '</pre>';
       $documents=array();
       foreach ($doc_array as $content){
          $doc=new Document();
@@ -41,17 +38,18 @@ function index($doc_array=null, $shard_id=0){
          $documents[]=$doc;
       }
   
-      $socket = new TSocket ( ENDPOINT, BROKERPORT  );
+      $socket = new TSocket ( ENDPOINT_BROKER, BROKERPORT  );
       $transport = new TBufferedTransport ( $socket, 1024, 1024 );
       $protocol = new TBinaryProtocol ( $transport );
 	 
       $client = new IndexBrokerClient($protocol);
 
       $transport->open ();
-    
-      error_log("---Documents: ".print_r($documents), true); //exit;
       
+      //error_log("---Documents: ".print_r($documents, true)); //exit;
       $client->index($shard_id, $documents);
+    
+      $transport->flush();
       
       return 1;
     } 

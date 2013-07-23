@@ -23,9 +23,8 @@ use Thrift\Transport\TBufferedTransport;
 use Thrift\Exception\TException;
 
 //Service call
-$data = RestUtils::processRequest();
+$data = RestUtils::processRequest("get");
 
-//$data->response=  getStatus($data->request_vars['shard_id']);
 $data->response= getStatus();
 $data->response= json_encode($data->response);
 RestUtils::sendResponse(200, $data->response, 'application/json');
@@ -39,7 +38,7 @@ function getPort($address){
 function getStatus(){
   try{
   
-      $socket = new TSocket ( ENDPOINT, MONITORPORT );
+      $socket = new TSocket ( ENDPOINT_MONITOR, MONITORPORT );
       $transport = new TBufferedTransport ( $socket, 1024, 1024 );
       $protocol = new TBinaryProtocol ( $transport );
     
