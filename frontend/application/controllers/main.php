@@ -41,7 +41,7 @@ class main extends CI_Controller {
       $files = glob($directory . $user_id."*.txt");
       $documents = array();
 	  
-	  foreach($files as $file){
+      foreach($files as $file){
         error_log(print_r($file, true));
 		$documents[]=$this->parse($file);
 		unlink($file);
@@ -49,7 +49,7 @@ class main extends CI_Controller {
       
       $shard_id=$this->session->userdata('shard_id');
       $get=array('documents'=>$documents, 'shard_id'=>$shard_id);
-	  $res=$this->curl->simple_get(URL_MAKE_INDEX,$get);
+	  $res=$this->curl->simple_post(URL_MAKE_INDEX,$get);
       //echo '<pre>'; print_r($res); echo '</pre>';exit;
 	}
     
@@ -143,9 +143,7 @@ class main extends CI_Controller {
           $get=array('query'=>$query, 'shard_id'=>$shard_id);
           
  		  $res=$this->curl->simple_get(URL_SEARCH,$get);
-          //print_r($res); //exit;
-          $result=json_decode($res);//exit;
-          //echo "<pre>";print_r($result); echo "</pre>";exit;
+          $result=json_decode($res);
           $this->load->view("main", array('user_id'=> $this->session->userdata('user_id'),'title'=>$title, 'text'=>$text, 'director'=>$director,'year'=>$year, 'genre'=>$genre, 'operator'=>$operator, 'result'=>$result));
         }
         else{ 
