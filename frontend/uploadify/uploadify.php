@@ -7,7 +7,7 @@ Released under the MIT License <http://www.opensource.org/licenses/mit-license.p
 */
 
 // Define a destination
-$targetFolder = '/frontend/uploads/'; // Relative to the root
+$targetFolder = '/tppro/frontend/uploads/'; // Relative to the root
 $verifyToken = md5('unique_salt' . rand() );
 
 if (!empty($_FILES) ) {
