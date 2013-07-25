@@ -34,6 +34,9 @@ function getPort($address){
     return substr($address, strpos($address, '_')+1);
   return substr($address, strpos($address, ':')+1);
 }
+function convertNodeUrl($address){
+  return str_replace(":", "_", $address);
+}
 
 function getStatus(){
   try{
@@ -50,12 +53,17 @@ function getStatus(){
       $replicas=array();
       foreach ($client->getNodes() as $node){
         if($node->type==0)
-          $nodes[]=  "'".getPort($node->url)."'";
+          $nodes[]=  "'".$node->url."'";
           //$replicas[$node->url]=array();
       }      
 
       foreach ($client->getReplicas() as $replica){
-        $replicas["'".getPort($replica->nodeUrl)."'"][]=$replica;
+        
+        //echo "<br>Replica nodeurl:";
+        //echo $replica->nodeUrl;
+        //echo "<br>";
+        
+        $replicas["'".convertNodeUrl($replica->nodeUrl)."'"][]=$replica;
       }
       
       //echo "<pre>Replicas procesadas:<br>------<br><br>"; print_r($replicas); echo "</pre>";

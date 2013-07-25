@@ -80,7 +80,7 @@ class TSocket extends TTransport {
    *
    * @var int
    */
-  private $recvTimeoutSec_ = 0;
+  private $recvTimeoutSec_ = 60;
 
   /**
    * Recv timeout in microseconds
