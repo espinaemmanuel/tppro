@@ -48,12 +48,20 @@ foreach ($replicas as $replica) {
                  * Armo la fila: nodo 1 | nodo 2 | .... | nodo n  
                  */
                 foreach ($nodes as $node){
-                  foreach($replicas[$node] as $data){
-                    $node_replica=NULL;
-                    if($data['groupId']==$part['groupId'] && $data['partitionId']===$part['partitionId']){
-                      $node_replica=$data;
-                      break;
+                  //echo "<pre>";
+                  //print_r($nodes);
+                  //echo "</pre>------";
+                  if(isset($replicas[$node])){
+                    foreach($replicas[$node] as $data){
+                      $node_replica=NULL;
+                      if($data['groupId']==$part['groupId'] && $data['partitionId']===$part['partitionId']){
+                        $node_replica=$data;
+                        break;
+                      }
                     }
+                  }
+                  else{
+                    $node_replica['status']="";
                   }
                   /* Armo las columnas: 
                    * Group id: 1 Replica: 1
@@ -128,8 +136,9 @@ setInterval(function() {
                 '<th  style="width: 130px;">Group id: '+parts[j][0]+'<br>Partition id: '+parts[j][1]+'</th>'; 
               for(var z in data['nodes']){
                 var node=data['nodes'][z];
+                var node_replica='';
                 for (var k in data['replicas'][node]){
-                    var node_replica='';
+                    node_replica='';
                     if(data['replicas'][node][k]['groupId']==parts[j][0] && data['replicas'][node][k]['partitionId']==parts[j][1]){
                       node_replica=data['replicas'][node][k];
                       break;
@@ -156,7 +165,7 @@ setInterval(function() {
           $('#table').html(estado);
       }
   });
-}, 3000);
+}, 1000);
 </script>
 <script type="text/javascript">
 $(document).ready(function() {

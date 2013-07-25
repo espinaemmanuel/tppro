@@ -58,6 +58,12 @@ a.tooltip2:hover{
     width: 90%;
 }    
 
+@media (min-width:300px){
+  .navbar .nav {
+      width: 80%;
+  }
+}
+
 .logOut{
   position:absolute; 
   right: 0px;

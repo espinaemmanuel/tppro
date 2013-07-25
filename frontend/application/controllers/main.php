@@ -1,7 +1,5 @@
 <?php
 
-//define("URL_SEARCH", 'http://192.168.42.130/phpClient/searchService.php');
-//define("URL_MAKE_INDEX", 'http://192.168.42.130/phpClient/indexService.php');
 class main extends CI_Controller {
 	
 	function __construct(){
@@ -99,11 +97,11 @@ class main extends CI_Controller {
           $operator=$_POST['operator'];
           
           if($_POST['title']!==''){
-            $query.="title: ".$_POST['title']."*";
+            $query.="title:".$_POST['title']."*";
             $title=$_POST['title'];
             
             if($_POST['text']!==''){
-              $query.= " " . $operator . " overview: ". $_POST['text'];
+              $query.= " " . $operator . " overview:". $_POST['text'];
               $text=$_POST['text'];
             }
             else
@@ -111,30 +109,30 @@ class main extends CI_Controller {
           }
           else if($_POST['text']!==''){
               $text=$_POST['text'];
-              $query.= "overview: " . $_POST['text'] . "* ";
+              $query.= "overview:" . $_POST['text'] . "* ";
           }
           
           if ($query !== ''){
             
             if($_POST['director']){
-              $query.=" AND  director: ". $_POST['director'];
+              $query.=" AND  director:". $_POST['director'];
               $director=$_POST['director'];
             }
             if($_POST['year']){
-              $query.=" AND  release: [". $_POST['year'] . " TO 2013]";
+              $query.=" AND  release:[". $_POST['year'] . " TO 2013]";
               $year=$_POST['year'];
             }  
           }
           
           else{
             if($_POST['director']){
-              $query.="director: ". $_POST['director'];
+              $query.="director:". $_POST['director'];
               $director=$_POST['director'];
             }
             if($_POST['year']){
               if($_POST['director'])
                 $query.=" AND ";
-              $query.="release: [" . $_POST['year']. " TO 2013]";
+              $query.="release:[" . $_POST['year']. " TO 2013]";
               $year=$_POST['year'];
             }
           }  
@@ -142,7 +140,9 @@ class main extends CI_Controller {
           $shard_id=$this->session->userdata('shard_id');
           $get=array('query'=>$query, 'shard_id'=>$shard_id);
           
- 		  $res=$this->curl->simple_get(URL_SEARCH,$get);
+          $this->curl->option(CURLOPT_TIMEOUT, 60);
+          $res=$this->curl->simple_get(URL_SEARCH,$get);
+          
           $result=json_decode($res);
           $this->load->view("main", array('user_id'=> $this->session->userdata('user_id'),'title'=>$title, 'text'=>$text, 'director'=>$director,'year'=>$year, 'genre'=>$genre, 'operator'=>$operator, 'result'=>$result));
         }
