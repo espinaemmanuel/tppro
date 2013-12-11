@@ -1,16 +1,17 @@
 package ar.uba.fi.tppro.core.service;
 
 import java.io.File;
+import java.io.FileReader;
 import java.net.InetAddress;
 import java.net.SocketException;
 import java.util.Collection;
+import java.util.Properties;
 
 import org.apache.thrift.server.TServer;
 import org.apache.thrift.server.TThreadPoolServer;
 import org.apache.thrift.transport.TServerSocket;
 import org.apache.thrift.transport.TServerTransport;
 import org.apache.thrift.transport.TTransportException;
-import org.apache.zookeeper.CreateMode;
 import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.handler.DefaultHandler;
@@ -18,10 +19,6 @@ import org.eclipse.jetty.server.handler.HandlerList;
 import org.eclipse.jetty.server.handler.ResourceHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.netflix.curator.framework.CuratorFramework;
-import com.netflix.curator.framework.CuratorFrameworkFactory;
-import com.netflix.curator.retry.RetryOneTime;
 
 import ar.uba.fi.tppro.core.index.IndexCoreHandler;
 import ar.uba.fi.tppro.core.index.RemoteIndexNodeDescriptor;
@@ -35,6 +32,10 @@ import ar.uba.fi.tppro.core.service.thrift.IndexNode;
 import ar.uba.fi.tppro.partition.PartitionResolver;
 import ar.uba.fi.tppro.partition.ZookeeperPartitionResolver;
 import ar.uba.fi.tppro.util.NetworkUtils;
+
+import com.netflix.curator.framework.CuratorFramework;
+import com.netflix.curator.framework.CuratorFrameworkFactory;
+import com.netflix.curator.retry.RetryOneTime;
 
 public class IndexServer implements Runnable {
 
@@ -59,11 +60,21 @@ public class IndexServer implements Runnable {
 
 	public static void main(String[] args) throws NumberFormatException,
 			Exception {
+		
+		Properties props  = new Properties(System.getProperties());
+		
+		File propertiesFile = new File("cluster.properties");
+		if(propertiesFile.exists()){
+			System.out.println("Loading properties from " + propertiesFile);
+			props.load(new FileReader("cluster.properties"));
+		} else {
+			System.out.println("Using system properties");
+		}
 
-		String port = System.getProperty("port", "9090");
-		String dataDir = System.getProperty("dataDir", "data");
-		int simulateDelay = Integer.parseInt(System.getProperty("simulateDelay", "0"));
-		String zookeeperHost = System
+		String port = props.getProperty("port", "9090");
+		String dataDir = props.getProperty("dataDir", "data");
+		int simulateDelay = Integer.parseInt(props.getProperty("simulateDelay", "0"));
+		String zookeeperHost = props
 				.getProperty("zookeeper", "localhost:2181");
 
 		if (zookeeperHost == null) {

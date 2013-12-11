@@ -166,7 +166,7 @@ public class LocalIndexBrokerHandlerTest {
 	@Test
 	public void testIndexAndSearch() throws Exception {
 
-		new Thread(new BrokerServer(9000, folder.newFolder(), true)).start();
+		new Thread(new BrokerServer(9000, folder.newFolder(), null, true)).start();
 		Thread.sleep(5000);
 
 		// Run the test

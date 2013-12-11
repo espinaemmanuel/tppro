@@ -12,6 +12,7 @@
 		<module>console</module>
 		<module>monitor</module>
 		<module>stress</module>
+		<module>tests</module>
 	</modules>
 
 	<properties>

@@ -1,8 +1,12 @@
 package ar.uba.fi.tppro.core.service;
 
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
 import java.net.InetAddress;
 import java.util.Collection;
+import java.util.Properties;
 
 import org.apache.thrift.server.TServer;
 import org.apache.thrift.server.TThreadPoolServer;
@@ -48,20 +52,33 @@ public class BrokerServer implements Runnable {
 	protected CuratorFramework curator;
 	private IndexCoreHandler localIndexServer;
 	private ClusterManager clusterManager;
+	private String zookeeperHost;
 
-	public static void main(String[] args) {
+	public static void main(String[] args) throws FileNotFoundException, IOException {
 		
-		boolean localMode = System.getProperties().containsKey("localMode");
-		String port = System.getProperty("port", "9090");
-		String dataDir = System.getProperty("dataDir", "./data");
+		Properties props  = new Properties(System.getProperties());
+		
+		File propertiesFile = new File("cluster.properties");
+		if(propertiesFile.exists()){
+			System.out.println("Loading properties from " + propertiesFile);
+			props.load(new FileReader("cluster.properties"));
+		} else {
+			System.out.println("Using system properties");
+		}
+		
+		boolean localMode = props.containsKey("localMode");
+		String port = props.getProperty("port", "9090");
+		String dataDir = props.getProperty("dataDir", "./data");
+		String zookeeper = System.getProperty("zookeeper", "localhost:2181");
 
-		new Thread(new BrokerServer(Integer.parseInt(port), new File(dataDir), localMode)).start();
+		new Thread(new BrokerServer(Integer.parseInt(port), new File(dataDir), zookeeper, localMode)).start();
 	}
 	
-	public BrokerServer(int port, File dataDir, boolean localMode){
+	public BrokerServer(int port, File dataDir, String zookeeper, boolean localMode){
 		this.port = port;
 		this.dataDir = dataDir;
 		this.localMode = localMode;
+		zookeeperHost = zookeeper;
 	}
 	
 	private static CuratorFramework createZookeeperClient(String zookeeperHost) {
@@ -92,7 +109,6 @@ public class BrokerServer implements Runnable {
 			} else {
 				//Distributed mode				
 				if(this.curator == null){
-					String zookeeperHost = System.getProperty("zookeeper", "localhost:2181");
 					if(zookeeperHost == null){
 						System.out.println("Zookeeper server not specified");
 						return;
