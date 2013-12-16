@@ -66,9 +66,9 @@ public class BrokerServer implements Runnable {
 			System.out.println("Using system properties");
 		}
 		
-		boolean localMode = props.containsKey("localMode");
-		String port = props.getProperty("port", "9090");
-		String dataDir = props.getProperty("dataDir", "./data");
+		boolean localMode = Boolean.parseBoolean(props.getProperty("brokerLocalMode", "false"));
+		String port = props.getProperty("brokerPort", "9091");
+		String dataDir = props.getProperty("brokerDataDir", "data");
 		String zookeeper = System.getProperty("zookeeper", "localhost:2181");
 
 		new Thread(new BrokerServer(Integer.parseInt(port), new File(dataDir), zookeeper, localMode)).start();

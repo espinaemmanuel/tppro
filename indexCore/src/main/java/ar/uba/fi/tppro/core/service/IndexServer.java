@@ -71,8 +71,8 @@ public class IndexServer implements Runnable {
 			System.out.println("Using system properties");
 		}
 
-		String port = props.getProperty("port", "9090");
-		String dataDir = props.getProperty("dataDir", "data");
+		String port = props.getProperty("indexPort", "9090");
+		String dataDir = props.getProperty("indexDataDir", "data");
 		int simulateDelay = Integer.parseInt(props.getProperty("simulateDelay", "0"));
 		String zookeeperHost = props
 				.getProperty("zookeeper", "localhost:2181");

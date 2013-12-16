@@ -250,9 +250,6 @@ public class IndexPartition implements Closeable, ShardVersionObserver {
 			
 			logger.debug(String.format("COMMITED (id: %d)", this.lastCommittedMessageId));
 			
-			this.currentWriter.close();
-			this.currentWriter = null;
-			
 			mgr.maybeRefresh();
 		}
 	}

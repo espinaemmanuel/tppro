@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.Properties;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.xml.parsers.ParserConfigurationException;
 
@@ -17,7 +18,7 @@ import tests.ReutersSaxParser.ReutersDocHandler;
 
 public class IndexReuters {
 	
-	public static int counter = 0;
+	public static AtomicInteger counter = new AtomicInteger(0);
 
 
 	public static void main(String[] args) throws ParserConfigurationException, SAXException, IOException, IndexNodeDescriptorException {
@@ -25,20 +26,23 @@ public class IndexReuters {
 		Properties properties = new Properties();
 		properties.load(new FileReader("config.properties"));
 		
-		String brokerHost = properties.getProperty("host");
-		int port = Integer.parseInt(properties.getProperty("port"));
+		String brokerHost = properties.getProperty("brokerHost");
+		int port = Integer.parseInt(properties.getProperty("brokerPort"));
 		int bufferSize = Integer.parseInt(properties.getProperty("bufferSize"));
-		int shard = Integer.parseInt(properties.getProperty("shard"));
+		int group = Integer.parseInt(properties.getProperty("group"));
+		File documentsDir = new File(properties.getProperty("documentsDir"));
 
 		RemoteBrokerNodeDescriptor remoteNode = new RemoteBrokerNodeDescriptor(
 				brokerHost, port);
 		final IndexBroker.Iface broker = remoteNode.getClient();
 		
-		IndexingReutersDocHandler docHandler = new IndexingReutersDocHandler(broker, bufferSize, shard);
+		IndexingReutersDocHandler docHandler = new IndexingReutersDocHandler(broker, bufferSize, group, counter);
 		ReutersSaxParser parser = new ReutersSaxParser(docHandler);
 
-		for(String file : args){
-			parser.parse(new File(file));
+		for(File xmlFile : documentsDir.listFiles()){
+			if(!xmlFile.getName().contains(".xml")) continue;
+			
+			parser.parse(xmlFile);
 			System.out.println("Processed documents: " + counter);
 		}
 		
