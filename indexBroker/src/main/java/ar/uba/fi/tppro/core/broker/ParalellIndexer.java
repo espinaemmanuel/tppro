@@ -67,7 +67,7 @@ public class ParalellIndexer {
 		}
 	}
 
-	public IndexResult distributeAndIndex(final int shardId,
+	synchronized public IndexResult distributeAndIndex(final int shardId,
 			Multimap<Integer, IndexNodeDescriptor> partitions,
 			List<Document> documents) throws LockAquireTimeoutException,
 			VersionTrackerServerException, StaleVersionException {

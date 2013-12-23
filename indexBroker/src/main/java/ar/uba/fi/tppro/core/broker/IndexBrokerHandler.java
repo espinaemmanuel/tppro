@@ -99,7 +99,7 @@ public class IndexBrokerHandler implements BrokerIterface {
 	}
 
 	@Override
-	public IndexResult index(int shardId,
+	synchronized public IndexResult index(int shardId,
 			List<Document> documents) throws ParalellIndexException,
 			NonExistentPartitionException, TException {
 

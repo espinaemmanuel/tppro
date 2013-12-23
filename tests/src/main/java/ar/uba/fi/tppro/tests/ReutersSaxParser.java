@@ -1,4 +1,4 @@
-package tests;
+package ar.uba.fi.tppro.tests;
 
 import java.io.File;
 import java.io.FileReader;

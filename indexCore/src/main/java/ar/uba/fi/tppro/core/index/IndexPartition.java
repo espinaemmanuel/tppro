@@ -48,7 +48,7 @@ public class IndexPartition implements Closeable, ShardVersionObserver {
 
 	private static final String DEFAULT_FIELD = "text";
 	private static final String INDEX_VERSION = "indexVersion";
-	
+
 	private File dataPath;
 	private String defaultField = DEFAULT_FIELD;
 	private IndexWriterConfig config;
@@ -57,105 +57,110 @@ public class IndexPartition implements Closeable, ShardVersionObserver {
 	private SearcherManager mgr;
 	boolean isOpen = false;
 	private GroupVersionTracker versionTracker;
-	
+
 	private int partitionId;
 	private int shardId;
-	
+
 	/*
 	 * Two phase commit implementation
 	 */
 	private Long lastCommittedMessageId;
 	private Long lastPreparedMessageId;
 
-	
 	private IndexWriter currentWriter;
-	
+
 	private IndexPartitionStatus status;
 
 	private String lastError;
 
-	public IndexPartition(int shardId, int partitionId, File dataPath, GroupVersionTracker versionTracker) {
+	public IndexPartition(int shardId, int partitionId, File dataPath,
+			GroupVersionTracker versionTracker) {
 		this.partitionId = partitionId;
 		this.shardId = shardId;
 		this.dataPath = dataPath;
 		this.versionTracker = versionTracker;
-		
+
 		this.status = IndexPartitionStatus.CREATED;
 		this.analyzer = new StandardAnalyzer(Version.LUCENE_40);
 	}
-	
-	public void open(boolean checkVersion) throws IOException{
-					
+
+	public void open(boolean checkVersion) throws IOException {
+
 		indexDir = FSDirectory.open(dataPath);
 		config = new IndexWriterConfig(Version.LUCENE_40, analyzer);
 		config.setOpenMode(OpenMode.CREATE_OR_APPEND);
-		
-		//If the directory is empty, create an empty index
-		if(dataPath.list().length == 0){
+
+		// If the directory is empty, create an empty index
+		if (dataPath.list().length == 0) {
 			IndexWriter initialWriter = new IndexWriter(indexDir, config);
 			initialWriter.close();
 		}
-		
+
 		this.lastCommittedMessageId = this.readCurrentVersion();
 
-		if(checkVersion){
+		if (checkVersion) {
 			long clusterVersion;
 			try {
-				
-				clusterVersion = this.versionTracker.getCurrentVersion(this.shardId);
+
+				clusterVersion = this.versionTracker
+						.getCurrentVersion(this.shardId);
 				this.versionTracker.addVersionObserver(this.shardId, this);
-				
+
 			} catch (VersionTrackerServerException e) {
-				throw new IOException("could not retrieve version from server", e);
+				throw new IOException("could not retrieve version from server",
+						e);
 			}
-			
-			
-			if(clusterVersion == this.lastCommittedMessageId){
-				logger.info(String.format("Partition (%d, %d) up to date", this.shardId, this.partitionId));
+
+			if (clusterVersion == this.lastCommittedMessageId) {
+				logger.info(String.format("Partition (%d, %d) up to date",
+						this.shardId, this.partitionId));
 				this.status = IndexPartitionStatus.READY;
 			} else {
-				logger.info(String.format("Partition (%d, %d) stale - Local version = %d, Cluster version = %d. Will eventally restore", this.shardId, this.partitionId, this.lastCommittedMessageId, clusterVersion));
+				logger.info(String
+						.format("Partition (%d, %d) stale - Local version = %d, Cluster version = %d. Will eventally restore",
+								this.shardId, this.partitionId,
+								this.lastCommittedMessageId, clusterVersion));
 				this.status = IndexPartitionStatus.RESTORING;
 			}
 		} else {
 			this.status = IndexPartitionStatus.READY;
 		}
-			
-		mgr = new SearcherManager(indexDir, new SearcherFactory());	
+
+		mgr = new SearcherManager(indexDir, new SearcherFactory());
 		isOpen = true;
 	}
-	
+
 	private long readCurrentVersion() throws IOException {
-		
-		//Get a list of commits of the directory
+
+		// Get a list of commits of the directory
 		SegmentInfos segmentInfos = new SegmentInfos();
 		segmentInfos.read(this.indexDir);
 		long indexGeneration = segmentInfos.getLastGeneration();
-		
+
 		assert indexGeneration > 0 : "index generation cannot be less than 0";
-		
-		if(indexGeneration == 1){
+
+		if (indexGeneration == 1) {
 			return 0;
 		}
-		
+
 		IndexCommit currentCommit = null;
-		
-		for(IndexCommit commit : DirectoryReader.listCommits(indexDir)){
-			if(commit.getGeneration() == indexGeneration){
-				//This is the current generation commit
+
+		for (IndexCommit commit : DirectoryReader.listCommits(indexDir)) {
+			if (commit.getGeneration() == indexGeneration) {
+				// This is the current generation commit
 				currentCommit = commit;
-				break;				
+				break;
 			}
 		}
-		
-		if(currentCommit == null)
+
+		if (currentCommit == null)
 			throw new IOException("Could not get current commit");
-		
+
 		return Long.parseLong(currentCommit.getUserData().get(INDEX_VERSION));
 	}
 
-	protected void ensureOpen() throws IOException{
-		if(!isOpen){
+	synchronized protected void ensureOpen() throws IOException {
+		if (!isOpen) {
 			this.open(true);
 		}
 	}
@@ -167,12 +172,14 @@ public class IndexPartition implements Closeable, ShardVersionObserver {
 	 * @throws IOException
 	 * @throws PartitionNotReadyException
 	 */
-	public void index(List<Document> documents) throws IOException, PartitionNotReadyException {
-		long previousState = this.lastPreparedMessageId != null ? this.lastPreparedMessageId : this.lastCommittedMessageId;
+	public void index(List<Document> documents) throws IOException,
+			PartitionNotReadyException {
+		long previousState = this.lastPreparedMessageId != null ? this.lastPreparedMessageId
+				: this.lastCommittedMessageId;
 		long nextState = previousState + 1;
-			
+
 		this.prepare(new MessageId(previousState, nextState), documents);
-		this.commit();	
+		this.commit();
 	}
 
 	/**
@@ -182,37 +189,41 @@ public class IndexPartition implements Closeable, ShardVersionObserver {
 	 * @throws IOException
 	 * @throws PartitionNotReadyException
 	 */
-	public void prepare(MessageId messageId, List<Document> documents) throws IOException, PartitionNotReadyException {
-		
-		if(this.status != IndexPartitionStatus.READY){
-			throw new PartitionNotReadyException("partition not ready: " + this.status);
+	synchronized public void prepare(MessageId messageId,
+			List<Document> documents) throws IOException,
+			PartitionNotReadyException {
+
+		if (this.status != IndexPartitionStatus.READY) {
+			throw new PartitionNotReadyException("partition not ready: "
+					+ this.status);
 		}
-		
+
 		ensureOpen();
 		long startTime = System.currentTimeMillis();
 
-		if(this.currentWriter == null){
+		if (this.currentWriter == null) {
 			this.currentWriter = new IndexWriter(indexDir, config);
-		}	
-		
-		
-		if(this.lastPreparedMessageId != null){
-			if(this.lastPreparedMessageId == messageId.previousState){
-				//Commit previous state. This sets lastPreparedMessageId to null
+		}
+
+		if (this.lastPreparedMessageId != null) {
+			if (this.lastPreparedMessageId == messageId.previousState) {
+				// Commit previous state. This sets lastPreparedMessageId to
+				// null
 				this.commit();
-			} else if (this.lastCommittedMessageId == messageId.previousState){
-				this.currentWriter.rollback();			
-				this.currentWriter = new IndexWriter(indexDir, config);			
+			} else if (this.lastCommittedMessageId == messageId.previousState) {
+				this.currentWriter.rollback();
+				this.currentWriter = new IndexWriter(indexDir, config);
 				this.lastPreparedMessageId = null;
 			} else {
 				this.status = IndexPartitionStatus.RESTORING;
-				throw new PartitionNotReadyException("stale partition. Will eventually restore");
-			}	
+				throw new PartitionNotReadyException(
+						"stale partition. Will eventually restore");
+			}
 		}
-		
+
 		assert this.lastPreparedMessageId == null : "At this point last prepared message id should be null";
-		
-		//Prepare documents
+
+		// Prepare documents
 		for (Document document : documents) {
 			org.apache.lucene.document.Document luceneDoc = new org.apache.lucene.document.Document();
 
@@ -220,48 +231,53 @@ public class IndexPartition implements Closeable, ShardVersionObserver {
 				luceneDoc.add(new TextField(field.getKey(), field.getValue(),
 						Field.Store.YES));
 			}
-			
+
 			this.currentWriter.addDocument(luceneDoc);
 		}
-				
+
 		Map<String, String> userDataMap = Maps.newConcurrentMap();
 		userDataMap.put(INDEX_VERSION, Long.toString(messageId.nextState));
-		
+
 		this.currentWriter.prepareCommit(userDataMap);
 		this.lastPreparedMessageId = messageId.nextState;
-		
-		long endTime = System.currentTimeMillis();	
-		logger.debug(String.format("PREPARED (id: %d): DocCount=%d IndexTime=%d", this.lastPreparedMessageId, documents.size(), endTime - startTime));
+
+		long endTime = System.currentTimeMillis();
+		logger.debug(String.format(
+				"PREPARED (id: %d): DocCount=%d IndexTime=%d",
+				this.lastPreparedMessageId, documents.size(), endTime
+						- startTime));
 	}
-	
+
 	/**
 	 * Phase 2 of two phase commit
 	 * 
 	 * @throws IOException
 	 */
-	public void commit() throws IOException{
+	synchronized public void commit() throws IOException {
 		Preconditions.checkNotNull(this.currentWriter);
-		
-		if(this.lastPreparedMessageId != null){
+
+		if (this.lastPreparedMessageId != null) {
 			this.currentWriter.commit();
-			
+
 			this.lastCommittedMessageId = this.lastPreparedMessageId;
 			this.lastPreparedMessageId = null;
-			
-			logger.debug(String.format("COMMITED (id: %d)", this.lastCommittedMessageId));
-			
+
+			logger.debug(String.format("COMMITED (id: %d)",
+					this.lastCommittedMessageId));
+
 			mgr.maybeRefresh();
 		}
 	}
 
-
 	public QueryResult search(int partitionId, String query, int limit,
-			int offset) throws ParseException, IOException, PartitionNotReadyException {
-		
-		if(this.status != IndexPartitionStatus.READY){
-			throw new PartitionNotReadyException("partition not ready: " + this.status);
+			int offset) throws ParseException, IOException,
+			PartitionNotReadyException {
+
+		if (this.status != IndexPartitionStatus.READY) {
+			throw new PartitionNotReadyException("partition not ready: "
+					+ this.status);
 		}
-		
+
 		ensureOpen();
 
 		long startTime = System.currentTimeMillis();
@@ -316,9 +332,12 @@ public class IndexPartition implements Closeable, ShardVersionObserver {
 		} finally {
 			mgr.release(searcher);
 		}
-		
+
 		long endTime = System.currentTimeMillis();
-		logger.debug(String.format("QUERY: Partition=%d query=[%s] limit=%d offset=%d -> qtime=%d hits=%d", partitionId, query, limit, offset, endTime - startTime, queryResult.totalHits));
+		logger.debug(String
+				.format("QUERY: Partition=%d query=[%s] limit=%d offset=%d -> qtime=%d hits=%d",
+						partitionId, query, limit, offset, endTime - startTime,
+						queryResult.totalHits));
 
 		return queryResult;
 
@@ -331,7 +350,7 @@ public class IndexPartition implements Closeable, ShardVersionObserver {
 	public void setDefaultField(String defaultField) {
 		this.defaultField = defaultField;
 	}
-	
+
 	public IndexPartitionStatus getStatus() {
 		return status;
 	}
@@ -341,29 +360,29 @@ public class IndexPartition implements Closeable, ShardVersionObserver {
 	}
 
 	public void clear() throws IOException {
-		
-		if(this.currentWriter == null){
+
+		if (this.currentWriter == null) {
 			this.currentWriter = new IndexWriter(indexDir, config);
 		}
-		
-		this.currentWriter.deleteAll();	
+
+		this.currentWriter.deleteAll();
 	}
 
 	public void runReplicator(PartitionReplicator replicator) {
 		replicator.setPartition(this);
-		replicator.start();		
+		replicator.start();
 	}
 
 	public List<String> listFiles() throws IOException {
-		if(this.status != IndexPartitionStatus.READY){
+		if (this.status != IndexPartitionStatus.READY) {
 			return Lists.newArrayList();
 		}
-		
+
 		ensureOpen();
-		
+
 		return Lists.newArrayList(indexDir.listAll());
 	}
-	
+
 	public File getDataPath() {
 		return dataPath;
 	}
@@ -391,11 +410,11 @@ public class IndexPartition implements Closeable, ShardVersionObserver {
 
 	@Override
 	public void close() throws IOException {
-		if(this.currentWriter != null){
+		if (this.currentWriter != null) {
 			this.currentWriter.rollback();
 			this.currentWriter = null;
 		}
-		
+
 		this.mgr.close();
 		this.indexDir.close();
 	}
@@ -403,20 +422,24 @@ public class IndexPartition implements Closeable, ShardVersionObserver {
 	@Override
 	public void onConectionLoss(int partitionId) {
 		logger.error("This partition was disconnected from the cluster");
-		this.status = IndexPartitionStatus.DISCONNECTED;		
+		this.status = IndexPartitionStatus.DISCONNECTED;
 	}
 
 	@Override
 	public void onVersionChanged(int groupId, long newVersion) {
-		logger.info("Group " + groupId + " version changed. New version: " + newVersion);
-		logger.debug(String.format("lastPreparedMessageId = %d, newVersion = %d", this.lastPreparedMessageId, newVersion));
-		
-		if(this.lastPreparedMessageId != null  && this.lastPreparedMessageId == newVersion){
+		logger.info("Group " + groupId + " version changed. New version: "
+				+ newVersion);
+		logger.debug(String.format(
+				"lastPreparedMessageId = %d, newVersion = %d",
+				this.lastPreparedMessageId, newVersion));
+
+		if (this.lastPreparedMessageId != null
+				&& this.lastPreparedMessageId == newVersion) {
 			try {
 				this.commit();
 			} catch (IOException e) {
 				logger.error("Could not commit index", e);
-			}		
+			}
 		}
 	}
 
@@ -431,10 +454,11 @@ public class IndexPartition implements Closeable, ShardVersionObserver {
 	public int getShardId() {
 		return shardId;
 	}
-	
+
 	@Override
-	public String toString(){
-		return String.format("groupId=%d partitionId=%d", this.shardId, this.partitionId);
+	public String toString() {
+		return String.format("groupId=%d partitionId=%d", this.shardId,
+				this.partitionId);
 	}
 
 }

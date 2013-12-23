@@ -134,7 +134,7 @@ public class ZkShardVersionTracker implements GroupVersionTracker {
 	}
 
 	@Override
-	public void setShardVersion(int shardId, long newVersion)
+	synchronized public void setShardVersion(int shardId, long newVersion)
 			throws StaleVersionException, VersionTrackerServerException {
 		SharedValue counter = versionCounters.get(shardId);
 
@@ -150,11 +150,10 @@ public class ZkShardVersionTracker implements GroupVersionTracker {
 		}
 
 		try {
-			boolean changedVersion = counter.trySetValue(toBytes(newVersion));
-			if (changedVersion == false) {
-				throw new StaleVersionException(fromBytes(counter.getValue()));
-			}
+			counter.setValue(toBytes(newVersion));
 		} catch (Exception e) {
+			logger.error("set value exception", e);
+			
 			throw new VersionTrackerServerException(
 					"Low level exception in the server", e);
 		}

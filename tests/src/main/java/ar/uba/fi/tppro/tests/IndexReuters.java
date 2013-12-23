@@ -1,4 +1,4 @@
-package tests;
+package ar.uba.fi.tppro.tests;
 
 import java.io.File;
 import java.io.FileReader;
@@ -13,8 +13,8 @@ import org.xml.sax.SAXException;
 import ar.uba.fi.tppro.core.index.IndexNodeDescriptorException;
 import ar.uba.fi.tppro.core.index.RemoteBrokerNodeDescriptor;
 import ar.uba.fi.tppro.core.service.thrift.IndexBroker;
-import tests.ReutersSaxParser.ReutersDoc;
-import tests.ReutersSaxParser.ReutersDocHandler;
+import ar.uba.fi.tppro.tests.ReutersSaxParser.ReutersDoc;
+import ar.uba.fi.tppro.tests.ReutersSaxParser.ReutersDocHandler;
 
 public class IndexReuters {
 	

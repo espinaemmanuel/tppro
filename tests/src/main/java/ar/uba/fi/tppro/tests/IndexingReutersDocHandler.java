@@ -1,4 +1,4 @@
-package tests;
+package ar.uba.fi.tppro.tests;
 
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -12,8 +12,8 @@ import ar.uba.fi.tppro.core.service.thrift.Document;
 import ar.uba.fi.tppro.core.service.thrift.IndexBroker;
 import ar.uba.fi.tppro.core.service.thrift.NonExistentPartitionException;
 import ar.uba.fi.tppro.core.service.thrift.ParalellIndexException;
-import tests.ReutersSaxParser.ReutersDoc;
-import tests.ReutersSaxParser.ReutersDocHandler;
+import ar.uba.fi.tppro.tests.ReutersSaxParser.ReutersDoc;
+import ar.uba.fi.tppro.tests.ReutersSaxParser.ReutersDocHandler;
 
 public class IndexingReutersDocHandler implements ReutersDocHandler{
 	
